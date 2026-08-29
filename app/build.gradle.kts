@@ -39,6 +39,9 @@ dependencies {
     // Navigation Component: una sola Activity + Fragments, como en las practicas
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+    // Retrofit + Gson: cliente HTTP contra la API de Ronda (clase 3)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

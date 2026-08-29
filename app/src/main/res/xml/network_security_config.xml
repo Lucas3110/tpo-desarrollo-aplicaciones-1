@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Desde Android 9 (API 28) la app rechaza HTTP sin cifrar por defecto.
+  Nuestro backend de desarrollo corre en http://, no en https://, asi que
+  hay que permitirlo explicitamente y SOLO para estos hosts.
+
+    10.0.2.2  -> asi ve el emulador al "localhost" de la PC
+    localhost -> por si se prueba en un dispositivo con port forwarding
+
+  Cualquier otro dominio sigue exigiendo HTTPS.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>

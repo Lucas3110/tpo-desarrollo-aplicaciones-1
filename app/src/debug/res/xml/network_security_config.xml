@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Version de DESARROLLO. Al estar en app/src/debug/, este archivo reemplaza al de
+  app/src/main/ solo en las builds de debug; la build de release sigue usando el
+  otro, que exige HTTPS salvo para los hosts que lista.
+
+  Permite HTTP sin cifrar contra cualquier host para no tener que agregar a mano la
+  IP de la PC cada vez que cambia la red (casa, facultad, hotspot del celular).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
