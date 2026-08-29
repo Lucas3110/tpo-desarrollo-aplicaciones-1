@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/auth_nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.ronda.ui.auth.LoginFragment"
+        android:label="Ingresar"
+        tools:layout="@layout/fragment_login">
+
+        <action
+            android:id="@+id/action_login_to_registro"
+            app:destination="@id/registroFragment" />
+
+        <!-- Login por codigo: mismo OtpFragment, con proposito=LOGIN -->
+        <action
+            android:id="@+id/action_login_to_otp"
+            app:destination="@id/otpFragment" />
+
+        <!-- Ingreso con contrasena: entra al Home y limpia todo el graph de auth,
+             asi el boton "atras" no vuelve al login. -->
+        <action
+            android:id="@+id/action_auth_to_home"
+            app:destination="@id/home_nav_graph"
+            app:popUpTo="@id/auth_nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registroFragment"
+        android:name="com.example.ronda.ui.auth.RegistroFragment"
+        android:label="Crear cuenta"
+        tools:layout="@layout/fragment_registro">
+
+        <action
+            android:id="@+id/action_registro_to_otp"
+            app:destination="@id/otpFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/otpFragment"
+        android:name="com.example.ronda.ui.auth.OtpFragment"
+        android:label="Verificar codigo"
+        tools:layout="@layout/fragment_otp">
+
+        <argument
+            android:name="email"
+            app:argType="string"
+            android:defaultValue="" />
+
+        <argument
+            android:name="proposito"
+            app:argType="string"
+            android:defaultValue="REGISTRO" />
+
+        <action
+            android:id="@+id/action_otp_to_home"
+            app:destination="@id/home_nav_graph"
+            app:popUpTo="@id/auth_nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+</navigation>

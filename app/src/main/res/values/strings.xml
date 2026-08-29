@@ -1,3 +1,33 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Ronda</string>
+
+    <!-- Login -->
+    <string name="login_titulo">Ingresar a Ronda</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_ingresar">Ingresar</string>
+    <string name="login_con_codigo">Ingresar con un código</string>
+    <string name="login_crear_cuenta">No tenés cuenta? Crear una</string>
+
+    <!-- Registro -->
+    <string name="registro_titulo">Crear cuenta</string>
+    <string name="registro_nombre">Nombre</string>
+    <string name="registro_email">Email</string>
+    <string name="registro_password">Contraseña</string>
+    <string name="registro_crear">Crear cuenta</string>
+    <string name="registro_ya_tengo">Ya tengo cuenta</string>
+
+    <!-- OTP -->
+    <string name="otp_titulo">Verificá tu email</string>
+    <string name="otp_codigo">Código de 6 dígitos</string>
+    <string name="otp_enviado_a">Te enviamos un código a %1$s</string>
+    <string name="otp_verificar">Verificar</string>
+    <string name="otp_reenviar">Reenviar código</string>
+
+    <!-- Home -->
+    <string name="home_titulo">Bienvenido a Ronda</string>
+    <string name="home_cerrar_sesion">Cerrar sesión</string>
+
+    <!-- Errores genericos -->
+    <string name="error_sin_conexion">No pudimos conectarnos con el servidor. Revisá tu conexión e intentá nuevamente.</string>
 </resources>

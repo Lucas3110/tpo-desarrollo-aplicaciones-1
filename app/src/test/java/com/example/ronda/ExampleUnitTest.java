@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.ronda;
 
 import org.junit.Test;
 
