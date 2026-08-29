@@ -37,5 +37,8 @@
     <string name="error_codigo_incompleto">El código tiene 6 dígitos</string>
     <string name="error_codigo_generico">No pudimos verificar el código</string>
     <string name="error_reenvio_generico">No pudimos reenviar el código</string>
+    <string name="error_password_vacia">Ingresá tu contraseña</string>
+    <string name="error_login_generico">No pudimos ingresar</string>
+    <string name="error_email_para_codigo">Escribí tu email para enviarte el código</string>
     <string name="error_sin_conexion">No pudimos conectarnos con el servidor. Revisá tu conexión e intentá nuevamente.</string>
 </resources>
