@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.ronda.ui.home.HomeFragment"
+        android:label="Ronda"
+        tools:layout="@layout/fragment_home">
+
+        <!-- Cerrar sesion: vuelve al login y limpia el graph del home. -->
+        <action
+            android:id="@+id/action_home_to_auth"
+            app:destination="@id/auth_nav_graph"
+            app:popUpTo="@id/home_nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Los Puntos 3 a 6 cuelgan sus pantallas de aca -->
+
+</navigation>

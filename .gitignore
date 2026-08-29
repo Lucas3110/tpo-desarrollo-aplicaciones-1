@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+/build
+app/build/
+captures/
+.cxx/
+.externalNativeBuild/
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+
+# Configuracion local: apunta al SDK de cada maquina, no va a git
+local.properties
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Claves de firma
+*.jks
+*.keystore
