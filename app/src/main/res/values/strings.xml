@@ -33,7 +33,13 @@
     <string name="home_cerrar_sesion">Cerrar sesión</string>
 
     <!-- Errores -->
+    <string name="error_email_vacio">Ingresá tu email</string>
     <string name="error_email_invalido">Ingresá un email válido</string>
+    <string name="error_nombre_vacio">Ingresá tu nombre</string>
+    <string name="error_nombre_con_numeros">El nombre no puede tener números</string>
+    <string name="error_nombre_largo">El nombre no puede tener más de 30 caracteres</string>
+    <string name="error_nombre_invalido">El nombre solo puede tener letras, espacios, apóstrofos y guiones</string>
+    <string name="error_password_larga">La contraseña no puede tener más de 40 caracteres</string>
     <string name="error_password_corta">La contraseña debe tener al menos 6 caracteres</string>
     <string name="error_registro_generico">No pudimos crear la cuenta</string>
     <string name="error_codigo_incompleto">El código tiene 6 dígitos</string>

@@ -21,6 +21,7 @@ import com.example.ronda.data.model.MensajeResponse;
 import com.example.ronda.data.model.OtpEnviarRequest;
 import com.example.ronda.data.model.OtpVerificarRequest;
 import com.example.ronda.data.model.SesionResponse;
+import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.RetrofitClient;
 import com.example.ronda.data.repository.SessionRepository;
@@ -144,8 +145,9 @@ public class OtpFragment extends Fragment {
     }
 
     private void mostrarErrorDeVerificacion(Response<SesionResponse> response) {
-        String codigo = ApiErrorParser.codigoDe(response);
-        String mensaje = ApiErrorParser.mensajeDe(response,
+        ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+        String codigo = ApiErrorParser.codigo(error);
+        String mensaje = ApiErrorParser.mensaje(error,
                 getString(R.string.error_codigo_generico));
 
         if (codigo == null) {
@@ -198,7 +200,7 @@ public class OtpFragment extends Fragment {
                         } else {
                             // 429 OTP_COOLDOWN: el servidor todavia no deja pedir otro.
                             Toast.makeText(requireContext(),
-                                    ApiErrorParser.mensajeDe(response,
+                                    ApiErrorParser.mensaje(ApiErrorParser.parse(response),
                                             getString(R.string.error_reenvio_generico)),
                                     Toast.LENGTH_LONG).show();
                             arrancarCuentaRegresiva(SEGUNDOS_DE_ESPERA);
