@@ -23,6 +23,8 @@
     <string name="otp_enviado_a">Te enviamos un código a %1$s</string>
     <string name="otp_verificar">Verificar</string>
     <string name="otp_reenviar">Reenviar código</string>
+    <string name="otp_reenviar_en">Reenviar código (%1$d)</string>
+    <string name="otp_reenviado">Te enviamos un código nuevo</string>
 
     <!-- Home -->
     <string name="home_titulo">Bienvenido a Ronda</string>
@@ -32,5 +34,8 @@
     <string name="error_email_invalido">Ingresá un email válido</string>
     <string name="error_password_corta">La contraseña debe tener al menos 6 caracteres</string>
     <string name="error_registro_generico">No pudimos crear la cuenta</string>
+    <string name="error_codigo_incompleto">El código tiene 6 dígitos</string>
+    <string name="error_codigo_generico">No pudimos verificar el código</string>
+    <string name="error_reenvio_generico">No pudimos reenviar el código</string>
     <string name="error_sin_conexion">No pudimos conectarnos con el servidor. Revisá tu conexión e intentá nuevamente.</string>
 </resources>
