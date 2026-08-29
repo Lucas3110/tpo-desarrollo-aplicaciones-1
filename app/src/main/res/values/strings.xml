@@ -28,6 +28,9 @@
     <string name="home_titulo">Bienvenido a Ronda</string>
     <string name="home_cerrar_sesion">Cerrar sesión</string>
 
-    <!-- Errores genericos -->
+    <!-- Errores -->
+    <string name="error_email_invalido">Ingresá un email válido</string>
+    <string name="error_password_corta">La contraseña debe tener al menos 6 caracteres</string>
+    <string name="error_registro_generico">No pudimos crear la cuenta</string>
     <string name="error_sin_conexion">No pudimos conectarnos con el servidor. Revisá tu conexión e intentá nuevamente.</string>
 </resources>
