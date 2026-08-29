@@ -20,6 +20,7 @@
     <!-- OTP -->
     <string name="otp_titulo">Verificá tu email</string>
     <string name="otp_codigo">Código de 6 dígitos</string>
+    <string name="otp_codigo_hint">------</string>
     <string name="otp_enviado_a">Te enviamos un código a %1$s</string>
     <string name="otp_verificar">Verificar</string>
     <string name="otp_reenviar">Reenviar código</string>
@@ -28,6 +29,7 @@
 
     <!-- Home -->
     <string name="home_titulo">Bienvenido a Ronda</string>
+    <string name="home_cuenta_verificada">¡Tu cuenta quedó verificada!</string>
     <string name="home_cerrar_sesion">Cerrar sesión</string>
 
     <!-- Errores -->

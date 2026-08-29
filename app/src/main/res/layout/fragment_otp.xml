@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:autofillHints="smsOTPCode"
             android:gravity="center"
-            android:hint="@string/otp_codigo"
+            android:hint="@string/otp_codigo_hint"
             android:inputType="number"
             android:letterSpacing="0.3"
             android:maxLength="6"

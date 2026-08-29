@@ -117,8 +117,16 @@ public class OtpFragment extends Fragment {
                             SesionResponse cuerpo = response.body();
                             sesion.guardarSesion(cuerpo.getToken(),
                                     cuerpo.getUsuario().getEmail());
+
+                            // Al confirmar una cuenta nueva mostramos la
+                            // bienvenida y devolvemos a la persona al login.
+                            // Al ingresar con codigo, en cambio, se queda en
+                            // el Home como cualquier inicio de sesion.
+                            Bundle args = new Bundle();
+                            args.putBoolean("volverAlLogin",
+                                    "REGISTRO".equals(proposito));
                             Navigation.findNavController(view)
-                                    .navigate(R.id.action_otp_to_home);
+                                    .navigate(R.id.action_otp_to_home, args);
                         } else {
                             mostrarErrorDeVerificacion(response);
                         }
