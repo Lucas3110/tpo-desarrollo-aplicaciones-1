@@ -21,6 +21,7 @@ import com.example.ronda.data.model.MensajeResponse;
 import com.example.ronda.data.model.OtpEnviarRequest;
 import com.example.ronda.data.model.PerfilResponse;
 import com.example.ronda.data.model.SesionResponse;
+import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.RetrofitClient;
 import com.example.ronda.data.repository.SessionRepository;
@@ -126,8 +127,9 @@ public class LoginFragment extends Fragment {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString();
 
-        if (email.isEmpty() || !email.contains("@")) {
-            etEmail.setError(getString(R.string.error_email_invalido));
+        ValidadorRegistro.Resultado emailOk = ValidadorRegistro.validarEmail(email);
+        if (!emailOk.esValido()) {
+            etEmail.setError(getString(emailOk.getMensajeError()));
             etEmail.requestFocus();
             return;
         }
@@ -171,8 +173,9 @@ public class LoginFragment extends Fragment {
     }
 
     private void mostrarErrorDeLogin(View view, Response<SesionResponse> response, String email) {
-        String codigo = ApiErrorParser.codigoDe(response);
-        String mensaje = ApiErrorParser.mensajeDe(response,
+        ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+        String codigo = ApiErrorParser.codigo(error);
+        String mensaje = ApiErrorParser.mensaje(error,
                 getString(R.string.error_login_generico));
 
         if ("EMAIL_NO_VERIFICADO".equals(codigo)) {
@@ -192,7 +195,7 @@ public class LoginFragment extends Fragment {
     private void pedirCodigoDeIngreso(View view) {
         String email = etEmail.getText().toString().trim();
 
-        if (email.isEmpty() || !email.contains("@")) {
+        if (!ValidadorRegistro.validarEmail(email).esValido()) {
             etEmail.setError(getString(R.string.error_email_para_codigo));
             etEmail.requestFocus();
             return;
@@ -217,7 +220,7 @@ public class LoginFragment extends Fragment {
                             irAVerificarCodigo(view, email, "LOGIN");
                         } else {
                             Toast.makeText(requireContext(),
-                                    ApiErrorParser.mensajeDe(response,
+                                    ApiErrorParser.mensaje(ApiErrorParser.parse(response),
                                             getString(R.string.error_reenvio_generico)),
                                     Toast.LENGTH_LONG).show();
                         }
