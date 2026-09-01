@@ -13,11 +13,14 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.ronda.R;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * Unica Activity de la app (Single Activity Architecture).
  * No dibuja pantallas: solo hospeda el NavHostFragment, y cada pantalla
  * es un Fragment que el Navigation Component va intercambiando ahi adentro.
  */
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
 
     private NavController navController;

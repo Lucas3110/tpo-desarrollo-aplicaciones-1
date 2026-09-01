@@ -20,8 +20,11 @@ import com.example.ronda.data.model.RegistroRequest;
 import com.example.ronda.data.model.RegistroResponse;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.ApiErrorParser;
-import com.example.ronda.data.network.RetrofitClient;
+import com.example.ronda.data.network.AuthApiService;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -30,7 +33,12 @@ import retrofit2.Response;
  * Alta de cuenta: POST /api/auth/registro.
  * Si sale bien, el backend ya mando el codigo OTP y pasamos a OtpFragment.
  */
+@AndroidEntryPoint
 public class RegistroFragment extends Fragment {
+
+    // Hilt lo crea y lo inyecta: ya no hay que pedirlo con getInstance().
+    @Inject
+    AuthApiService authApi;
 
     private EditText etNombre;
     private EditText etEmail;
@@ -76,7 +84,7 @@ public class RegistroFragment extends Fragment {
 
         mostrarCargando(true);
 
-        RetrofitClient.getAuthApi()
+        authApi
                 .registrar(new RegistroRequest(email, password, nombre))
                 .enqueue(new Callback<RegistroResponse>() {
 

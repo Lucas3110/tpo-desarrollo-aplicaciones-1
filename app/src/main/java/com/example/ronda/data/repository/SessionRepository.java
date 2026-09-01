@@ -3,13 +3,24 @@ package com.example.ronda.data.repository;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import dagger.hilt.android.qualifiers.ApplicationContext;
+
 /**
- * Guarda la sesion en el celular.
+ * Guarda la sesión en el celular.
  *
- * SharedPreferences viene incluido en Android (no es una libreria extra) y
- * persiste en disco, asi que el token sobrevive a cerrar y volver a abrir
- * la app. Eso es lo que permite el auto-login.
+ * SharedPreferences viene incluido en Android (no es una librería extra) y
+ * persiste en disco, así que el token sobrevive a cerrar y volver a abrir la
+ * app. Eso es lo que permite el auto-login.
+ *
+ * Con Hilt ya no se instancia a mano: se pide con @Inject y el
+ * @ApplicationContext lo provee el framework, así que nadie tiene que
+ * acordarse de pasar el contexto correcto (usar el del Fragment filtraría una
+ * referencia a una pantalla ya destruida).
  */
+@Singleton
 public class SessionRepository {
 
     private static final String ARCHIVO = "sesion_ronda";
@@ -18,10 +29,9 @@ public class SessionRepository {
 
     private final SharedPreferences prefs;
 
-    public SessionRepository(Context contexto) {
-        // getApplicationContext evita quedarse con una referencia al Fragment.
-        prefs = contexto.getApplicationContext()
-                .getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE);
+    @Inject
+    public SessionRepository(@ApplicationContext Context contexto) {
+        prefs = contexto.getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE);
     }
 
     public void guardarSesion(String token, String email) {
