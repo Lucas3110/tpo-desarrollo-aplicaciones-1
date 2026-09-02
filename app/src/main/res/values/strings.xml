@@ -36,6 +36,19 @@
     <string name="home_buscar_hint">Buscar por título o descripción</string>
     <string name="home_buscar_desc">Buscar</string>
     <string name="home_limpiar_busqueda_desc">Borrar búsqueda</string>
+    <string name="home_filtros">Filtros</string>
+    <string name="home_filtros_con_cantidad">Filtros (%1$d)</string>
+    <string name="home_categoria">Categoría</string>
+    <string name="home_categoria_todas">Todas las categorías</string>
+    <string name="home_precio_min">Precio mínimo</string>
+    <string name="home_precio_max">Precio máximo</string>
+    <string name="home_estado_articulo">Estado del artículo</string>
+    <string name="estado_nuevo">Nuevo</string>
+    <string name="estado_como_nuevo">Como nuevo</string>
+    <string name="estado_usado">Usado</string>
+    <string name="home_aplicar">Aplicar</string>
+    <string name="home_limpiar">Limpiar</string>
+    <string name="error_rango_precio">El mínimo no puede ser mayor que el máximo</string>
     <string name="home_ordenar_por">Ordenar por</string>
     <string name="orden_recientes">Más recientes</string>
     <string name="orden_precio_asc">Menor precio</string>
@@ -45,9 +58,9 @@
         <item quantity="other">%1$d de %2$d publicaciones</item>
     </plurals>
     <string name="home_vacio_sin_filtros">Todavía no hay publicaciones</string>
-    <string name="home_vacio_con_filtros">No encontramos publicaciones con esa búsqueda</string>
+    <string name="home_vacio_con_filtros">No encontramos publicaciones con esa búsqueda o esos filtros</string>
     <string name="home_actualizar">Actualizar</string>
-    <string name="home_limpiar_todo">Limpiar búsqueda</string>
+    <string name="home_limpiar_todo">Limpiar búsqueda y filtros</string>
     <string name="home_reintentar">Reintentar</string>
     <string name="home_error_carga">No pudimos cargar las publicaciones</string>
     <string name="home_error_mas_publicaciones">No pudimos cargar más publicaciones</string>

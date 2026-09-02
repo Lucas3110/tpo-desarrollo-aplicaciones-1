@@ -79,6 +79,106 @@ public class FiltrosPublicacionesTest {
     }
 
     @Test
+    public void estadoArticulo_seMandaSoloSiHayAlgunosMarcadosPeroNoTodos() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+
+        assertNull(filtros.getEstadoArticuloParam());
+
+        filtros.setEstados(true, false, true);
+        assertEquals("NUEVO,USADO", filtros.getEstadoArticuloParam());
+
+        filtros.setEstados(false, true, false);
+        assertEquals("COMO_NUEVO", filtros.getEstadoArticuloParam());
+
+        // Los tres marcados es lo mismo que ninguno: no viaja el parametro.
+        filtros.setEstados(true, true, true);
+        assertNull(filtros.getEstadoArticuloParam());
+        assertEquals(0, filtros.contarFiltros());
+    }
+
+    @Test
+    public void contarFiltros_cuentaCategoriaRangoYEstadoComoUnoCadaUno() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+        assertEquals(0, filtros.contarFiltros());
+
+        filtros.setCategoriaId(2);
+        assertEquals(1, filtros.contarFiltros());
+
+        filtros.setPrecioMin(1000.0);
+        filtros.setPrecioMax(5000.0);
+        assertEquals(2, filtros.contarFiltros());
+
+        filtros.setEstados(false, false, true);
+        assertEquals(3, filtros.contarFiltros());
+        assertTrue(filtros.hayAlgoAplicado());
+    }
+
+    @Test
+    public void rangoPrecio_esInvalidoSoloConLosDosExtremosYMinMayorQueMax() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+
+        filtros.setPrecioMin(5000.0);
+        assertFalse(filtros.rangoPrecioInvalido());
+
+        filtros.setPrecioMax(1000.0);
+        assertTrue(filtros.rangoPrecioInvalido());
+
+        filtros.setPrecioMax(5000.0);
+        assertFalse(filtros.rangoPrecioInvalido());
+    }
+
+    @Test
+    public void limpiarFiltros_conservaBusquedaYOrden_limpiarTodoSoloElOrden() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+        filtros.setQ("bici");
+        filtros.setOrden("precio_asc");
+        filtros.setCategoriaId(7);
+        filtros.setPrecioMax(90000.0);
+        filtros.setEstados(true, false, false);
+
+        filtros.limpiarFiltros();
+        assertEquals("bici", filtros.getQ());
+        assertEquals("precio_asc", filtros.getOrden());
+        assertNull(filtros.getCategoriaId());
+        assertNull(filtros.getPrecioMax());
+        assertNull(filtros.getEstadoArticuloParam());
+        assertEquals(0, filtros.contarFiltros());
+
+        filtros.limpiarTodo();
+        assertNull(filtros.getQ());
+        assertEquals("precio_asc", filtros.getOrden());
+        assertFalse(filtros.hayAlgoAplicado());
+    }
+
+    @Test
+    public void claveDeFiltros_cambiaConCadaFiltroYNoConBusquedaNiOrden() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+        String base = filtros.claveDeFiltros();
+
+        filtros.setQ("bici");
+        filtros.setOrden("precio_asc");
+        assertEquals(base, filtros.claveDeFiltros());
+
+        filtros.setCategoriaId(3);
+        String conCategoria = filtros.claveDeFiltros();
+        assertFalse(base.equals(conCategoria));
+
+        filtros.setPrecioMin(1000.0);
+        String conMin = filtros.claveDeFiltros();
+        assertFalse(conCategoria.equals(conMin));
+
+        filtros.setPrecioMax(9000.0);
+        String conMax = filtros.claveDeFiltros();
+        assertFalse(conMin.equals(conMax));
+
+        filtros.setEstados(true, false, false);
+        assertFalse(conMax.equals(filtros.claveDeFiltros()));
+
+        filtros.limpiarFiltros();
+        assertEquals(base, filtros.claveDeFiltros());
+    }
+
+    @Test
     public void ordenEnum_traduceValoresDeLaApi() {
         assertEquals(Orden.PRECIO_ASC, Orden.desdeValorApi("precio_asc"));
         assertEquals(Orden.PRECIO_DESC, Orden.desdeValorApi("precio_desc"));

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +28,8 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.ronda.R;
+import com.example.ronda.data.model.CategoriaResponse;
+import com.example.ronda.data.model.CategoriasResponse;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.model.PaginaPublicacionesResponse;
 import com.example.ronda.data.model.PublicacionItemResponse;
@@ -54,9 +57,10 @@ import retrofit2.Response;
  * paginas: cuando el scroll llega cerca del final y el backend dice que
  * hayMas, se pide la siguiente y se agrega al final. El buscador manda el
  * texto como q y el backend busca en titulo y descripcion; el Spinner de
- * orden manda "orden" y el backend ordena. Sigue el mismo
- * patron que las pantallas del Punto 1: enqueue, estaVivo() antes de tocar
- * la UI y ApiErrorParser.parse() una sola vez.
+ * orden manda "orden"; el panel de filtros manda categoriaId, precioMin,
+ * precioMax y estadoArticulo, todos combinables. Sigue el mismo patron que
+ * las pantallas del Punto 1: enqueue, estaVivo() antes de tocar la UI y
+ * ApiErrorParser.parse() una sola vez.
  *
  * Los datos viven en campos del Fragment y no en la vista: cuando se navega
  * al detalle y se vuelve, Navigation destruye la vista pero no el Fragment,
@@ -84,11 +88,17 @@ public class HomeFragment extends Fragment {
     private static final int UMBRAL_PRECARGA = 3;
 
     private static final String CLAVE_FILTROS = "filtros";
+    private static final String CLAVE_PANEL_ABIERTO = "panelAbierto";
+    private static final String TAG = "Home";
 
     // --- Datos (sobreviven a que se destruya la vista) ---
     private final List<PublicacionItemResponse> items = new ArrayList<>();
     /** Lo aplicado (no lo que se esta escribiendo): con esto se arma cada request. */
     private FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+    /** Catalogo para el Spinner; vive aca (no en el panel) para sobrevivir al back stack. */
+    private List<CategoriaResponse> categorias;
+    private Call<CategoriasResponse> llamadaCategorias;
+    private boolean panelAbierto = false;
     private PublicacionAdapter adapter;
     private int total = 0;
     private int paginaActual = 0;
@@ -104,6 +114,7 @@ public class HomeFragment extends Fragment {
     private Call<PaginaPublicacionesResponse> llamadaEnCurso;
 
     // --- Vistas ---
+    private PanelFiltros panel;
     private Spinner spOrden;
     private EditText etBuscar;
     private ImageButton btnLimpiarBusqueda;
@@ -130,6 +141,7 @@ public class HomeFragment extends Fragment {
             if (guardados != null) {
                 filtros = guardados;
             }
+            panelAbierto = savedInstanceState.getBoolean(CLAVE_PANEL_ABIERTO, false);
         }
     }
 
@@ -145,6 +157,13 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        panel = new PanelFiltros(view);
+        if (categorias != null) {
+            panel.setCategorias(categorias, filtros.getCategoriaId());
+        }
+        Button btnFiltros = view.findViewById(R.id.btnFiltros);
+        Button btnLimpiarFiltros = view.findViewById(R.id.btnLimpiarFiltros);
+        Button btnAplicarFiltros = view.findViewById(R.id.btnAplicarFiltros);
         spOrden = view.findViewById(R.id.spOrden);
         etBuscar = view.findViewById(R.id.etBuscar);
         btnLimpiarBusqueda = view.findViewById(R.id.btnLimpiarBusqueda);
@@ -163,6 +182,7 @@ public class HomeFragment extends Fragment {
 
         configurarBuscador(btnBuscar);
         configurarOrden();
+        configurarFiltros(btnFiltros, btnLimpiarFiltros, btnAplicarFiltros);
 
         // Pie con el spinner de "cargando mas". Va antes de setAdapter y no
         // es clickeable, asi el tap sobre el no cuenta como una publicacion.
@@ -215,6 +235,90 @@ public class HomeFragment extends Fragment {
             actualizarContador();
             mostrarEstado(Estado.LISTA);
         }
+        if (categorias == null) {
+            cargarCategorias();
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // Filtros: categoria, rango de precio y estado del articulo
+    // -----------------------------------------------------------------
+
+    private void configurarFiltros(Button btnFiltros, Button btnLimpiarFiltros,
+                                   Button btnAplicarFiltros) {
+        panel.volcar(filtros);
+        panel.mostrar(panelAbierto);
+        panel.actualizarBoton(filtros);
+
+        btnFiltros.setOnClickListener(v -> {
+            panelAbierto = !panelAbierto;
+            if (panelAbierto) {
+                // Se abre mostrando lo APLICADO: lo que se haya editado y no
+                // aplicado la vez anterior se descarta.
+                panel.volcar(filtros);
+                if (categorias == null) cargarCategorias();
+            }
+            panel.mostrar(panelAbierto);
+        });
+        btnAplicarFiltros.setOnClickListener(v -> aplicarFiltros(filtros.claveDeFiltros()));
+        btnLimpiarFiltros.setOnClickListener(v -> {
+            // La "foto" de lo aplicado se toma ANTES de limpiar: si no, la
+            // comparacion de aplicarFiltros() nunca ve el cambio y no recarga.
+            String antes = filtros.claveDeFiltros();
+            filtros.limpiarFiltros();
+            panel.volcar(filtros);
+            aplicarFiltros(antes);
+        });
+    }
+
+    /**
+     * Lee el panel, valida y, si algo cambio respecto de "antes" (la clave de
+     * lo que estaba aplicado), recarga desde la pagina 1.
+     */
+    private void aplicarFiltros(String antes) {
+        if (!panel.leerEn(filtros)) {
+            return; // el panel ya marco el error en el campo
+        }
+
+        ocultarTeclado();
+        panelAbierto = false;
+        panel.mostrar(false);
+        panel.actualizarBoton(filtros);
+
+        if (!antes.equals(filtros.claveDeFiltros())) {
+            recargar();
+        }
+    }
+
+    /**
+     * GET /categorias, sin token. Si falla no bloquea nada: el Spinner queda
+     * con "Todas" y se reintenta la proxima vez que se abre el panel.
+     */
+    private void cargarCategorias() {
+        if (llamadaCategorias != null) return;
+        llamadaCategorias = publicacionApi.categorias();
+        llamadaCategorias.enqueue(new Callback<CategoriasResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<CategoriasResponse> call,
+                                   @NonNull Response<CategoriasResponse> response) {
+                llamadaCategorias = null;
+                if (call.isCanceled() || !estaVivo()) return;
+                if (response.isSuccessful() && response.body() != null
+                        && response.body().getCategorias() != null) {
+                    categorias = response.body().getCategorias();
+                    panel.setCategorias(categorias, filtros.getCategoriaId());
+                } else {
+                    Log.w(TAG, "No se pudo cargar el catalogo de categorias: HTTP " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<CategoriasResponse> call, @NonNull Throwable t) {
+                llamadaCategorias = null;
+                if (call.isCanceled() || !estaVivo()) return;
+                Log.w(TAG, "No se pudo cargar el catalogo de categorias", t);
+            }
+        });
     }
 
     // -----------------------------------------------------------------
@@ -268,10 +372,17 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    /** Saca la busqueda y vuelve al listado completo. */
+    /** Saca la busqueda y los filtros y vuelve al listado completo. */
     private void limpiarTodo() {
         filtros.limpiarTodo();
         etBuscar.setText("");
+        // El panel y el boton "Filtros (n)" muestran lo aplicado: si no se
+        // refrescan, el boton sigue diciendo (n) y un "Aplicar" sobre el panel
+        // abierto volveria a poner los filtros que se acaban de sacar.
+        panelAbierto = false;
+        panel.mostrar(false);
+        panel.volcar(filtros);
+        panel.actualizarBoton(filtros);
         recargar();
     }
 
@@ -347,17 +458,17 @@ public class HomeFragment extends Fragment {
             mostrarCargandoMas(true);
         }
 
-        // Los parametros en null no viajan en la URL: los filtros llegan en
-        // las proximas entregas.
+        // Todo se combina en un solo request; los parametros en null no
+        // viajan en la URL.
         llamadaEnCurso = publicacionApi.listar(
                 sesion.getBearerOpcional(),
                 pagina,
                 LIMITE_PAGINA,
                 filtros.getQ(),
-                null,   // categoriaId
-                null,   // precioMin
-                null,   // precioMax
-                null,   // estadoArticulo
+                filtros.getCategoriaId(),
+                filtros.getPrecioMin(),
+                filtros.getPrecioMax(),
+                filtros.getEstadoArticuloParam(),
                 null,   // zonaId
                 filtros.getOrden());
 
@@ -451,6 +562,23 @@ public class HomeFragment extends Fragment {
             Toast.makeText(requireContext(), R.string.home_sesion_vencida, Toast.LENGTH_LONG).show();
             Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
             return;
+        }
+        if ("RANGO_PRECIO_INVALIDO".equals(codigo)) {
+            // La app ya valida minimo <= maximo antes de mandar, asi que verlo
+            // significa que el backend tiene una regla extra: se muestra en el
+            // campo, con el panel abierto, y la lista queda como estaba.
+            panelAbierto = true;
+            panel.mostrar(true);
+            panel.mostrarErrorPrecioMax(mensaje);
+            mostrarCargandoMas(false);
+            mostrarEstado(items.isEmpty() ? Estado.VACIO : Estado.LISTA);
+            return;
+        }
+        if ("ESTADO_ARTICULO_INVALIDO".equals(codigo) || "ORDEN_INVALIDO".equals(codigo)
+                || "PARAMETRO_INVALIDO".equals(codigo)) {
+            // Solo mandamos valores de diccionarios fijos: si ves esto en la
+            // demo, el bug es nuestro, no de quien usa la app.
+            Log.w(TAG, "Query invalida -> " + codigo + " (" + call.request().url() + ")");
         }
         if (pagina > 1) {
             if ("PAGINA_INVALIDA".equals(codigo) || "LIMITE_INVALIDO".equals(codigo)) {
@@ -570,12 +698,18 @@ public class HomeFragment extends Fragment {
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable(CLAVE_FILTROS, filtros);
+        // El LinearLayout no guarda su visibility solo.
+        outState.putBoolean(CLAVE_PANEL_ABIERTO, panelAbierto);
     }
 
     @Override
     public void onDestroyView() {
         // Una respuesta que llegue con la vista destruida no tiene donde pintarse.
         cancelarLlamadaEnCurso();
+        if (llamadaCategorias != null) {
+            llamadaCategorias.cancel();
+            llamadaCategorias = null;
+        }
         super.onDestroyView();
     }
 
