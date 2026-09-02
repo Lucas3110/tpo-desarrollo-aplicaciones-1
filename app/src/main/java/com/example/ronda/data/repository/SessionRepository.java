@@ -58,6 +58,15 @@ public class SessionRepository {
         return "Bearer " + getToken();
     }
 
+    /**
+     * Para las rutas con token opcional (el listado de publicaciones): si no
+     * hay sesion devuelve null y Retrofit directamente no manda la cabecera,
+     * en vez de mandar "Bearer null".
+     */
+    public String getBearerOpcional() {
+        return haySesion() ? getBearer() : null;
+    }
+
     public void cerrarSesion() {
         prefs.edit().clear().apply();
     }

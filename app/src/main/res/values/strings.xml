@@ -31,9 +31,21 @@
     <string name="bienvenida_titulo">Te damos la bienvenida a Ronda</string>
     <string name="bienvenida_cuenta_verificada">¡Tu cuenta quedó verificada!</string>
 
-    <!-- Home -->
-    <string name="home_titulo">Bienvenido a Ronda</string>
+    <!-- Home: explorar publicaciones -->
     <string name="home_cerrar_sesion">Cerrar sesión</string>
+    <plurals name="home_contador">
+        <item quantity="one">%1$d de %2$d publicación</item>
+        <item quantity="other">%1$d de %2$d publicaciones</item>
+    </plurals>
+    <string name="home_vacio_sin_filtros">Todavía no hay publicaciones</string>
+    <string name="home_actualizar">Actualizar</string>
+    <string name="home_reintentar">Reintentar</string>
+    <string name="home_error_carga">No pudimos cargar las publicaciones</string>
+    <string name="home_error_respuesta_invalida">El servidor respondió algo que la app no entiende</string>
+    <string name="home_url_base">Servidor: %1$s</string>
+    <string name="home_sesion_vencida">Tu sesión venció, volvé a ingresar</string>
+    <string name="home_foto_desc">Foto del artículo</string>
+    <string name="home_detalle_pendiente">Muy pronto vas a poder ver el detalle de \"%1$s\"</string>
 
     <!-- Errores -->
     <string name="error_email_vacio">Ingresá tu email</string>
