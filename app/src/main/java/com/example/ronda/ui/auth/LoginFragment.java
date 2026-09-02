@@ -109,6 +109,11 @@ public class LoginFragment extends Fragment {
                         mostrarCargando(false);
 
                         if (response.isSuccessful()) {
+                            // Aprovechamos para refrescar la zona guardada: es
+                            // lo que usa el Home para "Solo mi zona".
+                            if (response.body() != null && response.body().getUsuario() != null) {
+                                sesion.guardarZona(response.body().getUsuario().getZona());
+                            }
                             Navigation.findNavController(view)
                                     .navigate(R.id.action_auth_to_home);
                         } else {
@@ -163,6 +168,7 @@ public class LoginFragment extends Fragment {
                             SesionResponse cuerpo = response.body();
                             sesion.guardarSesion(cuerpo.getToken(),
                                     cuerpo.getUsuario().getEmail());
+                            sesion.guardarZona(cuerpo.getUsuario().getZona());
                             Navigation.findNavController(view)
                                     .navigate(R.id.action_auth_to_home);
                         } else {

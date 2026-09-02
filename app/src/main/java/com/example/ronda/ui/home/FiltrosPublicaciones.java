@@ -6,8 +6,8 @@ import java.util.List;
 
 /**
  * Lo que la persona tiene APLICADO en el Home: texto del buscador, orden y
- * filtros (categoria, rango de precio y estado del articulo). Todo se
- * combina en un solo request.
+ * filtros (categoria, rango de precio, estado del articulo y "solo mi
+ * zona"). Todo se combina en un solo request.
  *
  * Es Java puro (sin imports de Android) a proposito: se puede probar con
  * JUnit sin emulador y se guarda en el Bundle al rotar porque es Serializable.
@@ -28,6 +28,8 @@ public class FiltrosPublicaciones implements Serializable {
     private boolean nuevo;
     private boolean comoNuevo;
     private boolean usado;
+    /** Filtrar por la zona de la persona (zonaId sale de la sesion, no de aca). */
+    private boolean soloMiZona;
 
     // ---------------------------------------------------------------
     // Busqueda
@@ -129,13 +131,22 @@ public class FiltrosPublicaciones implements Serializable {
         return alguno && !todos;
     }
 
+    public boolean isSoloMiZona() {
+        return soloMiZona;
+    }
+
+    public void setSoloMiZona(boolean soloMiZona) {
+        this.soloMiZona = soloMiZona;
+    }
+
     /**
      * Resumen de TODO lo que el panel manda en la request. Se compara antes y
      * despues de "Aplicar" para pedir de nuevo solo si algo cambio. Vive aca,
      * al lado de los campos, para que un filtro nuevo no quede afuera.
      */
     public String claveDeFiltros() {
-        return categoriaId + "|" + precioMin + "|" + precioMax + "|" + getEstadoArticuloParam();
+        return categoriaId + "|" + precioMin + "|" + precioMax + "|" + getEstadoArticuloParam()
+                + "|" + soloMiZona;
     }
 
     /** Cuantos filtros hay puestos, para el boton "Filtros (n)". */
@@ -144,6 +155,7 @@ public class FiltrosPublicaciones implements Serializable {
         if (categoriaId != null) cantidad++;
         if (precioMin != null || precioMax != null) cantidad++;
         if (hayEstadoFiltrado()) cantidad++;
+        if (soloMiZona) cantidad++;
         return cantidad;
     }
 
@@ -155,6 +167,7 @@ public class FiltrosPublicaciones implements Serializable {
         nuevo = false;
         comoNuevo = false;
         usado = false;
+        soloMiZona = false;
     }
 
     // ---------------------------------------------------------------

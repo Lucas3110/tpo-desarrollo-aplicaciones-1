@@ -14,7 +14,9 @@ import com.example.ronda.R;
 public enum Orden {
     RECIENTES("recientes", R.string.orden_recientes),
     PRECIO_ASC("precio_asc", R.string.orden_precio_asc),
-    PRECIO_DESC("precio_desc", R.string.orden_precio_desc);
+    PRECIO_DESC("precio_desc", R.string.orden_precio_desc),
+    /** Por distancia a la zona de la persona: necesita sesion con zona configurada. */
+    CERCANIA("cercania", R.string.orden_cercania);
 
     private final String valorApi;
     @StringRes

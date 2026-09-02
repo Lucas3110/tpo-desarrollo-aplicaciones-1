@@ -53,6 +53,10 @@
     <string name="orden_recientes">Más recientes</string>
     <string name="orden_precio_asc">Menor precio</string>
     <string name="orden_precio_desc">Mayor precio</string>
+    <string name="orden_cercania">Más cercanas</string>
+    <string name="home_solo_mi_zona">Solo mi zona (%1$s)</string>
+    <string name="home_solo_mi_zona_sin_zona">Solo mi zona (configurá tu zona en tu perfil)</string>
+    <string name="home_error_sin_zona">Para usar la cercanía primero configurá tu zona en tu perfil</string>
     <plurals name="home_contador">
         <item quantity="one">%1$d de %2$d publicación</item>
         <item quantity="other">%1$d de %2$d publicaciones</item>

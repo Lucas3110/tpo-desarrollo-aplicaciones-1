@@ -142,6 +142,7 @@ public class OtpFragment extends Fragment {
                                 // como cualquier otro, va derecho al Home.
                                 sesion.guardarSesion(cuerpo.getToken(),
                                         cuerpo.getUsuario().getEmail());
+                                sesion.guardarZona(cuerpo.getUsuario().getZona());
                                 Navigation.findNavController(view)
                                         .navigate(R.id.action_otp_to_home);
                             }

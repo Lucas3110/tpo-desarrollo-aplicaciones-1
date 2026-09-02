@@ -32,8 +32,10 @@ import com.example.ronda.data.model.CategoriaResponse;
 import com.example.ronda.data.model.CategoriasResponse;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.model.PaginaPublicacionesResponse;
+import com.example.ronda.data.model.PerfilResponse;
 import com.example.ronda.data.model.PublicacionItemResponse;
 import com.example.ronda.data.network.ApiErrorParser;
+import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.repository.SessionRepository;
 import com.google.android.material.snackbar.Snackbar;
@@ -58,7 +60,10 @@ import retrofit2.Response;
  * hayMas, se pide la siguiente y se agrega al final. El buscador manda el
  * texto como q y el backend busca en titulo y descripcion; el Spinner de
  * orden manda "orden"; el panel de filtros manda categoriaId, precioMin,
- * precioMax y estadoArticulo, todos combinables. Sigue el mismo patron que
+ * precioMax, estadoArticulo y zonaId, todos combinables. La cercania a la
+ * zona de la persona se cubre de las dos formas que ofrece el backend:
+ * "Solo mi zona" (filtro zonaId) y "Mas cercanas" (orden=cercania, por
+ * distancia). Sigue el mismo patron que
  * las pantallas del Punto 1: enqueue, estaVivo() antes de tocar la UI y
  * ApiErrorParser.parse() una sola vez.
  *
@@ -71,6 +76,10 @@ public class HomeFragment extends Fragment {
 
     @Inject
     PublicacionApiService publicacionApi;
+
+    /** Solo para refrescar la zona con GET /auth/me si el backend la desconoce. */
+    @Inject
+    AuthApiService authApi;
 
     @Inject
     SessionRepository sesion;
@@ -246,6 +255,11 @@ public class HomeFragment extends Fragment {
 
     private void configurarFiltros(Button btnFiltros, Button btnLimpiarFiltros,
                                    Button btnAplicarFiltros) {
+        panel.setZonaDelUsuario(sesion.getZonaNombre());
+        if (!sesion.tieneZona()) {
+            // Sin zona no hay "mi zona" por la que filtrar.
+            filtros.setSoloMiZona(false);
+        }
         panel.volcar(filtros);
         panel.mostrar(panelAbierto);
         panel.actualizarBoton(filtros);
@@ -415,11 +429,19 @@ public class HomeFragment extends Fragment {
         spOrden.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View vista, int posicion, long id) {
-                String elegido = Orden.values()[posicion].getValorApi();
+                Orden elegido = Orden.values()[posicion];
                 // El Spinner tambien avisa al inflarse y al seleccionar por
                 // codigo: si el orden no cambio, no se pide nada.
-                if (elegido.equals(filtros.getOrden())) return;
-                filtros.setOrden(elegido);
+                if (elegido.getValorApi().equals(filtros.getOrden())) return;
+
+                if (elegido == Orden.CERCANIA && !sesion.tieneZona()) {
+                    // El backend responderia SIN_ZONA_CONFIGURADA: se avisa
+                    // antes y se vuelve al orden que estaba aplicado.
+                    Toast.makeText(requireContext(), R.string.home_error_sin_zona, Toast.LENGTH_LONG).show();
+                    spOrden.setSelection(Orden.desdeValorApi(filtros.getOrden()).ordinal(), false);
+                    return;
+                }
+                filtros.setOrden(elegido.getValorApi());
                 recargar();
             }
 
@@ -469,7 +491,7 @@ public class HomeFragment extends Fragment {
                 filtros.getPrecioMin(),
                 filtros.getPrecioMax(),
                 filtros.getEstadoArticuloParam(),
-                null,   // zonaId
+                filtros.isSoloMiZona() ? sesion.getZonaId() : null,
                 filtros.getOrden());
 
         llamadaEnCurso.enqueue(new Callback<PaginaPublicacionesResponse>() {
@@ -563,6 +585,10 @@ public class HomeFragment extends Fragment {
             Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
             return;
         }
+        if ("SIN_ZONA_CONFIGURADA".equals(codigo)) {
+            resolverSinZona();
+            return;
+        }
         if ("RANGO_PRECIO_INVALIDO".equals(codigo)) {
             // La app ya valida minimo <= maximo antes de mandar, asi que verlo
             // significa que el backend tiene una regla extra: se muestra en el
@@ -595,6 +621,73 @@ public class HomeFragment extends Fragment {
         // que no era el JSON esperado (codigo null): se muestra lo que dijo
         // el servidor y se ofrece reintentar.
         mostrarError(mensaje, call);
+    }
+
+    /**
+     * El backend dijo que la persona no tiene zona (solo pasa con "Mas
+     * cercanas"). Si la app tampoco cree que la tenga, se avisa y se vuelve
+     * a "Mas recientes". Si la app SI cree que la tiene, antes de tocar nada
+     * se consulta GET /auth/me: puede ser que la sesion haya vencido (el
+     * listado ignora un token vencido en vez de dar 401) o que la zona
+     * guardada este vieja. El backend es la fuente de verdad.
+     */
+    private void resolverSinZona() {
+        mostrarCargandoMas(false);
+        if (!sesion.tieneZona()) {
+            volverARecientesSinZona();
+            return;
+        }
+        final Integer zonaAntes = sesion.getZonaId();
+        authApi.me(sesion.getBearer()).enqueue(new Callback<PerfilResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<PerfilResponse> call,
+                                   @NonNull Response<PerfilResponse> response) {
+                if (!estaVivo()) return;
+                if (response.code() == 401) {
+                    sesion.cerrarSesion();
+                    Toast.makeText(requireContext(), R.string.home_sesion_vencida, Toast.LENGTH_LONG).show();
+                    Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
+                    return;
+                }
+                if (!response.isSuccessful() || response.body() == null
+                        || response.body().getUsuario() == null) {
+                    // 5xx, 404, etc.: no se puede saber que paso con la zona.
+                    // Se muestra el error en vez de volver a pedir lo mismo.
+                    ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                    mostrarError(ApiErrorParser.mensaje(error, getString(R.string.home_error_carga)), call);
+                    return;
+                }
+                sesion.guardarZona(response.body().getUsuario().getZona());
+                panel.setZonaDelUsuario(sesion.getZonaNombre());
+
+                Integer zonaAhora = sesion.getZonaId();
+                if (zonaAhora != null && !zonaAhora.equals(zonaAntes)) {
+                    recargar(); // la zona habia cambiado: con la nueva, el pedido vale
+                } else {
+                    // Sin zona, o la misma que el backend acaba de rechazar: no se
+                    // insiste con el mismo pedido (seria un bucle) y se avisa.
+                    volverARecientesSinZona();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<PerfilResponse> call, @NonNull Throwable t) {
+                if (!estaVivo()) return;
+                mostrarError(getString(R.string.error_sin_conexion), call);
+            }
+        });
+    }
+
+    private void volverARecientesSinZona() {
+        Toast.makeText(requireContext(), R.string.home_error_sin_zona, Toast.LENGTH_LONG).show();
+        filtros.setOrden(Orden.RECIENTES.getValorApi());
+        filtros.setSoloMiZona(false);
+        // No dispara recarga: el listener compara con lo aplicado.
+        spOrden.setSelection(Orden.RECIENTES.ordinal(), false);
+        panel.setZonaDelUsuario(sesion.getZonaNombre());
+        panel.volcar(filtros);
+        panel.actualizarBoton(filtros);
+        recargar();
     }
 
     // -----------------------------------------------------------------
