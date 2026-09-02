@@ -41,6 +41,7 @@
     <string name="home_actualizar">Actualizar</string>
     <string name="home_reintentar">Reintentar</string>
     <string name="home_error_carga">No pudimos cargar las publicaciones</string>
+    <string name="home_error_mas_publicaciones">No pudimos cargar más publicaciones</string>
     <string name="home_error_respuesta_invalida">El servidor respondió algo que la app no entiende</string>
     <string name="home_url_base">Servidor: %1$s</string>
     <string name="home_sesion_vencida">Tu sesión venció, volvé a ingresar</string>
