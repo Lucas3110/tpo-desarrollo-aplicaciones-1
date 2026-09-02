@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -22,6 +23,7 @@ import com.example.ronda.data.model.PublicacionItemResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.repository.SessionRepository;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,9 +40,11 @@ import retrofit2.Response;
 /**
  * Home: explorar publicaciones (Punto 3).
  *
- * Pide el listado a GET /publicaciones y lo muestra en un ListView. Sigue el
- * mismo patron que las pantallas del Punto 1: enqueue, estaVivo() antes de
- * tocar la UI y ApiErrorParser.parse() una sola vez.
+ * Pide el listado a GET /publicaciones y lo muestra en un ListView, de a
+ * paginas: cuando el scroll llega cerca del final y el backend dice que
+ * hayMas, se pide la siguiente y se agrega al final. Sigue el mismo patron
+ * que las pantallas del Punto 1: enqueue, estaVivo() antes de tocar la UI y
+ * ApiErrorParser.parse() una sola vez.
  *
  * Los datos viven en campos del Fragment y no en la vista: cuando se navega
  * al detalle y se vuelve, Navigation destruye la vista pero no el Fragment,
@@ -58,12 +62,29 @@ public class HomeFragment extends Fragment {
     /** Que se ve en el area central: una sola de estas vistas a la vez. */
     private enum Estado { CARGANDO, LISTA, VACIO, ERROR }
 
+    /**
+     * Publicaciones por pagina. El backend admite hasta 50; con 10 el
+     * paginado se ve con pocas publicaciones cargadas.
+     */
+    private static final int LIMITE_PAGINA = 10;
+
+    /** Cuantas filas antes del final se empieza a pedir la pagina siguiente. */
+    private static final int UMBRAL_PRECARGA = 3;
+
     // --- Datos (sobreviven a que se destruya la vista) ---
     private final List<PublicacionItemResponse> items = new ArrayList<>();
     private PublicacionAdapter adapter;
     private int total = 0;
+    private int paginaActual = 0;
     private boolean hayMas = false;
     private boolean cargando = false;
+    /**
+     * Fallo la carga de una pagina siguiente: el scroll no insiste mientras el
+     * aviso esta a la vista. Vuelve a false cuando el Snackbar se cierra (por
+     * "Reintentar", por tiempo o por gesto), asi el paginado nunca queda trabado.
+     */
+    private boolean errorPaginado = false;
+    private Snackbar snackbarPaginado;
     private Call<PaginaPublicacionesResponse> llamadaEnCurso;
 
     // --- Vistas ---
@@ -74,6 +95,7 @@ public class HomeFragment extends Fragment {
     private TextView tvContador;
     private TextView tvError;
     private TextView tvUrlBase;
+    private View pbCargandoMas;
 
     @Nullable
     @Override
@@ -98,6 +120,12 @@ public class HomeFragment extends Fragment {
         Button btnActualizar = view.findViewById(R.id.btnActualizar);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
+        // Pie con el spinner de "cargando mas". Va antes de setAdapter y no
+        // es clickeable, asi el tap sobre el no cuenta como una publicacion.
+        View pie = getLayoutInflater().inflate(R.layout.item_cargando_mas, lvPublicaciones, false);
+        pbCargandoMas = pie.findViewById(R.id.pbCargandoMas);
+        lvPublicaciones.addFooterView(pie, null, false);
+
         // El adapter se crea una sola vez y trabaja sobre la misma lista
         // "items"; la vista nueva simplemente se engancha a el.
         if (adapter == null) {
@@ -106,6 +134,23 @@ public class HomeFragment extends Fragment {
         lvPublicaciones.setAdapter(adapter);
         lvPublicaciones.setOnItemClickListener((parent, fila, posicion, id) ->
                 abrirDetalle(adapter.getItem(posicion)));
+        lvPublicaciones.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView vista, int estado) {
+                // No hace falta reaccionar al cambio de estado del gesto.
+            }
+
+            @Override
+            public void onScroll(AbsListView vista, int primeraVisible,
+                                 int cantidadVisibles, int totalEnLista) {
+                boolean cercaDelFinal = primeraVisible + cantidadVisibles
+                        >= totalEnLista - UMBRAL_PRECARGA;
+                if (cercaDelFinal && hayMas && !cargando && !errorPaginado
+                        && !items.isEmpty()) {
+                    cargarPagina(paginaActual + 1);
+                }
+            }
+        });
 
         btnCerrarSesion.setOnClickListener(v -> cerrarSesion());
         btnActualizar.setOnClickListener(v -> recargar());
@@ -133,19 +178,31 @@ public class HomeFragment extends Fragment {
         // se vuelve a intentar en vez de mostrarla).
         adapter.reemplazar(Collections.<PublicacionItemResponse>emptyList());
         total = 0;
+        paginaActual = 0;
+        hayMas = false;
+        errorPaginado = false;
+        if (snackbarPaginado != null) {
+            snackbarPaginado.dismiss();
+            snackbarPaginado = null;
+        }
+        mostrarCargandoMas(false);
         mostrarEstado(Estado.CARGANDO);
         cargarPagina(1);
     }
 
     private void cargarPagina(int pagina) {
         cargando = true;
+        if (pagina > 1) {
+            mostrarCargandoMas(true);
+        }
 
-        // Los parametros en null no viajan en la URL: por ahora solo se pide
-        // la pagina, los filtros y el orden llegan en las proximas entregas.
+        // Los parametros en null no viajan en la URL: por ahora solo se piden
+        // la pagina y el limite, los filtros y el orden llegan en las
+        // proximas entregas.
         llamadaEnCurso = publicacionApi.listar(
                 sesion.getBearerOpcional(),
                 pagina,
-                null,   // limite (default del backend: 20)
+                LIMITE_PAGINA,
                 null,   // q
                 null,   // categoriaId
                 null,   // precioMin
@@ -164,13 +221,13 @@ public class HomeFragment extends Fragment {
                 cargando = false;
 
                 if (response.isSuccessful() && response.body() != null) {
-                    mostrarPagina(response.body());
+                    mostrarPagina(response.body(), pagina);
                 } else {
                     // Se lee el cuerpo UNA sola vez.
                     ErrorResponse.Detalle error = ApiErrorParser.parse(response);
                     manejarErrorApi(response.code(), ApiErrorParser.codigo(error),
                             ApiErrorParser.mensaje(error, getString(R.string.home_error_carga)),
-                            call);
+                            call, pagina);
                 }
             }
 
@@ -187,20 +244,33 @@ public class HomeFragment extends Fragment {
                 int mensaje = t instanceof IOException
                         ? R.string.error_sin_conexion
                         : R.string.home_error_respuesta_invalida;
-                mostrarError(getString(mensaje), call);
+                if (pagina == 1) {
+                    mostrarError(getString(mensaje), call);
+                } else {
+                    mostrarErrorPaginado();
+                }
             }
         });
     }
 
-    private void mostrarPagina(PaginaPublicacionesResponse pagina) {
-        List<PublicacionItemResponse> nuevos = pagina.getItems() != null
-                ? pagina.getItems()
+    private void mostrarPagina(PaginaPublicacionesResponse respuesta, int paginaPedida) {
+        List<PublicacionItemResponse> nuevos = respuesta.getItems() != null
+                ? respuesta.getItems()
                 : Collections.<PublicacionItemResponse>emptyList();
 
-        total = pagina.getTotal();
-        hayMas = pagina.isHayMas();
-        adapter.reemplazar(nuevos);
-        lvPublicaciones.setSelection(0);
+        total = respuesta.getTotal();
+        paginaActual = respuesta.getPagina();
+        hayMas = respuesta.isHayMas();
+        mostrarCargandoMas(false);
+
+        if (paginaPedida == 1) {
+            adapter.reemplazar(nuevos);
+            lvPublicaciones.setSelection(0);
+        } else {
+            // Se suman al final; las repetidas por un corrimiento del backend
+            // las descarta el adapter.
+            adapter.agregar(nuevos);
+        }
 
         actualizarContador();
         mostrarEstado(items.isEmpty() ? Estado.VACIO : Estado.LISTA);
@@ -210,7 +280,8 @@ public class HomeFragment extends Fragment {
      * Errores que SI respondio el backend (4xx / 5xx). Se decide por el codigo
      * estable, nunca por el texto del mensaje.
      */
-    private void manejarErrorApi(int httpCode, String codigo, String mensaje, Call<?> call) {
+    private void manejarErrorApi(int httpCode, String codigo, String mensaje, Call<?> call,
+                                 int pagina) {
         if (httpCode == 401) {
             // Token vencido o invalido: lo que dice el apunte de Retrofit,
             // "redirigir al login". Hoy el listado acepta visitantes, asi que
@@ -218,6 +289,17 @@ public class HomeFragment extends Fragment {
             sesion.cerrarSesion();
             Toast.makeText(requireContext(), R.string.home_sesion_vencida, Toast.LENGTH_LONG).show();
             Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
+            return;
+        }
+        if (pagina > 1) {
+            if ("PAGINA_INVALIDA".equals(codigo) || "LIMITE_INVALIDO".equals(codigo)) {
+                // No tiene sentido insistir con esa pagina: se da por terminado.
+                hayMas = false;
+                mostrarCargandoMas(false);
+                return;
+            }
+            // La lista que ya se ve sigue valiendo: solo se avisa abajo.
+            mostrarErrorPaginado();
             return;
         }
         // RUTA_NO_ENCONTRADA, ERROR_INTERNO, BASE_NO_DISPONIBLE, o un cuerpo
@@ -266,6 +348,40 @@ public class HomeFragment extends Fragment {
                 + call.request().url().host() + ":" + call.request().url().port() + "/";
         tvUrlBase.setText(getString(R.string.home_url_base, servidor));
         mostrarEstado(Estado.ERROR);
+    }
+
+    /**
+     * Fallo una pagina siguiente: la lista se conserva, se apaga el pie y se
+     * ofrece reintentar en un Snackbar. Mientras el aviso esta a la vista el
+     * scroll no vuelve a pedir (si no, con el backend caido cada gesto
+     * dispararia un request y un aviso nuevo). Cuando el aviso se cierra, por
+     * "Reintentar", por tiempo o por gesto, el proximo scroll reintenta solo.
+     */
+    private void mostrarErrorPaginado() {
+        errorPaginado = true;
+        mostrarCargandoMas(false);
+        snackbarPaginado = Snackbar.make(requireView(), R.string.home_error_mas_publicaciones,
+                Snackbar.LENGTH_LONG);
+        snackbarPaginado.setAction(R.string.home_reintentar, v -> {
+            // Si mientras tanto hubo una recarga (cambio de filtros u orden),
+            // hayMas quedo en false hasta que responda la pagina 1: no se pisa.
+            if (!estaVivo() || cargando || !hayMas) return;
+            cargarPagina(paginaActual + 1);
+        });
+        snackbarPaginado.addCallback(new Snackbar.Callback() {
+            @Override
+            public void onDismissed(Snackbar snackbar, int motivo) {
+                errorPaginado = false;
+                if (snackbarPaginado == snackbar) snackbarPaginado = null;
+            }
+        });
+        snackbarPaginado.show();
+    }
+
+    private void mostrarCargandoMas(boolean visible) {
+        if (pbCargandoMas != null) {
+            pbCargandoMas.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void actualizarContador() {
