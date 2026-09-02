@@ -53,4 +53,37 @@ public class FiltrosPublicacionesTest {
         assertNull(filtros.getQ());
         assertFalse(filtros.hayAlgoAplicado());
     }
+
+    @Test
+    public void orden_porDefectoEsRecientesYNoCuentaComoFiltro() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+
+        assertEquals("recientes", filtros.getOrden());
+
+        filtros.setOrden("precio_desc");
+        assertEquals("precio_desc", filtros.getOrden());
+        assertFalse(filtros.hayAlgoAplicado());
+    }
+
+    @Test
+    public void orden_nuloOVacioVuelveAlPorDefecto_yLimpiarTodoLoConserva() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+
+        filtros.setOrden(null);
+        assertEquals("recientes", filtros.getOrden());
+
+        filtros.setOrden("precio_asc");
+        filtros.setQ("bici");
+        filtros.limpiarTodo();
+        assertEquals("precio_asc", filtros.getOrden());
+    }
+
+    @Test
+    public void ordenEnum_traduceValoresDeLaApi() {
+        assertEquals(Orden.PRECIO_ASC, Orden.desdeValorApi("precio_asc"));
+        assertEquals(Orden.PRECIO_DESC, Orden.desdeValorApi("precio_desc"));
+        assertEquals(Orden.RECIENTES, Orden.desdeValorApi("recientes"));
+        assertEquals(Orden.RECIENTES, Orden.desdeValorApi("cualquier-cosa"));
+        assertEquals("precio_desc", Orden.PRECIO_DESC.getValorApi());
+    }
 }
