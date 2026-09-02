@@ -5,12 +5,15 @@ import android.os.Build;
 import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
 import dagger.hilt.InstallIn;
 import dagger.hilt.components.SingletonComponent;
+import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -43,11 +46,31 @@ public class NetworkModule {
      */
     private static final String URL_RED_LOCAL = "http://192.168.0.153:3000/";
 
+    /** Cuanto se espera al servidor antes de dar la request por fallida. */
+    private static final long TIMEOUT_SEGUNDOS = 15;
+
+    /**
+     * Retrofit usa OkHttp por debajo. Se configura el cliente a mano para
+     * fijar los timeouts (apunte "API REST y Retrofit", consideracion 3):
+     * si el celular apunta a una IP que no responde, la app espera 15 s y
+     * cae en onFailure con un IOException, en vez del default de 10 s.
+     */
     @Provides
     @Singleton
-    public Retrofit provideRetrofit() {
+    public OkHttpClient provideOkHttpClient() {
+        return new OkHttpClient.Builder()
+                .connectTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
+                .readTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
+                .writeTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
+                .build();
+    }
+
+    @Provides
+    @Singleton
+    public Retrofit provideRetrofit(OkHttpClient cliente) {
         return new Retrofit.Builder()
                 .baseUrl(getBaseUrl())
+                .client(cliente)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
     }
