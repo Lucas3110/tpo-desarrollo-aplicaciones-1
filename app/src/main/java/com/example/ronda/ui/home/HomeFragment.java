@@ -1,11 +1,18 @@
 package com.example.ronda.ui.home;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -42,9 +49,10 @@ import retrofit2.Response;
  *
  * Pide el listado a GET /publicaciones y lo muestra en un ListView, de a
  * paginas: cuando el scroll llega cerca del final y el backend dice que
- * hayMas, se pide la siguiente y se agrega al final. Sigue el mismo patron
- * que las pantallas del Punto 1: enqueue, estaVivo() antes de tocar la UI y
- * ApiErrorParser.parse() una sola vez.
+ * hayMas, se pide la siguiente y se agrega al final. El buscador manda el
+ * texto como q y el backend busca en titulo y descripcion. Sigue el mismo
+ * patron que las pantallas del Punto 1: enqueue, estaVivo() antes de tocar
+ * la UI y ApiErrorParser.parse() una sola vez.
  *
  * Los datos viven en campos del Fragment y no en la vista: cuando se navega
  * al detalle y se vuelve, Navigation destruye la vista pero no el Fragment,
@@ -71,8 +79,12 @@ public class HomeFragment extends Fragment {
     /** Cuantas filas antes del final se empieza a pedir la pagina siguiente. */
     private static final int UMBRAL_PRECARGA = 3;
 
+    private static final String CLAVE_FILTROS = "filtros";
+
     // --- Datos (sobreviven a que se destruya la vista) ---
     private final List<PublicacionItemResponse> items = new ArrayList<>();
+    /** Lo aplicado (no lo que se esta escribiendo): con esto se arma cada request. */
+    private FiltrosPublicaciones filtros = new FiltrosPublicaciones();
     private PublicacionAdapter adapter;
     private int total = 0;
     private int paginaActual = 0;
@@ -88,6 +100,10 @@ public class HomeFragment extends Fragment {
     private Call<PaginaPublicacionesResponse> llamadaEnCurso;
 
     // --- Vistas ---
+    private EditText etBuscar;
+    private ImageButton btnLimpiarBusqueda;
+    private TextView tvVacio;
+    private Button btnActualizar;
     private ListView lvPublicaciones;
     private ProgressBar progressBar;
     private View grupoVacio;
@@ -96,6 +112,21 @@ public class HomeFragment extends Fragment {
     private TextView tvError;
     private TextView tvUrlBase;
     private View pbCargandoMas;
+
+    @Override
+    @SuppressWarnings("deprecation") // getSerializable(String) sigue siendo la unica forma en minSdk 24
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Al rotar, Android recrea el Fragment y se pierden los campos: lo
+        // aplicado se recupera del Bundle y la lista se vuelve a pedir.
+        if (savedInstanceState != null) {
+            FiltrosPublicaciones guardados =
+                    (FiltrosPublicaciones) savedInstanceState.getSerializable(CLAVE_FILTROS);
+            if (guardados != null) {
+                filtros = guardados;
+            }
+        }
+    }
 
     @Nullable
     @Override
@@ -109,6 +140,10 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        etBuscar = view.findViewById(R.id.etBuscar);
+        btnLimpiarBusqueda = view.findViewById(R.id.btnLimpiarBusqueda);
+        ImageButton btnBuscar = view.findViewById(R.id.btnBuscar);
+        tvVacio = view.findViewById(R.id.tvVacio);
         lvPublicaciones = view.findViewById(R.id.lvPublicaciones);
         progressBar = view.findViewById(R.id.progressBar);
         grupoVacio = view.findViewById(R.id.grupoVacio);
@@ -117,8 +152,10 @@ public class HomeFragment extends Fragment {
         tvError = view.findViewById(R.id.tvError);
         tvUrlBase = view.findViewById(R.id.tvUrlBase);
         Button btnCerrarSesion = view.findViewById(R.id.btnCerrarSesion);
-        Button btnActualizar = view.findViewById(R.id.btnActualizar);
+        btnActualizar = view.findViewById(R.id.btnActualizar);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
+
+        configurarBuscador(btnBuscar);
 
         // Pie con el spinner de "cargando mas". Va antes de setAdapter y no
         // es clickeable, asi el tap sobre el no cuenta como una publicacion.
@@ -153,7 +190,14 @@ public class HomeFragment extends Fragment {
         });
 
         btnCerrarSesion.setOnClickListener(v -> cerrarSesion());
-        btnActualizar.setOnClickListener(v -> recargar());
+        btnActualizar.setOnClickListener(v -> {
+            // En el vacio "con busqueda" el boton limpia; en el vacio a secas, actualiza.
+            if (filtros.hayAlgoAplicado()) {
+                limpiarTodo();
+            } else {
+                recargar();
+            }
+        });
         btnReintentar.setOnClickListener(v -> recargar());
 
         if (items.isEmpty()) {
@@ -164,6 +208,73 @@ public class HomeFragment extends Fragment {
             actualizarContador();
             mostrarEstado(Estado.LISTA);
         }
+    }
+
+    // -----------------------------------------------------------------
+    // Buscador
+    // -----------------------------------------------------------------
+
+    private void configurarBuscador(ImageButton btnBuscar) {
+        // Si venimos de rotar o de otra pantalla, el campo muestra lo aplicado.
+        if (filtros.getQ() != null && etBuscar.getText().toString().isEmpty()) {
+            etBuscar.setText(filtros.getQ());
+        }
+        btnLimpiarBusqueda.setVisibility(etBuscar.getText().length() > 0 ? View.VISIBLE : View.GONE);
+
+        // La "x" solo tiene sentido cuando hay algo escrito.
+        etBuscar.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                btnLimpiarBusqueda.setVisibility(s.length() > 0 ? View.VISIBLE : View.GONE);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) { }
+        });
+
+        // Lupa del teclado (imeOptions="actionSearch") y boton de la pantalla.
+        etBuscar.setOnEditorActionListener((v, accion, evento) -> {
+            if (accion == EditorInfo.IME_ACTION_SEARCH) {
+                buscar();
+                return true;
+            }
+            return false;
+        });
+        btnBuscar.setOnClickListener(v -> buscar());
+        btnLimpiarBusqueda.setOnClickListener(v -> {
+            etBuscar.setText("");
+            buscar();
+        });
+    }
+
+    /** Aplica el texto escrito. Si es igual a lo que ya esta aplicado, no pide de nuevo. */
+    private void buscar() {
+        ocultarTeclado();
+        String anterior = filtros.getQ();
+        filtros.setQ(etBuscar.getText().toString());
+        boolean cambio = anterior == null ? filtros.getQ() != null : !anterior.equals(filtros.getQ());
+        if (cambio) {
+            recargar();
+        }
+    }
+
+    /** Saca la busqueda y vuelve al listado completo. */
+    private void limpiarTodo() {
+        filtros.limpiarTodo();
+        etBuscar.setText("");
+        recargar();
+    }
+
+    private void ocultarTeclado() {
+        InputMethodManager imm = (InputMethodManager)
+                requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(etBuscar.getWindowToken(), 0);
+        }
+        etBuscar.clearFocus();
     }
 
     // -----------------------------------------------------------------
@@ -196,14 +307,13 @@ public class HomeFragment extends Fragment {
             mostrarCargandoMas(true);
         }
 
-        // Los parametros en null no viajan en la URL: por ahora solo se piden
-        // la pagina y el limite, los filtros y el orden llegan en las
-        // proximas entregas.
+        // Los parametros en null no viajan en la URL: los filtros y el orden
+        // llegan en las proximas entregas.
         llamadaEnCurso = publicacionApi.listar(
                 sesion.getBearerOpcional(),
                 pagina,
                 LIMITE_PAGINA,
-                null,   // q
+                filtros.getQ(),
                 null,   // categoriaId
                 null,   // precioMin
                 null,   // precioMax
@@ -276,6 +386,17 @@ public class HomeFragment extends Fragment {
         mostrarEstado(items.isEmpty() ? Estado.VACIO : Estado.LISTA);
     }
 
+    /** Dos vacios distintos: "no hay nada" y "no hay nada CON esta busqueda". */
+    private void mostrarVacio() {
+        if (filtros.hayAlgoAplicado()) {
+            tvVacio.setText(R.string.home_vacio_con_filtros);
+            btnActualizar.setText(R.string.home_limpiar_todo);
+        } else {
+            tvVacio.setText(R.string.home_vacio_sin_filtros);
+            btnActualizar.setText(R.string.home_actualizar);
+        }
+    }
+
     /**
      * Errores que SI respondio el backend (4xx / 5xx). Se decide por el codigo
      * estable, nunca por el texto del mensaje.
@@ -334,6 +455,9 @@ public class HomeFragment extends Fragment {
     // -----------------------------------------------------------------
 
     private void mostrarEstado(Estado estado) {
+        if (estado == Estado.VACIO) {
+            mostrarVacio();
+        }
         progressBar.setVisibility(estado == Estado.CARGANDO ? View.VISIBLE : View.GONE);
         lvPublicaciones.setVisibility(estado == Estado.LISTA ? View.VISIBLE : View.GONE);
         grupoVacio.setVisibility(estado == Estado.VACIO ? View.VISIBLE : View.GONE);
@@ -400,6 +524,12 @@ public class HomeFragment extends Fragment {
             llamadaEnCurso = null;
         }
         cargando = false;
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable(CLAVE_FILTROS, filtros);
     }
 
     @Override
