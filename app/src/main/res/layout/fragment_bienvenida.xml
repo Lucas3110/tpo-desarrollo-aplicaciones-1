@@ -6,13 +6,13 @@
     android:gravity="center"
     android:orientation="vertical"
     android:padding="24dp"
-    tools:context=".ui.home.HomeFragment">
+    tools:context=".ui.auth.BienvenidaFragment">
 
     <TextView
         android:id="@+id/tvBienvenida"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/home_titulo"
+        android:text="@string/bienvenida_titulo"
         android:textSize="24sp"
         android:textStyle="bold" />
 
@@ -23,11 +23,12 @@
         android:layout_marginTop="8dp"
         tools:text="lucas@gmail.com" />
 
-    <Button
-        android:id="@+id/btnCerrarSesion"
+    <TextView
+        android:id="@+id/tvSubtitulo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="@string/home_cerrar_sesion" />
+        android:layout_marginTop="16dp"
+        android:text="@string/bienvenida_cuenta_verificada"
+        android:textStyle="bold" />
 
 </LinearLayout>

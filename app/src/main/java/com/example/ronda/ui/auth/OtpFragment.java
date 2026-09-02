@@ -39,7 +39,9 @@ import retrofit2.Response;
  *   REGISTRO -> confirmar la cuenta recien creada
  *   LOGIN    -> ingresar sin contrasena
  *
- * En los dos casos, verificar el codigo devuelve el token y crea la sesion.
+ * Verificar el codigo devuelve un token en los dos casos, pero solo se crea
+ * la sesion al ingresar: al confirmar una cuenta nueva se muestra la
+ * bienvenida y la persona ingresa despues desde el login.
  */
 @AndroidEntryPoint
 public class OtpFragment extends Fragment {
@@ -125,18 +127,24 @@ public class OtpFragment extends Fragment {
 
                         if (response.isSuccessful() && response.body() != null) {
                             SesionResponse cuerpo = response.body();
-                            sesion.guardarSesion(cuerpo.getToken(),
-                                    cuerpo.getUsuario().getEmail());
 
-                            // Al confirmar una cuenta nueva mostramos la
-                            // bienvenida y devolvemos a la persona al login.
-                            // Al ingresar con codigo, en cambio, se queda en
-                            // el Home como cualquier inicio de sesion.
-                            Bundle args = new Bundle();
-                            args.putBoolean("volverAlLogin",
-                                    "REGISTRO".equals(proposito));
-                            Navigation.findNavController(view)
-                                    .navigate(R.id.action_otp_to_home, args);
+                            if ("REGISTRO".equals(proposito)) {
+                                // Cuenta nueva confirmada: mostramos la
+                                // bienvenida y devolvemos a la persona al
+                                // login. No guardamos la sesion, la va a
+                                // crear cuando ingrese con sus credenciales.
+                                Bundle args = new Bundle();
+                                args.putString("email", email);
+                                Navigation.findNavController(view)
+                                        .navigate(R.id.action_otp_to_bienvenida, args);
+                            } else {
+                                // Ingreso con codigo: es un inicio de sesion
+                                // como cualquier otro, va derecho al Home.
+                                sesion.guardarSesion(cuerpo.getToken(),
+                                        cuerpo.getUsuario().getEmail());
+                                Navigation.findNavController(view)
+                                        .navigate(R.id.action_otp_to_home);
+                            }
                         } else {
                             mostrarErrorDeVerificacion(response);
                         }

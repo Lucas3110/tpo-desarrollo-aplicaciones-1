@@ -27,9 +27,12 @@
     <string name="otp_reenviar_en">Reenviar código (%1$d)</string>
     <string name="otp_reenviado">Te enviamos un código nuevo</string>
 
+    <!-- Bienvenida (cuenta nueva confirmada) -->
+    <string name="bienvenida_titulo">Te damos la bienvenida a Ronda</string>
+    <string name="bienvenida_cuenta_verificada">¡Tu cuenta quedó verificada!</string>
+
     <!-- Home -->
     <string name="home_titulo">Bienvenido a Ronda</string>
-    <string name="home_cuenta_verificada">¡Tu cuenta quedó verificada!</string>
     <string name="home_cerrar_sesion">Cerrar sesión</string>
 
     <!-- Errores -->
