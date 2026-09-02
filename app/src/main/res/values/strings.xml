@@ -36,6 +36,10 @@
     <string name="home_buscar_hint">Buscar por título o descripción</string>
     <string name="home_buscar_desc">Buscar</string>
     <string name="home_limpiar_busqueda_desc">Borrar búsqueda</string>
+    <string name="home_ordenar_por">Ordenar por</string>
+    <string name="orden_recientes">Más recientes</string>
+    <string name="orden_precio_asc">Menor precio</string>
+    <string name="orden_precio_desc">Mayor precio</string>
     <plurals name="home_contador">
         <item quantity="one">%1$d de %2$d publicación</item>
         <item quantity="other">%1$d de %2$d publicaciones</item>

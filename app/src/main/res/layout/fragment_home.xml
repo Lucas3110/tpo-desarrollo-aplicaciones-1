@@ -78,6 +78,30 @@
 
     </LinearLayout>
 
+    <!-- Orden: cambiarlo recarga desde la pagina 1 conservando la busqueda. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/home_ordenar_por"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="14sp" />
+
+        <Spinner
+            android:id="@+id/spOrden"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
     <TextView
         android:id="@+id/tvContador"
         android:layout_width="match_parent"

@@ -10,11 +10,14 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,7 +53,8 @@ import retrofit2.Response;
  * Pide el listado a GET /publicaciones y lo muestra en un ListView, de a
  * paginas: cuando el scroll llega cerca del final y el backend dice que
  * hayMas, se pide la siguiente y se agrega al final. El buscador manda el
- * texto como q y el backend busca en titulo y descripcion. Sigue el mismo
+ * texto como q y el backend busca en titulo y descripcion; el Spinner de
+ * orden manda "orden" y el backend ordena. Sigue el mismo
  * patron que las pantallas del Punto 1: enqueue, estaVivo() antes de tocar
  * la UI y ApiErrorParser.parse() una sola vez.
  *
@@ -100,6 +104,7 @@ public class HomeFragment extends Fragment {
     private Call<PaginaPublicacionesResponse> llamadaEnCurso;
 
     // --- Vistas ---
+    private Spinner spOrden;
     private EditText etBuscar;
     private ImageButton btnLimpiarBusqueda;
     private TextView tvVacio;
@@ -140,6 +145,7 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        spOrden = view.findViewById(R.id.spOrden);
         etBuscar = view.findViewById(R.id.etBuscar);
         btnLimpiarBusqueda = view.findViewById(R.id.btnLimpiarBusqueda);
         ImageButton btnBuscar = view.findViewById(R.id.btnBuscar);
@@ -156,6 +162,7 @@ public class HomeFragment extends Fragment {
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
         configurarBuscador(btnBuscar);
+        configurarOrden();
 
         // Pie con el spinner de "cargando mas". Va antes de setAdapter y no
         // es clickeable, asi el tap sobre el no cuenta como una publicacion.
@@ -278,6 +285,39 @@ public class HomeFragment extends Fragment {
     }
 
     // -----------------------------------------------------------------
+    // Orden
+    // -----------------------------------------------------------------
+
+    private void configurarOrden() {
+        // Las opciones salen del enum: el texto para la persona y el valor
+        // para la API viajan juntos.
+        List<String> textos = new ArrayList<>();
+        for (Orden orden : Orden.values()) {
+            textos.add(getString(orden.getTextoRes()));
+        }
+        ArrayAdapter<String> adapterOrden = new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_item, textos);
+        adapterOrden.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spOrden.setAdapter(adapterOrden);
+        spOrden.setSelection(Orden.desdeValorApi(filtros.getOrden()).ordinal(), false);
+
+        spOrden.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View vista, int posicion, long id) {
+                String elegido = Orden.values()[posicion].getValorApi();
+                // El Spinner tambien avisa al inflarse y al seleccionar por
+                // codigo: si el orden no cambio, no se pide nada.
+                if (elegido.equals(filtros.getOrden())) return;
+                filtros.setOrden(elegido);
+                recargar();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
+    }
+
+    // -----------------------------------------------------------------
     // Cargar publicaciones
     // -----------------------------------------------------------------
 
@@ -307,8 +347,8 @@ public class HomeFragment extends Fragment {
             mostrarCargandoMas(true);
         }
 
-        // Los parametros en null no viajan en la URL: los filtros y el orden
-        // llegan en las proximas entregas.
+        // Los parametros en null no viajan en la URL: los filtros llegan en
+        // las proximas entregas.
         llamadaEnCurso = publicacionApi.listar(
                 sesion.getBearerOpcional(),
                 pagina,
@@ -319,7 +359,7 @@ public class HomeFragment extends Fragment {
                 null,   // precioMax
                 null,   // estadoArticulo
                 null,   // zonaId
-                null);  // orden (default del backend: recientes)
+                filtros.getOrden());
 
         llamadaEnCurso.enqueue(new Callback<PaginaPublicacionesResponse>() {
 
