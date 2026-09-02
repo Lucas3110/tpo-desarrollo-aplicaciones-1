@@ -3,6 +3,8 @@ package com.example.ronda.data.repository;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.example.ronda.data.model.ZonaResponse;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -26,6 +28,9 @@ public class SessionRepository {
     private static final String ARCHIVO = "sesion_ronda";
     private static final String CLAVE_TOKEN = "token";
     private static final String CLAVE_EMAIL = "email";
+    private static final String CLAVE_ZONA_ID = "zonaId";
+    private static final String CLAVE_ZONA_NOMBRE = "zonaNombre";
+    private static final int SIN_ZONA = -1;
 
     private final SharedPreferences prefs;
 
@@ -47,6 +52,36 @@ public class SessionRepository {
 
     public String getEmail() {
         return prefs.getString(CLAVE_EMAIL, null);
+    }
+
+    /**
+     * Zona de la persona, para "Solo mi zona" y "Mas cercanas" del Home.
+     * Se guarda al iniciar sesion y se refresca en cada auto-login. Si el
+     * Punto 2 (editar perfil) cambia la zona, tiene que llamar a esto tambien.
+     * Con null (usuario sin zona) se borra lo guardado.
+     */
+    public void guardarZona(ZonaResponse zona) {
+        SharedPreferences.Editor editor = prefs.edit();
+        if (zona == null) {
+            editor.remove(CLAVE_ZONA_ID).remove(CLAVE_ZONA_NOMBRE);
+        } else {
+            editor.putInt(CLAVE_ZONA_ID, zona.getId()).putString(CLAVE_ZONA_NOMBRE, zona.getNombre());
+        }
+        editor.apply();
+    }
+
+    public boolean tieneZona() {
+        return prefs.getInt(CLAVE_ZONA_ID, SIN_ZONA) != SIN_ZONA;
+    }
+
+    /** Id de la zona, o null si la persona no configuro ninguna. */
+    public Integer getZonaId() {
+        int id = prefs.getInt(CLAVE_ZONA_ID, SIN_ZONA);
+        return id == SIN_ZONA ? null : id;
+    }
+
+    public String getZonaNombre() {
+        return prefs.getString(CLAVE_ZONA_NOMBRE, null);
     }
 
     public boolean haySesion() {

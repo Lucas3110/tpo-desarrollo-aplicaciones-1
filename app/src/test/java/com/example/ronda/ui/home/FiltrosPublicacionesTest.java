@@ -179,6 +179,36 @@ public class FiltrosPublicacionesTest {
     }
 
     @Test
+    public void soloMiZona_cambiaLaClaveDeFiltros() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+        String sinZona = filtros.claveDeFiltros();
+
+        filtros.setSoloMiZona(true);
+
+        assertFalse(sinZona.equals(filtros.claveDeFiltros()));
+    }
+
+    @Test
+    public void soloMiZona_cuentaComoFiltroYSeLimpiaConLosDemas() {
+        FiltrosPublicaciones filtros = new FiltrosPublicaciones();
+
+        filtros.setSoloMiZona(true);
+        assertTrue(filtros.isSoloMiZona());
+        assertEquals(1, filtros.contarFiltros());
+        assertTrue(filtros.hayAlgoAplicado());
+
+        filtros.limpiarFiltros();
+        assertFalse(filtros.isSoloMiZona());
+        assertEquals(0, filtros.contarFiltros());
+    }
+
+    @Test
+    public void ordenEnum_incluyeCercania() {
+        assertEquals(Orden.CERCANIA, Orden.desdeValorApi("cercania"));
+        assertEquals("cercania", Orden.CERCANIA.getValorApi());
+    }
+
+    @Test
     public void ordenEnum_traduceValoresDeLaApi() {
         assertEquals(Orden.PRECIO_ASC, Orden.desdeValorApi("precio_asc"));
         assertEquals(Orden.PRECIO_DESC, Orden.desdeValorApi("precio_desc"));

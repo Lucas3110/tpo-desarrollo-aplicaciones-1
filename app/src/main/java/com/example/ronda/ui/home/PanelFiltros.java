@@ -32,6 +32,7 @@ class PanelFiltros {
     private final CheckBox cbNuevo;
     private final CheckBox cbComoNuevo;
     private final CheckBox cbUsado;
+    private final CheckBox cbSoloMiZona;
 
     /** Catalogo para el Spinner; null hasta que llega GET /categorias. */
     private List<CategoriaResponse> categorias;
@@ -45,7 +46,23 @@ class PanelFiltros {
         cbNuevo = raiz.findViewById(R.id.cbNuevo);
         cbComoNuevo = raiz.findViewById(R.id.cbComoNuevo);
         cbUsado = raiz.findViewById(R.id.cbUsado);
+        cbSoloMiZona = raiz.findViewById(R.id.cbSoloMiZona);
         armarSpinnerCategorias();
+    }
+
+    /**
+     * Nombre de la zona de la persona, o null si no configuro ninguna: en
+     * ese caso la casilla queda deshabilitada y explica que hacer.
+     */
+    void setZonaDelUsuario(String nombreZona) {
+        if (nombreZona == null) {
+            cbSoloMiZona.setText(R.string.home_solo_mi_zona_sin_zona);
+            cbSoloMiZona.setEnabled(false);
+            cbSoloMiZona.setChecked(false);
+        } else {
+            cbSoloMiZona.setText(cbSoloMiZona.getContext().getString(R.string.home_solo_mi_zona, nombreZona));
+            cbSoloMiZona.setEnabled(true);
+        }
     }
 
     // ---------------------------------------------------------------
@@ -80,6 +97,7 @@ class PanelFiltros {
         cbNuevo.setChecked(filtros.isNuevo());
         cbComoNuevo.setChecked(filtros.isComoNuevo());
         cbUsado.setChecked(filtros.isUsado());
+        cbSoloMiZona.setChecked(cbSoloMiZona.isEnabled() && filtros.isSoloMiZona());
         seleccionarCategoria(filtros.getCategoriaId());
     }
 
@@ -100,6 +118,7 @@ class PanelFiltros {
         filtros.setPrecioMax(precioMax);
         filtros.setCategoriaId(categoriaSeleccionada(filtros.getCategoriaId()));
         filtros.setEstados(cbNuevo.isChecked(), cbComoNuevo.isChecked(), cbUsado.isChecked());
+        filtros.setSoloMiZona(cbSoloMiZona.isEnabled() && cbSoloMiZona.isChecked());
         return true;
     }
 

@@ -197,6 +197,15 @@
 
         </LinearLayout>
 
+        <!-- Cercania como filtro: publicaciones de la zona de la persona.
+             Deshabilitado (con la explicacion) si la sesion no tiene zona. -->
+        <CheckBox
+            android:id="@+id/cbSoloMiZona"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/home_solo_mi_zona_sin_zona"
+            tools:text="Solo mi zona (Palermo)" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
