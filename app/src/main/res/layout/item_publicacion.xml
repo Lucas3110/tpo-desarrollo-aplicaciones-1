@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Una fila del listado del Home: lo que pide la consigna (titulo, precio,
-     estado del articulo y zona del vendedor) mas el lugar para la foto,
-     que es opcional y por ahora queda oculto. -->
+     estado del articulo y zona del vendedor) mas la foto principal, que la
+     consigna marca como opcional: se muestra con Glide si la publicacion
+     tiene fotos y se oculta si no. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"

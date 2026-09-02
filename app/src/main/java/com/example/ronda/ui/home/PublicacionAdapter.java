@@ -7,6 +7,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.ronda.R;
 import com.example.ronda.data.model.PublicacionItemResponse;
 
@@ -116,6 +117,26 @@ public class PublicacionAdapter extends BaseAdapter {
             // Ya viene traducido del backend ("Como nuevo"), no hace falta mapear.
             tvEstado.setText(item.getEstadoArticuloTexto());
             tvZona.setText(item.getZona() != null ? item.getZona().getNombre() : "");
+            mostrarFoto(item.getFotoPrincipal());
+        }
+
+        /**
+         * La foto es opcional: si la publicacion no tiene, el espacio se
+         * oculta. Glide descarga en segundo plano, cachea y, como la fila se
+         * recicla, cancela solo la carga anterior de este ImageView.
+         */
+        private void mostrarFoto(String url) {
+            if (url == null || url.isEmpty()) {
+                Glide.with(ivFoto).clear(ivFoto);
+                ivFoto.setVisibility(View.GONE);
+                return;
+            }
+            ivFoto.setVisibility(View.VISIBLE);
+            Glide.with(ivFoto)
+                    .load(url)
+                    .placeholder(R.drawable.bg_estado_articulo)
+                    .centerCrop()
+                    .into(ivFoto);
         }
     }
 

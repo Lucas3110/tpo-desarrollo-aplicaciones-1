@@ -47,6 +47,9 @@ dependencies {
     // no kapt (kapt es para proyectos Kotlin).
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)
+    // Glide: descarga, cachea y muestra la fotoPrincipal (una URL) de cada
+    // publicacion en el listado. Sin annotationProcessor: no hace falta.
+    implementation(libs.glide)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
