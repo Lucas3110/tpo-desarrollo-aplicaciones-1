@@ -23,9 +23,12 @@ import com.example.ronda.data.model.OtpVerificarRequest;
 import com.example.ronda.data.model.SesionResponse;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.ApiErrorParser;
-import com.example.ronda.data.network.RetrofitClient;
+import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.repository.SessionRepository;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -38,7 +41,15 @@ import retrofit2.Response;
  *
  * En los dos casos, verificar el codigo devuelve el token y crea la sesion.
  */
+@AndroidEntryPoint
 public class OtpFragment extends Fragment {
+
+    // Hilt lo crea y lo inyecta: ya no hay que pedirlo con getInstance().
+    @Inject
+    AuthApiService authApi;
+
+    @Inject
+    SessionRepository sesion;
 
     /** Tiene que coincidir con OTP_RESEND_COOLDOWN_SECONDS del backend. */
     private static final int SEGUNDOS_DE_ESPERA = 60;
@@ -52,7 +63,6 @@ public class OtpFragment extends Fragment {
     private ProgressBar progressBar;
 
     private CountDownTimer cuentaRegresiva;
-    private SessionRepository sesion;
 
     @Nullable
     @Override
@@ -71,7 +81,6 @@ public class OtpFragment extends Fragment {
             proposito = getArguments().getString("proposito", "REGISTRO");
         }
 
-        sesion = new SessionRepository(requireContext());
 
         TextView tvDestino = view.findViewById(R.id.tvDestino);
         etCodigo = view.findViewById(R.id.etCodigo);
@@ -104,7 +113,7 @@ public class OtpFragment extends Fragment {
 
         mostrarCargando(true);
 
-        RetrofitClient.getAuthApi()
+        authApi
                 .verificarOtp(new OtpVerificarRequest(email, codigo, proposito))
                 .enqueue(new Callback<SesionResponse>() {
 
@@ -182,7 +191,7 @@ public class OtpFragment extends Fragment {
     private void reenviar() {
         mostrarCargando(true);
 
-        RetrofitClient.getAuthApi()
+        authApi
                 .enviarOtp(new OtpEnviarRequest(email, proposito))
                 .enqueue(new Callback<MensajeResponse>() {
 

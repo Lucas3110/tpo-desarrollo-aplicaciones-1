@@ -18,6 +18,10 @@ import androidx.navigation.Navigation;
 import com.example.ronda.R;
 import com.example.ronda.data.repository.SessionRepository;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * Pantalla a la que se llega con la sesion ya iniciada.
  *
@@ -31,7 +35,11 @@ import com.example.ronda.data.repository.SessionRepository;
  *          bienvenida animada y a los pocos segundos se vuelve al login para
  *          que la persona ingrese con sus credenciales.
  */
+@AndroidEntryPoint
 public class HomeFragment extends Fragment {
+
+    @Inject
+    SessionRepository sesion;
 
     /** Cuanto dura la bienvenida antes de volver al login. */
     private static final long DEMORA_REDIRECCION_MS = 2600L;
@@ -51,7 +59,6 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        SessionRepository sesion = new SessionRepository(requireContext());
 
         TextView tvBienvenida = view.findViewById(R.id.tvBienvenida);
         TextView tvEmail = view.findViewById(R.id.tvEmail);

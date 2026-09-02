@@ -23,9 +23,12 @@ import com.example.ronda.data.model.PerfilResponse;
 import com.example.ronda.data.model.SesionResponse;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.ApiErrorParser;
-import com.example.ronda.data.network.RetrofitClient;
+import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.repository.SessionRepository;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -38,13 +41,20 @@ import retrofit2.Response;
  * Ademas hace auto-login: si hay un token guardado y sigue siendo valido,
  * entra directo al Home sin pedir nada.
  */
+@AndroidEntryPoint
 public class LoginFragment extends Fragment {
+
+    // Hilt lo crea y lo inyecta: ya no hay que pedirlo con getInstance().
+    @Inject
+    AuthApiService authApi;
+
+    @Inject
+    SessionRepository sesion;
 
     private EditText etEmail;
     private EditText etPassword;
     private Button btnIngresar;
     private ProgressBar progressBar;
-    private SessionRepository sesion;
 
     @Nullable
     @Override
@@ -58,7 +68,6 @@ public class LoginFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        sesion = new SessionRepository(requireContext());
 
         etEmail = view.findViewById(R.id.etEmail);
         etPassword = view.findViewById(R.id.etPassword);
@@ -90,7 +99,7 @@ public class LoginFragment extends Fragment {
 
         mostrarCargando(true);
 
-        RetrofitClient.getAuthApi().me(sesion.getBearer())
+        authApi.me(sesion.getBearer())
                 .enqueue(new Callback<PerfilResponse>() {
 
                     @Override
@@ -141,7 +150,7 @@ public class LoginFragment extends Fragment {
 
         mostrarCargando(true);
 
-        RetrofitClient.getAuthApi().login(new LoginRequest(email, password))
+        authApi.login(new LoginRequest(email, password))
                 .enqueue(new Callback<SesionResponse>() {
 
                     @Override
@@ -203,7 +212,7 @@ public class LoginFragment extends Fragment {
 
         mostrarCargando(true);
 
-        RetrofitClient.getAuthApi()
+        authApi
                 .enviarOtp(new OtpEnviarRequest(email, "LOGIN"))
                 .enqueue(new Callback<MensajeResponse>() {
 
