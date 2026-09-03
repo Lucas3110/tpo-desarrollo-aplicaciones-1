@@ -54,7 +54,7 @@ public class RetrofitClient {
      * prueba, ni acordarse de revertirlo antes de entregar.
      */
     private static String getBaseUrl() {
-        return esEmulador() ? URL_EMULADOR : URL_RED_LOCAL;
+        return "http://127.0.0.1:3000/";
     }
 
     /** Heuristica estandar: los emuladores se identifican en Build. */
@@ -69,4 +69,13 @@ public class RetrofitClient {
                 || Build.HARDWARE.contains("goldfish")
                 || Build.HARDWARE.contains("ranchu");
     }
+
+    public static PublicacionApiService getPublicacionApi() {
+        return getInstance().create(PublicacionApiService.class);
+    }
+
 }
+
+
+
+

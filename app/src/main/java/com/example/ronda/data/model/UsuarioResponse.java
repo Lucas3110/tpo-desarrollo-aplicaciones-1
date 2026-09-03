@@ -21,8 +21,18 @@ public class UsuarioResponse {
     @SerializedName("telefono")
     private String telefono;
 
-    @SerializedName("zona")
-    private String zona;
+        @SerializedName("zona")
+    private Zona zona;
+
+    public static class Zona {
+        @SerializedName("id")
+        private int id;
+        @SerializedName("nombre")
+        private String nombre;
+
+        public int getId() { return id; }
+        public String getNombre() { return nombre; }
+    }
 
     @SerializedName("emailVerificado")
     private boolean emailVerificado;
@@ -46,9 +56,7 @@ public class UsuarioResponse {
         return telefono;
     }
 
-    public String getZona() {
-        return zona;
-    }
+    public Zona getZona() { return zona; }
 
     public boolean isEmailVerificado() {
         return emailVerificado;
@@ -58,3 +66,4 @@ public class UsuarioResponse {
         return creadoEn;
     }
 }
+

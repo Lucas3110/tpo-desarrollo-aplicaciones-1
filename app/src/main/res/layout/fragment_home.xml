@@ -31,7 +31,7 @@
         android:layout_marginTop="16dp"
         android:textStyle="bold"
         android:visibility="gone"
-        tools:text="¡Tu cuenta quedó verificada!"
+        tools:text="Ã‚Â¡Tu cuenta quedÃƒÂ³ verificada!"
         tools:visibility="visible" />
 
     <Button
@@ -41,4 +41,13 @@
         android:layout_marginTop="32dp"
         android:text="@string/home_cerrar_sesion" />
 
+    <Button
+        android:id="@+id/btnTestDetalle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_gravity="center"
+        android:text="PROBAR DETALLE (ID: 48)" />
 </LinearLayout>
+
+

@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
+import androidx.navigation.Navigation;
+import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
@@ -69,7 +71,13 @@ public class HomeFragment extends Fragment {
         } else {
             tvSubtitulo.setVisibility(View.GONE);
             btnCerrarSesion.setVisibility(View.VISIBLE);
-            btnCerrarSesion.setOnClickListener(v -> {
+                    // Boton de prueba agregado para testear el Punto 4
+        view.findViewById(R.id.btnTestDetalle).setOnClickListener(v -> {
+            Bundle bundle = new Bundle();
+            bundle.putInt("publicacionId", 48); // ID de prueba de los seeders
+            Navigation.findNavController(v).navigate(R.id.action_home_to_detalle, bundle);
+        });
+        btnCerrarSesion.setOnClickListener(v -> {
                 // Borrar el token es lo que corta la sesion: sin el, el
                 // auto-login del LoginFragment no se dispara.
                 sesion.cerrarSesion();
@@ -128,3 +136,5 @@ public class HomeFragment extends Fragment {
         super.onDestroyView();
     }
 }
+
+

@@ -81,7 +81,7 @@ public class LoginFragment extends Fragment {
     }
 
     // -----------------------------------------------------------------
-    // Auto-login: el token guardado, ¿sigue sirviendo?
+    // Auto-login: el token guardado, Â¿sigue sirviendo?
     // -----------------------------------------------------------------
     private void intentarAutoLogin(View view) {
         if (!sesion.haySesion()) {
@@ -166,8 +166,9 @@ public class LoginFragment extends Fragment {
                                           @NonNull Throwable t) {
                         if (!estaVivo()) return;
                         mostrarCargando(false);
-                        Toast.makeText(requireContext(),
-                                R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
+                          android.util.Log.e("RondaError", "Fallo en conexion", t);
+                          Toast.makeText(requireContext(),
+                                  R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -231,8 +232,9 @@ public class LoginFragment extends Fragment {
                                           @NonNull Throwable t) {
                         if (!estaVivo()) return;
                         mostrarCargando(false);
-                        Toast.makeText(requireContext(),
-                                R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
+                          android.util.Log.e("RondaError", "Fallo en conexion", t);
+                          Toast.makeText(requireContext(),
+                                  R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -254,3 +256,4 @@ public class LoginFragment extends Fragment {
         return isAdded() && getView() != null;
     }
 }
+
