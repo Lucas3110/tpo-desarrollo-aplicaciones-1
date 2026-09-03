@@ -17,7 +17,7 @@ import retrofit2.http.POST;
 
 /**
  * Endpoints del Punto 1. Retrofit convierte esta interfaz en llamadas HTTP:
- *   @POST  -> verbo y path (relativo a la BASE_URL de RetrofitClient)
+ *   @POST  -> verbo y path (relativo a la BASE_URL que define NetworkModule)
  *   @Body  -> el objeto se serializa a JSON con Gson
  *   @Header-> agrega una cabecera a la request
  */

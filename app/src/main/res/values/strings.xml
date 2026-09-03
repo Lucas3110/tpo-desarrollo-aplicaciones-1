@@ -4,51 +4,91 @@
     <!-- Login -->
     <string name="login_titulo">Ingresar a Ronda</string>
     <string name="login_email">Email</string>
-    <string name="login_password">ContraseÃ±a</string>
+    <string name="login_password">Contraseña</string>
     <string name="login_ingresar">Ingresar</string>
-    <string name="login_con_codigo">Ingresar con un cÃ³digo</string>
-    <string name="login_crear_cuenta">No tenÃ©s cuenta? Crear una</string>
+    <string name="login_con_codigo">Ingresar con un código</string>
+    <string name="login_crear_cuenta">No tenés cuenta? Crear una</string>
 
     <!-- Registro -->
     <string name="registro_titulo">Crear cuenta</string>
     <string name="registro_nombre">Nombre</string>
     <string name="registro_email">Email</string>
-    <string name="registro_password">ContraseÃ±a</string>
+    <string name="registro_password">Contraseña</string>
     <string name="registro_crear">Crear cuenta</string>
     <string name="registro_ya_tengo">Ya tengo cuenta</string>
 
     <!-- OTP -->
-    <string name="otp_titulo">VerificÃ¡ tu email</string>
-    <string name="otp_codigo">CÃ³digo de 6 dÃ­gitos</string>
+    <string name="otp_titulo">Verificá tu email</string>
+    <string name="otp_codigo">Código de 6 dígitos</string>
     <string name="otp_codigo_hint">------</string>
-    <string name="otp_enviado_a">Te enviamos un cÃ³digo a %1$s</string>
+    <string name="otp_enviado_a">Te enviamos un código a %1$s</string>
     <string name="otp_verificar">Verificar</string>
-    <string name="otp_reenviar">Reenviar cÃ³digo</string>
-    <string name="otp_reenviar_en">Reenviar cÃ³digo (%1$d)</string>
-    <string name="otp_reenviado">Te enviamos un cÃ³digo nuevo</string>
+    <string name="otp_reenviar">Reenviar código</string>
+    <string name="otp_reenviar_en">Reenviar código (%1$d)</string>
+    <string name="otp_reenviado">Te enviamos un código nuevo</string>
 
-    <!-- Home -->
-    <string name="home_titulo">Bienvenido a Ronda</string>
-    <string name="home_cuenta_verificada">Â¡Tu cuenta quedÃ³ verificada!</string>
-    <string name="home_cerrar_sesion">Cerrar sesiÃ³n</string>
+    <!-- Bienvenida (cuenta nueva confirmada) -->
+    <string name="bienvenida_titulo">Te damos la bienvenida a Ronda</string>
+    <string name="bienvenida_cuenta_verificada">¡Tu cuenta quedó verificada!</string>
+
+    <!-- Home: explorar publicaciones -->
+    <string name="home_cerrar_sesion">Cerrar sesión</string>
+    <string name="home_buscar_hint">Buscar por título o descripción</string>
+    <string name="home_buscar_desc">Buscar</string>
+    <string name="home_limpiar_busqueda_desc">Borrar búsqueda</string>
+    <string name="home_filtros">Filtros</string>
+    <string name="home_filtros_con_cantidad">Filtros (%1$d)</string>
+    <string name="home_categoria">Categoría</string>
+    <string name="home_categoria_todas">Todas las categorías</string>
+    <string name="home_precio_min">Precio mínimo</string>
+    <string name="home_precio_max">Precio máximo</string>
+    <string name="home_estado_articulo">Estado del artículo</string>
+    <string name="estado_nuevo">Nuevo</string>
+    <string name="estado_como_nuevo">Como nuevo</string>
+    <string name="estado_usado">Usado</string>
+    <string name="home_aplicar">Aplicar</string>
+    <string name="home_limpiar">Limpiar</string>
+    <string name="error_rango_precio">El mínimo no puede ser mayor que el máximo</string>
+    <string name="home_ordenar_por">Ordenar por</string>
+    <string name="orden_recientes">Más recientes</string>
+    <string name="orden_precio_asc">Menor precio</string>
+    <string name="orden_precio_desc">Mayor precio</string>
+    <string name="orden_cercania">Más cercanas</string>
+    <string name="home_solo_mi_zona">Solo mi zona (%1$s)</string>
+    <string name="home_solo_mi_zona_sin_zona">Solo mi zona (configurá tu zona en tu perfil)</string>
+    <string name="home_error_sin_zona">Para usar la cercanía primero configurá tu zona en tu perfil</string>
+    <plurals name="home_contador">
+        <item quantity="one">%1$d de %2$d publicación</item>
+        <item quantity="other">%1$d de %2$d publicaciones</item>
+    </plurals>
+    <string name="home_vacio_sin_filtros">Todavía no hay publicaciones</string>
+    <string name="home_vacio_con_filtros">No encontramos publicaciones con esa búsqueda o esos filtros</string>
+    <string name="home_actualizar">Actualizar</string>
+    <string name="home_limpiar_todo">Limpiar búsqueda y filtros</string>
+    <string name="home_reintentar">Reintentar</string>
+    <string name="home_error_carga">No pudimos cargar las publicaciones</string>
+    <string name="home_error_mas_publicaciones">No pudimos cargar más publicaciones</string>
+    <string name="home_error_respuesta_invalida">El servidor respondió algo que la app no entiende</string>
+    <string name="home_url_base">Servidor: %1$s</string>
+    <string name="home_sesion_vencida">Tu sesión venció, volvé a ingresar</string>
+    <string name="home_foto_desc">Foto del artículo</string>
+    <string name="home_detalle_pendiente">Muy pronto vas a poder ver el detalle de \"%1$s\"</string>
 
     <!-- Errores -->
-    <string name="error_email_vacio">IngresÃ¡ tu email</string>
-    <string name="error_email_invalido">IngresÃ¡ un email vÃ¡lido</string>
-    <string name="error_nombre_vacio">IngresÃ¡ tu nombre</string>
-    <string name="error_nombre_con_numeros">El nombre no puede tener nÃºmeros</string>
-    <string name="error_nombre_largo">El nombre no puede tener mÃ¡s de 30 caracteres</string>
-    <string name="error_nombre_invalido">El nombre solo puede tener letras, espacios, apÃ³strofos y guiones</string>
-    <string name="error_password_larga">La contraseÃ±a no puede tener mÃ¡s de 40 caracteres</string>
-    <string name="error_password_corta">La contraseÃ±a debe tener al menos 6 caracteres</string>
+    <string name="error_email_vacio">Ingresá tu email</string>
+    <string name="error_email_invalido">Ingresá un email válido</string>
+    <string name="error_nombre_vacio">Ingresá tu nombre</string>
+    <string name="error_nombre_con_numeros">El nombre no puede tener números</string>
+    <string name="error_nombre_largo">El nombre no puede tener más de 30 caracteres</string>
+    <string name="error_nombre_invalido">El nombre solo puede tener letras, espacios, apóstrofos y guiones</string>
+    <string name="error_password_larga">La contraseña no puede tener más de 40 caracteres</string>
+    <string name="error_password_corta">La contraseña debe tener al menos 6 caracteres</string>
     <string name="error_registro_generico">No pudimos crear la cuenta</string>
-    <string name="error_codigo_incompleto">El cÃ³digo tiene 6 dÃ­gitos</string>
-    <string name="error_codigo_generico">No pudimos verificar el cÃ³digo</string>
-    <string name="error_reenvio_generico">No pudimos reenviar el cÃ³digo</string>
-    <string name="error_password_vacia">IngresÃ¡ tu contraseÃ±a</string>
+    <string name="error_codigo_incompleto">El código tiene 6 dígitos</string>
+    <string name="error_codigo_generico">No pudimos verificar el código</string>
+    <string name="error_reenvio_generico">No pudimos reenviar el código</string>
+    <string name="error_password_vacia">Ingresá tu contraseña</string>
     <string name="error_login_generico">No pudimos ingresar</string>
-    <string name="error_email_para_codigo">EscribÃ­ tu email para enviarte el cÃ³digo</string>
-    <string name="error_sin_conexion">No pudimos conectarnos con el servidor. RevisÃ¡ tu conexiÃ³n e intentÃ¡ nuevamente.</string>
-    <string name="error_generico">Ocurrió un error inesperado</string>
+    <string name="error_email_para_codigo">Escribí tu email para enviarte el código</string>
+    <string name="error_sin_conexion">No pudimos conectarnos con el servidor. Revisá tu conexión e intentá nuevamente.</string>
 </resources>
-

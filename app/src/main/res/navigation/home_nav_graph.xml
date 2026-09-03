@@ -5,23 +5,11 @@
     android:id="@+id/home_nav_graph"
     app:startDestination="@id/homeFragment">
 
-    <!-- true cuando se llega de confirmar la cuenta: el Home muestra la
-         bienvenida animada y vuelve solo al login. -->
-    <argument
-        android:name="volverAlLogin"
-        app:argType="boolean"
-        android:defaultValue="false" />
-
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.ronda.ui.home.HomeFragment"
         android:label="Ronda"
         tools:layout="@layout/fragment_home">
-
-        <argument
-            android:name="volverAlLogin"
-            app:argType="boolean"
-            android:defaultValue="false" />
 
         <!-- Cerrar sesion: vuelve al login y limpia el graph del home. -->
         <action

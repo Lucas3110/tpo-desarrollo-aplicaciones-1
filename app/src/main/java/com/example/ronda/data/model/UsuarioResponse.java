@@ -21,18 +21,14 @@ public class UsuarioResponse {
     @SerializedName("telefono")
     private String telefono;
 
-        @SerializedName("zona")
-    private Zona zona;
-
-    public static class Zona {
-        @SerializedName("id")
-        private int id;
-        @SerializedName("nombre")
-        private String nombre;
-
-        public int getId() { return id; }
-        public String getNombre() { return nombre; }
-    }
+    /**
+     * Puede ser null: el usuario recien registrado todavia no eligio zona.
+     * OJO: es un objeto { id, nombre }, no un texto. Si se declara como String,
+     * Gson tira JsonSyntaxException al parsear la sesion de cualquier usuario
+     * con zona y el login termina en onFailure como si no hubiera conexion.
+     */
+    @SerializedName("zona")
+    private ZonaResponse zona;
 
     @SerializedName("emailVerificado")
     private boolean emailVerificado;
@@ -56,7 +52,9 @@ public class UsuarioResponse {
         return telefono;
     }
 
-    public Zona getZona() { return zona; }
+    public ZonaResponse getZona() {
+        return zona;
+    }
 
     public boolean isEmailVerificado() {
         return emailVerificado;
@@ -66,4 +64,3 @@ public class UsuarioResponse {
         return creadoEn;
     }
 }
-

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo redondeado de la etiqueta "Nuevo / Como nuevo / Usado" de cada fila.
+     Usa un color del tema Material3, asi acompaña al modo claro y al oscuro. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="12dp" />
+    <solid android:color="?attr/colorSecondaryContainer" />
+</shape>

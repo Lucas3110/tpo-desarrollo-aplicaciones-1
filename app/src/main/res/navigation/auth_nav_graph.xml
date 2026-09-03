@@ -61,6 +61,26 @@
             app:destination="@id/home_nav_graph"
             app:popUpTo="@id/auth_nav_graph"
             app:popUpToInclusive="true" />
+
+        <!-- Cuenta nueva confirmada: bienvenida y vuelta al login. popUpTo
+             saca del historial a registro y otp, asi la bienvenida queda
+             justo encima del login y "atras" (o el tiempo) vuelve ahi. -->
+        <action
+            android:id="@+id/action_otp_to_bienvenida"
+            app:destination="@id/bienvenidaFragment"
+            app:popUpTo="@id/loginFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/bienvenidaFragment"
+        android:name="com.example.ronda.ui.auth.BienvenidaFragment"
+        android:label="Bienvenida"
+        tools:layout="@layout/fragment_bienvenida">
+
+        <argument
+            android:name="email"
+            app:argType="string"
+            android:defaultValue="" />
     </fragment>
 
 </navigation>

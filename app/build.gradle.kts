@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -43,6 +44,13 @@ dependencies {
     // Retrofit + Gson: cliente HTTP contra la API de Ronda (clase 3)
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
+    // Hilt: inyeccion de dependencias. En Java se usa annotationProcessor,
+    // no kapt (kapt es para proyectos Kotlin).
+    implementation(libs.hilt.android)
+    annotationProcessor(libs.hilt.compiler)
+    // Glide: descarga, cachea y muestra la fotoPrincipal (una URL) de cada
+    // publicacion en el listado. Sin annotationProcessor: no hace falta.
+    implementation(libs.glide)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
