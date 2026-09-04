@@ -699,9 +699,9 @@ public class HomeFragment extends Fragment {
      * Mientras tanto, un aviso pensado para quien usa la app, no para el equipo.
      */
     private void abrirDetalle(PublicacionItemResponse publicacion) {
-        Toast.makeText(requireContext(),
-                getString(R.string.home_detalle_pendiente, publicacion.getTitulo()),
-                Toast.LENGTH_SHORT).show();
+        android.os.Bundle bundle = new android.os.Bundle();
+        bundle.putInt("publicacionId", publicacion.getId());
+        androidx.navigation.Navigation.findNavController(getView()).navigate(R.id.action_home_to_detalle, bundle);
     }
 
     private void cerrarSesion() {

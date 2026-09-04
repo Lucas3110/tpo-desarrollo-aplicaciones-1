@@ -37,7 +37,7 @@ public class NetworkModule {
      * 10.0.2.2 es el alias que el emulador redirige al localhost de la máquina.
      * Ojo: "localhost" NO sirve, porque desde el emulador apunta al emulador.
      */
-    private static final String URL_EMULADOR = "http://10.0.2.2:3000/";
+    private static final String URL_EMULADOR = "http://localhost:3000/";
 
     /**
      * Para un celular físico en la misma WiFi. Hay que actualizarla con la IP

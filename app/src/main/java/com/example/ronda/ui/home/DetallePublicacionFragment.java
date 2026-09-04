@@ -20,13 +20,25 @@ import com.example.ronda.R;
 import com.example.ronda.data.model.PublicacionDetalleResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.model.ErrorResponse;
-import com.example.ronda.data.network.RetrofitClient;
+
+import javax.inject.Inject;
+import dagger.hilt.android.AndroidEntryPoint;
+import com.example.ronda.data.network.PublicacionApiService;
+import com.example.ronda.data.repository.SessionRepository;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class DetallePublicacionFragment extends Fragment {
+
+    @Inject
+    PublicacionApiService publicacionApi;
+
+    @Inject
+    SessionRepository sesion;
+
 
     private int publicacionId = -1;
 
@@ -80,6 +92,7 @@ public class DetallePublicacionFragment extends Fragment {
         btnPreguntar.setOnClickListener(v -> Toast.makeText(requireContext(), "Abrir chat de preguntas...", Toast.LENGTH_SHORT).show());
         btnOfertar.setOnClickListener(v -> Toast.makeText(requireContext(), "Abrir flujo de oferta...", Toast.LENGTH_SHORT).show());
         btnGuardar.setOnClickListener(v -> Toast.makeText(requireContext(), "Guardado en favoritos!", Toast.LENGTH_SHORT).show());
+        tvEstadoArticulo.setOnClickListener(v -> Toast.makeText(requireContext(), "Navegar a categoria...", Toast.LENGTH_SHORT).show());
         btnGestionar.setOnClickListener(v -> Toast.makeText(requireContext(), "Abrir gestiA3n de publicaciA3n...", Toast.LENGTH_SHORT).show());
         btnVerPerfil.setOnClickListener(v -> Toast.makeText(requireContext(), "Ver perfil pAoblico...", Toast.LENGTH_SHORT).show());
 
@@ -93,7 +106,7 @@ public class DetallePublicacionFragment extends Fragment {
     private void cargarDetallePublicacion() {
         mostrarCargando(true);
 
-        RetrofitClient.getPublicacionApi().getDetallePublicacion(new com.example.ronda.data.repository.SessionRepository(requireContext()).getBearer(), publicacionId)
+        publicacionApi.getDetallePublicacion(sesion.getBearer(), publicacionId)
                 .enqueue(new Callback<PublicacionDetalleResponse>() {
                     
                     @Override
@@ -106,7 +119,7 @@ public class DetallePublicacionFragment extends Fragment {
                             poblarUi(response.body().getPublicacion());
                         } else {
                             ErrorResponse.Detalle error = ApiErrorParser.parse(response);
-                            String mensaje = ApiErrorParser.mensaje(error, getString(R.string.error_generico));
+                            String mensaje = ApiErrorParser.mensaje(error, "OcurriA3 un error inesperado");
                             Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
                         }
                     }
