@@ -1,4 +1,4 @@
-package com.example.ronda.ui.home; 
+package com.example.ronda.ui.home;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -20,12 +20,11 @@ import com.example.ronda.R;
 import com.example.ronda.data.model.PublicacionDetalleResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.model.ErrorResponse;
-
-import javax.inject.Inject;
-import dagger.hilt.android.AndroidEntryPoint;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.repository.SessionRepository;
 
+import javax.inject.Inject;
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -39,8 +38,8 @@ public class DetallePublicacionFragment extends Fragment {
     @Inject
     SessionRepository sesion;
 
-
     private int publicacionId = -1;
+    private boolean esFavorito = false;
 
     private ProgressBar progressBar;
     private ScrollView scrollView;
@@ -48,8 +47,7 @@ public class DetallePublicacionFragment extends Fragment {
     private TextView tvEstadoArticulo, tvTitulo, tvPrecio, tvDescripcion, tvVendedorNombre, tvReputacion;
     private Button btnPreguntar, btnOfertar, btnGuardar, btnGestionar, btnVerPerfil;
 
-    public DetallePublicacionFragment() {
-    }
+    public DetallePublicacionFragment() {}
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,8 +58,7 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_detalle_publicacion, container, false);
     }
 
@@ -87,60 +84,53 @@ public class DetallePublicacionFragment extends Fragment {
         btnGuardar = view.findViewById(R.id.btnGuardar);
         btnGestionar = view.findViewById(R.id.btnGestionar);
         btnVerPerfil = view.findViewById(R.id.btnVerPerfil);
-
         
-        btnPreguntar.setOnClickListener(v -> Toast.makeText(requireContext(), "Abrir chat de preguntas...", Toast.LENGTH_SHORT).show());
-        btnOfertar.setOnClickListener(v -> Toast.makeText(requireContext(), "Abrir flujo de oferta...", Toast.LENGTH_SHORT).show());
-        btnGuardar.setOnClickListener(v -> Toast.makeText(requireContext(), "Guardado en favoritos!", Toast.LENGTH_SHORT).show());
-        tvEstadoArticulo.setOnClickListener(v -> Toast.makeText(requireContext(), "Navegar a categoria...", Toast.LENGTH_SHORT).show());
-        btnGestionar.setOnClickListener(v -> Toast.makeText(requireContext(), "Abrir gestiA3n de publicaciA3n...", Toast.LENGTH_SHORT).show());
-        btnVerPerfil.setOnClickListener(v -> Toast.makeText(requireContext(), "Ver perfil pAoblico...", Toast.LENGTH_SHORT).show());
+        btnPreguntar.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_preguntar), Toast.LENGTH_SHORT).show());
+        btnOfertar.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_ofertar), Toast.LENGTH_SHORT).show());
+        btnGuardar.setOnClickListener(v -> toggleFavorito());
+        btnGestionar.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_gestionar), Toast.LENGTH_SHORT).show());
+        btnVerPerfil.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_perfil), Toast.LENGTH_SHORT).show());
 
         if (publicacionId != -1) {
             cargarDetallePublicacion();
         } else {
-            Toast.makeText(requireContext(), "Falta el ID de la publicación", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), getString(R.string.error_publicacion_id), Toast.LENGTH_SHORT).show();
         }
     }
 
     private void cargarDetallePublicacion() {
         mostrarCargando(true);
+        publicacionApi.getDetallePublicacion(sesion.getBearer(), publicacionId).enqueue(new Callback<PublicacionDetalleResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<PublicacionDetalleResponse> call, @NonNull Response<PublicacionDetalleResponse> response) {
+                if (!estaVivo()) return;
+                mostrarCargando(false);
 
-        publicacionApi.getDetallePublicacion(sesion.getBearer(), publicacionId)
-                .enqueue(new Callback<PublicacionDetalleResponse>() {
-                    
-                    @Override
-                    public void onResponse(@NonNull Call<PublicacionDetalleResponse> call,
-                                           @NonNull Response<PublicacionDetalleResponse> response) {
-                        if (!estaVivo()) return;
-                        mostrarCargando(false);
-
-                        if (response.isSuccessful() && response.body() != null) {
-                            poblarUi(response.body().getPublicacion());
-                        } else {
-                            ErrorResponse.Detalle error = ApiErrorParser.parse(response);
-                            String mensaje = ApiErrorParser.mensaje(error, "OcurriA3 un error inesperado");
-                            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(@NonNull Call<PublicacionDetalleResponse> call, @NonNull Throwable t) {
-                        if (!estaVivo()) return;
-                        mostrarCargando(false);
-                        Toast.makeText(requireContext(), R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
-                    }
-                });
+                if (response.isSuccessful() && response.body() != null) {
+                    poblarUi(response.body().getPublicacion());
+                } else {
+                    ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                    String mensaje = ApiErrorParser.mensaje(error, "Ocurrió un error inesperado");
+                    Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<PublicacionDetalleResponse> call, @NonNull Throwable t) {
+                if (!estaVivo()) return;
+                mostrarCargando(false);
+                Toast.makeText(requireContext(), R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void poblarUi(PublicacionDetalleResponse.Publicacion pub) {
         scrollView.setVisibility(View.VISIBLE);
 
         tvTitulo.setText(pub.getTitulo());
-        tvPrecio.setText("$ " + pub.getPrecio());
+        tvPrecio.setText(String.format("$ %.2f", pub.getPrecio()));
         tvDescripcion.setText(pub.getDescripcion());
         
-                if (pub.getFotos() != null && !pub.getFotos().isEmpty()) {
+        if (pub.getFotos() != null && !pub.getFotos().isEmpty()) {
             FotosAdapter adapter = new FotosAdapter(pub.getFotos());
             rvFotos.setAdapter(adapter);
             rvFotos.setVisibility(View.VISIBLE);
@@ -157,10 +147,10 @@ public class DetallePublicacionFragment extends Fragment {
             
             PublicacionDetalleResponse.Reputacion rep = pub.getVendedor().getReputacion();
             if (rep != null && rep.getPromedioEstrellas() != null) {
-                tvReputacion.setText(String.format("Reputación: %.1f estrellas (%d operaciones)", 
+                tvReputacion.setText(String.format(getString(R.string.reputacion_formato), 
                         rep.getPromedioEstrellas(), rep.getCantidadCalificaciones()));
             } else {
-                tvReputacion.setText("Aún no tiene calificaciones");
+                tvReputacion.setText(getString(R.string.reputacion_vacia));
             }
         }
 
@@ -169,6 +159,36 @@ public class DetallePublicacionFragment extends Fragment {
             btnOfertar.setVisibility(pub.getAcciones().isPuedeOfertar() ? View.VISIBLE : View.GONE);
             btnGuardar.setVisibility(pub.getAcciones().isPuedeGuardar() ? View.VISIBLE : View.GONE);
             btnGestionar.setVisibility(pub.getAcciones().isPuedeGestionar() ? View.VISIBLE : View.GONE);
+            
+            esFavorito = !pub.getAcciones().isPuedeGuardar(); // Simplificado para la demostracion
+        }
+    }
+    
+    private void toggleFavorito() {
+        if (esFavorito) {
+            publicacionApi.quitarFavorito(sesion.getBearer(), publicacionId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        esFavorito = false;
+                        Toast.makeText(requireContext(), getString(R.string.accion_quitar_guardar), Toast.LENGTH_SHORT).show();
+                    }
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {}
+            });
+        } else {
+            publicacionApi.agregarFavorito(sesion.getBearer(), publicacionId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        esFavorito = true;
+                        Toast.makeText(requireContext(), getString(R.string.accion_guardar), Toast.LENGTH_SHORT).show();
+                    }
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {}
+            });
         }
     }
 
@@ -181,7 +201,3 @@ public class DetallePublicacionFragment extends Fragment {
         return isAdded() && getView() != null;
     }
 }
-
-
-
-
