@@ -73,6 +73,11 @@
     <string name="home_sesion_vencida">Tu sesión venció, volvé a ingresar</string>
     <string name="home_foto_desc">Foto del artículo</string>
     <string name="home_detalle_pendiente">Muy pronto vas a poder ver el detalle de \"%1$s\"</string>
+    <string name="home_mi_perfil">Mi perfil</string>
+
+    <!-- Perfil (Punto 2) -->
+    <string name="perfil_titulo">Mi perfil</string>
+    <string name="perfil_error_carga">No pudimos cargar tu perfil</string>
 
     <!-- Errores -->
     <string name="error_email_vacio">Ingresá tu email</string>
