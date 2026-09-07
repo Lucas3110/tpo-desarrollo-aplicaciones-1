@@ -27,9 +27,8 @@ import retrofit2.Response;
 /**
  * Mi perfil (Punto 2).
  *
- * Primer paso: solo muestra el nombre de la persona logueada, que se pide a
- * GET /auth/me (el mismo endpoint que usa el auto-login). Los demas datos y
- * la edicion se agregan en pasos siguientes.
+ * Muestra el nombre de la persona logueada, que se pide a GET /auth/me (el
+ * mismo endpoint que usa el auto-login).
  *
  * Sigue el patron de las pantallas del Punto 1: enqueue, estaVivo() antes de
  * tocar la UI y sin bloquear el hilo principal.

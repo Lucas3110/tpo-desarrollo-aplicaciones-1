@@ -78,6 +78,17 @@
     <!-- Perfil (Punto 2) -->
     <string name="perfil_titulo">Mi perfil</string>
     <string name="perfil_error_carga">No pudimos cargar tu perfil</string>
+    <string name="perfil_nombre_label">Nombre</string>
+    <string name="perfil_email_label">Email</string>
+    <string name="perfil_telefono_label">Teléfono de contacto</string>
+    <string name="perfil_zona_label">Zona</string>
+    <string name="perfil_reputacion_titulo">Reputación</string>
+    <string name="perfil_dato_estatico_email">sofia.demo@ronda.app</string>
+    <string name="perfil_dato_estatico_telefono">11 4444-1111</string>
+    <string name="perfil_dato_estatico_zona">Palermo</string>
+    <string name="perfil_reputacion_estrellas">4,5 ★ · 12 calificaciones</string>
+    <string name="perfil_reputacion_operaciones">8 ventas · 3 compras concretadas</string>
+    <string name="perfil_miembro_desde">Miembro hace 42 días</string>
 
     <!-- Errores -->
     <string name="error_email_vacio">Ingresá tu email</string>
