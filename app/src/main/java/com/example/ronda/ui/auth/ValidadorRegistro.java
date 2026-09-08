@@ -21,6 +21,8 @@ public final class ValidadorRegistro {
     public static final int NOMBRE_MAX = 30;
     public static final int PASSWORD_MIN = 6;
     public static final int PASSWORD_MAX = 40;
+    /** Mismo limite que TELEFONO_MAX en src/services/usuarioService.js. */
+    public static final int TELEFONO_MAX = 30;
 
     private ValidadorRegistro() {
         // Clase de utilidades: no se instancia.
@@ -102,6 +104,27 @@ public final class ValidadorRegistro {
         }
         if (valor.length() > PASSWORD_MAX) {
             return Resultado.invalido(R.string.error_password_larga);
+        }
+        return Resultado.valido();
+    }
+
+    /**
+     * Telefono de contacto del Punto 2. Es opcional: vacio es valido (el
+     * backend lo guarda como NULL). Si viene, mismo criterio que
+     * src/services/usuarioService.js: numeros, espacios, guiones, parentesis
+     * y un "+" inicial, con al menos 6 caracteres.
+     */
+    public static Resultado validarTelefono(String telefono) {
+        String limpio = telefono == null ? "" : telefono.trim();
+
+        if (limpio.isEmpty()) {
+            return Resultado.valido();
+        }
+        if (limpio.length() > TELEFONO_MAX) {
+            return Resultado.invalido(R.string.error_telefono_largo);
+        }
+        if (!limpio.matches("^\\+?[\\d\\s()-]{6,}$")) {
+            return Resultado.invalido(R.string.error_telefono_invalido);
         }
         return Resultado.valido();
     }
