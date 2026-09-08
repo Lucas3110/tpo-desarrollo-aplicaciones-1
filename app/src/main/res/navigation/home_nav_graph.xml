@@ -17,7 +17,6 @@
             app:destination="@id/auth_nav_graph"
             app:popUpTo="@id/home_nav_graph"
             app:popUpToInclusive="true" />
-<<<<<<< HEAD
             <action
             android:id="@+id/action_home_to_detalle"
             app:destination="@id/detallePublicacionFragment" />
@@ -30,7 +29,6 @@
         <argument
             android:name="publicacionId"
             app:argType="integer" />
-=======
 
         <!-- Punto 2: mi perfil. -->
         <action
@@ -51,7 +49,6 @@
             app:destination="@id/auth_nav_graph"
             app:popUpTo="@id/home_nav_graph"
             app:popUpToInclusive="true" />
->>>>>>> main
     </fragment>
 
     <!-- Los Puntos 3 a 6 cuelgan sus pantallas de aca -->
