@@ -186,6 +186,7 @@ public class HomeFragment extends Fragment {
         tvError = view.findViewById(R.id.tvError);
         tvUrlBase = view.findViewById(R.id.tvUrlBase);
         Button btnCerrarSesion = view.findViewById(R.id.btnCerrarSesion);
+        Button btnMiPerfil = view.findViewById(R.id.btnMiPerfil);
         btnActualizar = view.findViewById(R.id.btnActualizar);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
@@ -226,6 +227,8 @@ public class HomeFragment extends Fragment {
         });
 
         btnCerrarSesion.setOnClickListener(v -> cerrarSesion());
+        btnMiPerfil.setOnClickListener(v ->
+                Navigation.findNavController(requireView()).navigate(R.id.action_home_to_perfil));
         btnActualizar.setOnClickListener(v -> {
             // En el vacio "con busqueda" el boton limpia; en el vacio a secas, actualiza.
             if (filtros.hayAlgoAplicado()) {

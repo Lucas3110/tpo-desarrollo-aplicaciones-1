@@ -4,6 +4,7 @@ import android.os.Build;
 
 import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.PublicacionApiService;
+import com.example.ronda.data.network.UsuarioApiService;
 
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +45,7 @@ public class NetworkModule {
      * que imprime el backend al arrancar, en la línea "Celular (WiFi) -> ...".
      * Cambia al cambiar de red (casa, facultad, hotspot).
      */
-    private static final String URL_RED_LOCAL = "http://192.168.0.153:3000/";
+    private static final String URL_RED_LOCAL = "http://192.168.1.37:3000/";
 
     /** Cuanto se espera al servidor antes de dar la request por fallida. */
     private static final long TIMEOUT_SEGUNDOS = 15;
@@ -92,6 +93,13 @@ public class NetworkModule {
     @Singleton
     public PublicacionApiService providePublicacionApiService(Retrofit retrofit) {
         return retrofit.create(PublicacionApiService.class);
+    }
+
+    /** Datos personales del Punto 2. Mismo patron que las otras interfaces. */
+    @Provides
+    @Singleton
+    public UsuarioApiService provideUsuarioApiService(Retrofit retrofit) {
+        return retrofit.create(UsuarioApiService.class);
     }
 
     /**
