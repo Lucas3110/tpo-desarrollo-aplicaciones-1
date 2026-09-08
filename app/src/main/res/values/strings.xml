@@ -80,12 +80,19 @@
     <string name="perfil_error_carga">No pudimos cargar tu perfil</string>
     <string name="perfil_nombre_label">Nombre</string>
     <string name="perfil_email_label">Email</string>
+    <string name="perfil_email_nota">El email no se cambia desde acá</string>
     <string name="perfil_telefono_label">Teléfono de contacto</string>
+    <string name="perfil_telefono_hint">Opcional</string>
     <string name="perfil_zona_label">Zona</string>
+    <string name="perfil_zona_sin_elegir">Sin zona</string>
+    <string name="perfil_editar_nombre">Editar nombre</string>
+    <string name="perfil_editar_telefono">Editar teléfono</string>
+    <string name="perfil_editar_zona">Editar zona</string>
+    <string name="perfil_guardar">Guardar cambios</string>
+    <string name="perfil_guardado">Datos actualizados</string>
+    <string name="perfil_error_guardar">No pudimos guardar los cambios</string>
+    <string name="perfil_reintentar">Reintentar</string>
     <string name="perfil_reputacion_titulo">Reputación</string>
-    <string name="perfil_dato_estatico_email">sofia.demo@ronda.app</string>
-    <string name="perfil_dato_estatico_telefono">11 4444-1111</string>
-    <string name="perfil_dato_estatico_zona">Palermo</string>
     <string name="perfil_reputacion_estrellas">4,5 ★ · 12 calificaciones</string>
     <string name="perfil_reputacion_operaciones">8 ventas · 3 compras concretadas</string>
     <string name="perfil_miembro_desde">Miembro hace 42 días</string>
@@ -107,4 +114,6 @@
     <string name="error_login_generico">No pudimos ingresar</string>
     <string name="error_email_para_codigo">Escribí tu email para enviarte el código</string>
     <string name="error_sin_conexion">No pudimos conectarnos con el servidor. Revisá tu conexión e intentá nuevamente.</string>
+    <string name="error_telefono_invalido">El teléfono solo puede tener números, espacios, guiones y paréntesis</string>
+    <string name="error_telefono_largo">El teléfono no puede tener más de 30 caracteres</string>
 </resources>

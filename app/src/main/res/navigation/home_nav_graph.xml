@@ -29,7 +29,15 @@
         android:id="@+id/perfilFragment"
         android:name="com.example.ronda.ui.perfil.PerfilFragment"
         android:label="Mi perfil"
-        tools:layout="@layout/fragment_perfil" />
+        tools:layout="@layout/fragment_perfil">
+
+        <!-- Sesion vencida (401) al pedir o guardar: se vuelve al login. -->
+        <action
+            android:id="@+id/action_perfil_to_auth"
+            app:destination="@id/auth_nav_graph"
+            app:popUpTo="@id/home_nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
 
     <!-- Los Puntos 3 a 6 cuelgan sus pantallas de aca -->
 
