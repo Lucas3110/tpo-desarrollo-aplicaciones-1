@@ -17,6 +17,18 @@
             app:destination="@id/auth_nav_graph"
             app:popUpTo="@id/home_nav_graph"
             app:popUpToInclusive="true" />
+            <action
+            android:id="@+id/action_home_to_detalle"
+            app:destination="@id/detallePublicacionFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/detallePublicacionFragment"
+        android:name="com.example.ronda.ui.home.DetallePublicacionFragment"
+        android:label="Detalle de Publicación"
+        tools:layout="@layout/fragment_detalle_publicacion">
+        <argument
+            android:name="publicacionId"
+            app:argType="integer" />
 
         <!-- Punto 2: mi perfil. -->
         <action
@@ -42,3 +54,5 @@
     <!-- Los Puntos 3 a 6 cuelgan sus pantallas de aca -->
 
 </navigation>
+
+
