@@ -39,6 +39,7 @@ public class DetallePublicacionFragment extends Fragment {
     SessionRepository sesion;
 
     private int publicacionId = -1;
+    private PublicacionDetalleResponse.Publicacion mPub;
     private boolean esFavorito = false;
 
     private ProgressBar progressBar;
@@ -85,10 +86,36 @@ public class DetallePublicacionFragment extends Fragment {
         btnGestionar = view.findViewById(R.id.btnGestionar);
         btnVerPerfil = view.findViewById(R.id.btnVerPerfil);
         
-        btnPreguntar.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_preguntar), Toast.LENGTH_SHORT).show());
-        btnOfertar.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_ofertar), Toast.LENGTH_SHORT).show());
+        btnPreguntar.setOnClickListener(v -> {
+            if (mPub == null) return;
+            boolean esVendedor = mPub.isEsMia();
+            boolean puedePreguntar = mPub.getAcciones().isPuedePreguntar();
+            PreguntasBottomSheet bottomSheet = new PreguntasBottomSheet(mPub.getId(), esVendedor, puedePreguntar);
+            bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
+        });
+        btnOfertar.setOnClickListener(v -> {
+            if (mPub == null) return;
+            boolean esVendedor = mPub.isEsMia();
+            boolean puedeOfertar = mPub.getAcciones().isPuedeOfertar();
+            OfertasBottomSheet bottomSheet = new OfertasBottomSheet(mPub.getId(), esVendedor, puedeOfertar);
+            bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
+        });
         btnGuardar.setOnClickListener(v -> toggleFavorito());
-        btnGestionar.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_gestionar), Toast.LENGTH_SHORT).show());
+        btnGestionar.setOnClickListener(v -> {
+            if (mPub == null) return;
+            new android.app.AlertDialog.Builder(requireContext())
+                .setTitle("Gestionar Publicación")
+                .setItems(new CharSequence[]{"Ver Preguntas", "Ver Ofertas"}, (dialog, which) -> {
+                    if (which == 0) {
+                        PreguntasBottomSheet bottomSheet = new PreguntasBottomSheet(mPub.getId(), true, false);
+                        bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
+                    } else {
+                        OfertasBottomSheet bottomSheet = new OfertasBottomSheet(mPub.getId(), true, false);
+                        bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
+                    }
+                })
+                .show();
+        });
         btnVerPerfil.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_perfil), Toast.LENGTH_SHORT).show());
 
         if (publicacionId != -1) {
@@ -124,10 +151,11 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void poblarUi(PublicacionDetalleResponse.Publicacion pub) {
+        this.mPub = pub;
         scrollView.setVisibility(View.VISIBLE);
 
         tvTitulo.setText(pub.getTitulo());
-        tvPrecio.setText(String.format("$ %.2f", pub.getPrecio()));
+        tvPrecio.setText(getString(R.string.precio_formato, pub.getPrecio()));
         tvDescripcion.setText(pub.getDescripcion());
         
         if (pub.getFotos() != null && !pub.getFotos().isEmpty()) {
@@ -154,13 +182,16 @@ public class DetallePublicacionFragment extends Fragment {
             }
         }
 
-        if (pub.getAcciones() != null) {
+        if (mPub.getAcciones() != null) {
+            // Mostrar siempre los botones para permitir abrir los historiales.
             btnPreguntar.setVisibility(pub.getAcciones().isPuedePreguntar() ? View.VISIBLE : View.GONE);
-            btnOfertar.setVisibility(pub.getAcciones().isPuedeOfertar() ? View.VISIBLE : View.GONE);
-            btnGuardar.setVisibility(pub.getAcciones().isPuedeGuardar() ? View.VISIBLE : View.GONE);
-            btnGestionar.setVisibility(pub.getAcciones().isPuedeGestionar() ? View.VISIBLE : View.GONE);
+            // Ofertas requiere estar autenticado (el backend rechaza listarOfertas si no hay token).
+            btnOfertar.setVisibility(mPub.getAcciones().isPuedeOfertar() ? View.VISIBLE : View.GONE);
+            btnGuardar.setVisibility(mPub.getAcciones().isPuedeGuardar() ? View.VISIBLE : View.GONE);
+            btnGestionar.setVisibility(mPub.getAcciones().isPuedeGestionar() ? View.VISIBLE : View.GONE);
             
-            esFavorito = !pub.getAcciones().isPuedeGuardar(); // Simplificado para la demostracion
+            esFavorito = mPub.isEsFavorito();
+            btnGuardar.setText(esFavorito ? "Quitar de Favoritos" : "Guardar en Favoritos");
         }
     }
     
@@ -171,6 +202,7 @@ public class DetallePublicacionFragment extends Fragment {
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         esFavorito = false;
+                        btnGuardar.setText("Guardar en Favoritos");
                         Toast.makeText(requireContext(), getString(R.string.accion_quitar_guardar), Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -183,6 +215,7 @@ public class DetallePublicacionFragment extends Fragment {
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         esFavorito = true;
+                        btnGuardar.setText("Quitar de Favoritos");
                         Toast.makeText(requireContext(), getString(R.string.accion_guardar), Toast.LENGTH_SHORT).show();
                     }
                 }

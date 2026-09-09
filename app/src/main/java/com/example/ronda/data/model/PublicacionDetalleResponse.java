@@ -31,6 +31,10 @@ public class PublicacionDetalleResponse {
         private Vendedor vendedor;
         @SerializedName("acciones")
         private Acciones acciones;
+        @SerializedName("esMia")
+        private boolean esMia;
+        @SerializedName("esFavorito")
+        private boolean esFavorito;
 
         public int getId() { return id; }
         public String getTitulo() { return titulo; }
@@ -42,6 +46,8 @@ public class PublicacionDetalleResponse {
         public List<Foto> getFotos() { return fotos; }
         public Vendedor getVendedor() { return vendedor; }
         public Acciones getAcciones() { return acciones; }
+        public boolean isEsMia() { return esMia; }
+        public boolean isEsFavorito() { return esFavorito; }
     }
 
     public static class Categoria {
@@ -97,10 +103,13 @@ public class PublicacionDetalleResponse {
         private boolean puedeGuardar;
         @SerializedName("puedeGestionar")
         private boolean puedeGestionar;
+        @SerializedName("requiereSesion")
+        private boolean requiereSesion;
 
         public boolean isPuedePreguntar() { return puedePreguntar; }
         public boolean isPuedeOfertar() { return puedeOfertar; }
         public boolean isPuedeGuardar() { return puedeGuardar; }
         public boolean isPuedeGestionar() { return puedeGestionar; }
+        public boolean isRequiereSesion() { return requiereSesion; }
     }
 }

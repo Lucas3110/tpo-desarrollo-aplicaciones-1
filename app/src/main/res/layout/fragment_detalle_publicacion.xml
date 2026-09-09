@@ -138,7 +138,7 @@
                     android:id="@+id/btnPreguntar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Preguntar"
+                    android:text="@string/detalle_preguntar"
                     android:visibility="gone"
                     tools:visibility="visible" />
 
@@ -147,7 +147,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Ofertar"
+                    android:text="@string/detalle_ofertar"
                     android:visibility="gone"
                     tools:visibility="visible" />
 
@@ -157,7 +157,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Guardar en Favoritos"
+                    android:text="@string/detalle_guardar_favorito"
                     android:visibility="gone"
                     tools:visibility="visible" />
 

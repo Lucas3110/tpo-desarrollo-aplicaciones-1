@@ -126,5 +126,16 @@
     <string name="error_publicacion_id">Falta el ID de la publicación</string>
     <string name="error_telefono_invalido">El teléfono solo puede tener números, espacios, guiones y paréntesis</string>
     <string name="error_telefono_largo">El teléfono no puede tener más de 30 caracteres</string>
-</resources>
 
+
+
+    <string name="detalle_descripcion">DescripciA3n</string>
+    <string name="detalle_info_vendedor">InformaciA3n del vendedor</string>
+    <string name="detalle_ver_perfil">Ver perfil pAblico</string>
+    <string name="detalle_preguntar">Preguntar</string>
+    <string name="detalle_ofertar">Ofertar</string>
+    <string name="detalle_guardar_favorito">Guardar en Favoritos</string>
+    <string name="detalle_gestionar">Gestionar publicaciA3n</string>
+    <string name="precio_formato">$ %1$.2f</string>
+
+</resources>
