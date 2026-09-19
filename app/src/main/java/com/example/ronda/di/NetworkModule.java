@@ -4,6 +4,7 @@ import android.os.Build;
 import android.util.Log;
 
 import com.example.ronda.data.network.AuthApiService;
+import com.example.ronda.data.network.OfertaApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.network.UsuarioApiService;
 import com.example.ronda.data.repository.SessionRepository;
@@ -131,6 +132,16 @@ public class NetworkModule {
     @Singleton
     public UsuarioApiService provideUsuarioApiService(Retrofit retrofit) {
         return retrofit.create(UsuarioApiService.class);
+    }
+
+    /**
+     * Ofertas y negociacion del Punto 7. Es la primera interfaz que no recibe
+     * el token por parametro: se lo pone el interceptor de provideOkHttpClient.
+     */
+    @Provides
+    @Singleton
+    public OfertaApiService provideOfertaApiService(Retrofit retrofit) {
+        return retrofit.create(OfertaApiService.class);
     }
 
     /**
