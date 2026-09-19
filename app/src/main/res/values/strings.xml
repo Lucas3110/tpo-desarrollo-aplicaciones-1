@@ -131,6 +131,22 @@
     <string name="mis_ofertas_contraoferta_enviada">Tu contraoferta sobre su oferta</string>
     <string name="mis_ofertas_foto_desc">Foto de la publicación</string>
 
+    <!-- Responder una oferta: aceptar, rechazar o contraofertar (Punto 7) -->
+    <string name="oferta_contraofertar">Contraofertar</string>
+    <string name="accion_cancelar">Cancelar</string>
+    <string name="oferta_confirmar_aceptar_titulo">Aceptar oferta</string>
+    <string name="oferta_confirmar_aceptar_mensaje">¿Aceptás %1$s por “%2$s”?</string>
+    <string name="oferta_confirmar_rechazar_titulo">Rechazar oferta</string>
+    <string name="oferta_confirmar_rechazar_mensaje">¿Rechazás %1$s por “%2$s”?</string>
+    <string name="contraoferta_titulo">Contraoferta</string>
+    <string name="contraoferta_oferta_actual">Te ofrecieron %1$s por “%2$s”</string>
+    <string name="contraoferta_monto_hint">Tu contrapropuesta</string>
+    <string name="contraoferta_mensaje_hint">Mensaje breve (opcional)</string>
+    <string name="contraoferta_enviar">Enviar</string>
+    <string name="contraoferta_enviada">Contraoferta enviada</string>
+    <string name="contraoferta_error_mismo_monto">Proponé un precio distinto; si estás de acuerdo, aceptá la oferta</string>
+    <string name="contraoferta_error_enviar">No pudimos enviar la contraoferta</string>
+
     <!-- Perfil (Punto 2) -->
     <string name="perfil_titulo">Mi perfil</string>
     <string name="perfil_error_carga">No pudimos cargar tu perfil</string>
