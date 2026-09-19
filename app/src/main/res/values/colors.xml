@@ -2,4 +2,11 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Estados de una oferta (Punto 7). Mismos tonos en la etiqueta y en los botones. -->
+    <color name="estado_pendiente">#FF9800</color>
+    <color name="estado_aceptada">#4CAF50</color>
+    <color name="estado_rechazada">#F44336</color>
+    <color name="estado_vencida">#9E9E9E</color>
+    <color name="fondo_formulario_oferta">#FAFAFA</color>
 </resources>

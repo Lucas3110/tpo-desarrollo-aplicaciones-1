@@ -97,7 +97,7 @@ public class DetallePublicacionFragment extends Fragment {
             if (mPub == null) return;
             boolean esVendedor = mPub.isEsMia();
             boolean puedeOfertar = mPub.getAcciones().isPuedeOfertar();
-            OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), esVendedor, puedeOfertar);
+            OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), esVendedor, puedeOfertar, mPub.getPrecio());
             bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
         });
         btnGuardar.setOnClickListener(v -> toggleFavorito());
@@ -110,7 +110,7 @@ public class DetallePublicacionFragment extends Fragment {
                         PreguntasBottomSheet bottomSheet = PreguntasBottomSheet.newInstance(mPub.getId(), true, false);
                         bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
                     } else {
-                        OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), true, false);
+                        OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), true, false, mPub.getPrecio());
                         bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
                     }
                 })
