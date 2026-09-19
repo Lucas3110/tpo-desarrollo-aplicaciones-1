@@ -1,10 +1,12 @@
 package com.example.ronda.di;
 
 import android.os.Build;
+import android.util.Log;
 
 import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.network.UsuarioApiService;
+import com.example.ronda.data.repository.SessionRepository;
 
 import java.util.concurrent.TimeUnit;
 
@@ -15,6 +17,7 @@ import dagger.Provides;
 import dagger.hilt.InstallIn;
 import dagger.hilt.components.SingletonComponent;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -50,16 +53,44 @@ public class NetworkModule {
     /** Cuanto se espera al servidor antes de dar la request por fallida. */
     private static final long TIMEOUT_SEGUNDOS = 15;
 
+    private static final String TAG_RED = "Red";
+    private static final String CABECERA_AUTH = "Authorization";
+
     /**
-     * Retrofit usa OkHttp por debajo. Se configura el cliente a mano para
-     * fijar los timeouts (apunte "API REST y Retrofit", consideracion 3):
-     * si el celular apunta a una IP que no responde, la app espera 15 s y
-     * cae en onFailure con un IOException, en vez del default de 10 s.
+     * Retrofit usa OkHttp por debajo. Se configura el cliente a mano por dos
+     * motivos:
+     *
+     * 1. Los timeouts (apunte "API REST y Retrofit", consideracion 3): si el
+     *    celular apunta a una IP que no responde, la app espera 15 s y cae en
+     *    onFailure con un IOException, en vez del default de 10 s.
+     *
+     * 2. El interceptor del JWT (clase 5, "JWT + LocalStorage"): antes de
+     *    enviar cada request lee el token guardado en SessionRepository
+     *    (nuestro "TokenManager") y, si hay sesion, agrega solo la cabecera
+     *    Authorization. Asi las interfaces nuevas no tienen que recibir el
+     *    bearer a mano en cada metodo. Si una request ya trae la cabecera
+     *    (las interfaces de los Puntos 1 a 4 la pasan con @Header), se
+     *    respeta tal cual: nunca se manda dos veces.
      */
     @Provides
     @Singleton
-    public OkHttpClient provideOkHttpClient() {
+    public OkHttpClient provideOkHttpClient(SessionRepository sesion) {
         return new OkHttpClient.Builder()
+                .addInterceptor(chain -> {
+                    Request original = chain.request();
+                    String token = sesion.getToken();
+                    if (token == null || original.header(CABECERA_AUTH) != null) {
+                        // Sin sesion (login, registro, OTP) o ya venia puesta.
+                        return chain.proceed(original);
+                    }
+                    Request conToken = original.newBuilder()
+                            .header(CABECERA_AUTH, "Bearer " + token)
+                            .build();
+                    // Para verificar en Logcat que el token viaja (hands-on de la clase 5).
+                    Log.d(TAG_RED, "JWT agregado a " + original.method() + " "
+                            + original.url().encodedPath());
+                    return chain.proceed(conToken);
+                })
                 .connectTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
                 .readTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
                 .writeTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
