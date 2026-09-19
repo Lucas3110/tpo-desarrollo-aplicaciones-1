@@ -154,7 +154,7 @@
     <string name="accion_quitar_guardar">Quitado de favoritos</string>
     <string name="accion_gestionar">Abrir gestión de publicación...</string>
     <string name="accion_perfil">Ver perfil público...</string>
-    <string name="reputacion_formato">Reputación: %1$.1f estrellas (%2 operaciones)</string>
+    <string name="reputacion_formato">Reputación: %1$.1f estrellas (%2$d calificaciones)</string>
     <string name="reputacion_vacia">Aún no tiene calificaciones</string>
     <string name="error_publicacion_id">Falta el ID de la publicación</string>
     <string name="error_telefono_invalido">El teléfono solo puede tener números, espacios, guiones y paréntesis</string>
@@ -162,13 +162,17 @@
 
 
 
-    <string name="detalle_descripcion">DescripciA3n</string>
-    <string name="detalle_info_vendedor">InformaciA3n del vendedor</string>
-    <string name="detalle_ver_perfil">Ver perfil pAblico</string>
+    <string name="detalle_descripcion">Descripción</string>
+    <string name="detalle_info_vendedor">Información del vendedor</string>
+    <string name="detalle_ver_perfil">Ver perfil público</string>
     <string name="detalle_preguntar">Preguntar</string>
     <string name="detalle_ofertar">Ofertar</string>
     <string name="detalle_guardar_favorito">Guardar en Favoritos</string>
-    <string name="detalle_gestionar">Gestionar publicaciA3n</string>
+    <string name="detalle_gestionar">Gestionar publicación</string>
+    <string name="detalle_gestionar_ver_preguntas">Ver preguntas</string>
+    <string name="detalle_gestionar_ver_ofertas">Ver ofertas</string>
+    <string name="detalle_quitar_favorito">Quitar de favoritos</string>
+    <string name="detalle_error_carga">No pudimos cargar la publicación</string>
     <string name="precio_formato">$ %1$.2f</string>
 
 </resources>

@@ -104,8 +104,10 @@ public class DetallePublicacionFragment extends Fragment {
         btnGestionar.setOnClickListener(v -> {
             if (mPub == null) return;
             new android.app.AlertDialog.Builder(requireContext())
-                .setTitle("Gestionar Publicación")
-                .setItems(new CharSequence[]{"Ver Preguntas", "Ver Ofertas"}, (dialog, which) -> {
+                .setTitle(R.string.detalle_gestionar)
+                .setItems(new CharSequence[]{
+                        getString(R.string.detalle_gestionar_ver_preguntas),
+                        getString(R.string.detalle_gestionar_ver_ofertas)}, (dialog, which) -> {
                     if (which == 0) {
                         PreguntasBottomSheet bottomSheet = PreguntasBottomSheet.newInstance(mPub.getId(), true, false);
                         bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
@@ -137,7 +139,7 @@ public class DetallePublicacionFragment extends Fragment {
                     poblarUi(response.body().getPublicacion());
                 } else {
                     ErrorResponse.Detalle error = ApiErrorParser.parse(response);
-                    String mensaje = ApiErrorParser.mensaje(error, "Ocurrió un error inesperado");
+                    String mensaje = ApiErrorParser.mensaje(error, getString(R.string.detalle_error_carga));
                     Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -175,7 +177,9 @@ public class DetallePublicacionFragment extends Fragment {
             
             PublicacionDetalleResponse.Reputacion rep = pub.getVendedor().getReputacion();
             if (rep != null && rep.getPromedioEstrellas() != null) {
-                tvReputacion.setText(String.format(getString(R.string.reputacion_formato), 
+                // getString con argumentos: el recurso tiene %1$.1f y %2$d, asi que
+                // String.format sobre el texto ya resuelto rompia en tiempo de ejecucion.
+                tvReputacion.setText(getString(R.string.reputacion_formato,
                         rep.getPromedioEstrellas(), rep.getCantidadCalificaciones()));
             } else {
                 tvReputacion.setText(getString(R.string.reputacion_vacia));
@@ -191,7 +195,7 @@ public class DetallePublicacionFragment extends Fragment {
             btnGestionar.setVisibility(mPub.getAcciones().isPuedeGestionar() ? View.VISIBLE : View.GONE);
             
             esFavorito = mPub.isEsFavorito();
-            btnGuardar.setText(esFavorito ? "Quitar de Favoritos" : "Guardar en Favoritos");
+            btnGuardar.setText(esFavorito ? R.string.detalle_quitar_favorito : R.string.detalle_guardar_favorito);
         }
     }
     
@@ -202,7 +206,7 @@ public class DetallePublicacionFragment extends Fragment {
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         esFavorito = false;
-                        btnGuardar.setText("Guardar en Favoritos");
+                        btnGuardar.setText(R.string.detalle_guardar_favorito);
                         Toast.makeText(requireContext(), getString(R.string.accion_quitar_guardar), Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -215,7 +219,7 @@ public class DetallePublicacionFragment extends Fragment {
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         esFavorito = true;
-                        btnGuardar.setText("Quitar de Favoritos");
+                        btnGuardar.setText(R.string.detalle_quitar_favorito);
                         Toast.makeText(requireContext(), getString(R.string.accion_guardar), Toast.LENGTH_SHORT).show();
                     }
                 }
