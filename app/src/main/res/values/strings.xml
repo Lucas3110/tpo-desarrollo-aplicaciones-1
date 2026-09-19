@@ -268,6 +268,14 @@
     <string name="mis_pausar_titulo">¿Pausar publicación?</string>
     <string name="mis_reactivar_titulo">¿Reactivar publicación?</string>
     <string name="mis_confirmar">Sí</string>
+
+    <!-- Punto 6: modo sin conexión -->
+    <string name="sin_conexion_datos_de">Sin conexión · datos guardados a las %1$s</string>
+    <string name="sin_conexion_datos_de_fecha">Sin conexión · datos guardados el %1$s</string>
+    <string name="sin_conexion_sin_cache">Sin conexión y todavía no hay nada guardado. Conectate para ver las publicaciones.</string>
+    <string name="sin_conexion_detalle_no_guardado">Sin conexión y esta publicación no está guardada. Abrila una vez con internet para poder verla después.</string>
+    <string name="sin_conexion_accion">Necesitás conexión para hacer esto</string>
+    <string name="sin_conexion_volvio">Volvió la conexión, actualizando…</string>
     <string name="entrega_titulo">Punto de entrega</string>
     <string name="entrega_como_llegar">Cómo llegar</string>
     <string name="entrega_coordenadas">Punto de encuentro: %1$s</string>

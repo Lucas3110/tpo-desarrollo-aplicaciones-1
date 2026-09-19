@@ -6,6 +6,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!--
+      Punto 6: ConnectivityManager necesita este permiso para poder responder
+      si hay red. Es de los que se conceden solos al instalar, no hay que
+      pedirlo en runtime.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
       Android 16 (API 36) estrenó la "Local Network Protection": INTERNET ya no
       alcanza para conectarse a una direccion de la RED LOCAL, hace falta este
       permiso aparte y ademas concederlo en tiempo de ejecucion.

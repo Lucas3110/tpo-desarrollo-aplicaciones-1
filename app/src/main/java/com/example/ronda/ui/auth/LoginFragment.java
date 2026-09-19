@@ -26,6 +26,7 @@ import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.repository.SessionRepository;
+import com.example.ronda.util.Conectividad;
 
 import javax.inject.Inject;
 
@@ -51,6 +52,10 @@ public class LoginFragment extends Fragment {
 
     @Inject
     SessionRepository sesion;
+
+    /** Punto 6: sin red no se puede validar el token contra el servidor. */
+    @Inject
+    Conectividad conectividad;
 
     private EditText etEmail;
     private EditText etPassword;
@@ -181,6 +186,19 @@ public class LoginFragment extends Fragment {
     // asi, entra directo al Home.
     private void validarSesionYEntrar(View view) {
         if (!estaVivo()) return;
+
+        // Punto 6: sin conexion no hay a quien preguntarle si el token sigue
+        // valido, y quedarse en el login dejaria la app inutilizable — con el
+        // modo sin conexion andando, pero sin forma de llegar a el.
+        //
+        // El token vive 7 dias y esta guardado aca: alcanza para dejar entrar.
+        // Si resulta que ya no servia, la primera request que se haga al
+        // recuperar la red devuelve 401 y el interceptor manda de vuelta al
+        // login. O sea que no se pierde la validacion, se pospone.
+        if (!conectividad.hayInternet()) {
+            irAlHome(view);
+            return;
+        }
 
         mostrarCargando(true);
 
