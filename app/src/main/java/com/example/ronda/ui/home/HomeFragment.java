@@ -39,6 +39,7 @@ import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.repository.SessionRepository;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -187,6 +188,8 @@ public class HomeFragment extends Fragment {
         tvUrlBase = view.findViewById(R.id.tvUrlBase);
         Button btnCerrarSesion = view.findViewById(R.id.btnCerrarSesion);
         Button btnMiPerfil = view.findViewById(R.id.btnMiPerfil);
+        Button btnPublicar = view.findViewById(R.id.btnPublicar);
+        Button btnMisPublicaciones = view.findViewById(R.id.btnMisPublicaciones);
         btnActualizar = view.findViewById(R.id.btnActualizar);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
@@ -229,6 +232,9 @@ public class HomeFragment extends Fragment {
         btnCerrarSesion.setOnClickListener(v -> cerrarSesion());
         btnMiPerfil.setOnClickListener(v ->
                 Navigation.findNavController(requireView()).navigate(R.id.action_home_to_perfil));
+        btnPublicar.setOnClickListener(v -> mostrarTutorialPublicacion());
+        btnMisPublicaciones.setOnClickListener(v -> Navigation.findNavController(requireView())
+                .navigate(R.id.action_home_to_mis_publicaciones));
         btnActualizar.setOnClickListener(v -> {
             // En el vacio "con busqueda" el boton limpia; en el vacio a secas, actualiza.
             if (filtros.hayAlgoAplicado()) {
@@ -250,6 +256,16 @@ public class HomeFragment extends Fragment {
         if (categorias == null) {
             cargarCategorias();
         }
+    }
+
+    private void mostrarTutorialPublicacion() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.tutorial_titulo)
+                .setMessage(R.string.tutorial_mensaje)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.tutorial_empezar, (dialogo, cual) ->
+                        Navigation.findNavController(requireView()).navigate(R.id.action_home_to_publicar))
+                .show();
     }
 
     // -----------------------------------------------------------------

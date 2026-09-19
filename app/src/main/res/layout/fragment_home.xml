@@ -36,6 +36,20 @@
             android:text="@string/home_mi_perfil" />
 
         <Button
+            android:id="@+id/btnPublicar"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/publicar" />
+
+        <Button
+            android:id="@+id/btnMisPublicaciones"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/mis_publicaciones_corto" />
+
+        <Button
             android:id="@+id/btnCerrarSesion"
             style="?attr/borderlessButtonStyle"
             android:layout_width="wrap_content"

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+        <TextView android:id="@+id/tvPaso" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:textStyle="bold" android:textSize="14sp" />
+        <TextView android:id="@+id/tvTituloPaso" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:textSize="24sp" android:textStyle="bold" />
+
+        <LinearLayout android:id="@+id/pasoFotos" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="20dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/publicar_fotos_ayuda" />
+            <Button android:id="@+id/btnElegirFotos" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                android:text="@string/publicar_elegir_fotos" />
+            <TextView android:id="@+id/tvFotosElegidas" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp" />
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="120dp"
+                android:layout_marginTop="8dp">
+                <LinearLayout android:id="@+id/contenedorFotos" android:layout_width="wrap_content"
+                    android:layout_height="match_parent" android:orientation="horizontal" />
+            </HorizontalScrollView>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/pasoDatos" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="20dp">
+            <EditText android:id="@+id/etTituloPublicacion" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:hint="@string/publicar_titulo_hint"
+                android:maxLength="120" android:inputType="textCapSentences" />
+            <EditText android:id="@+id/etDescripcion" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:hint="@string/publicar_descripcion_hint"
+                android:minLines="3" android:gravity="top" android:inputType="textCapSentences|textMultiLine" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:text="@string/publicar_categoria" />
+            <Spinner android:id="@+id/spCategoriaPublicar" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <EditText android:id="@+id/etPrecio" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:hint="@string/publicar_precio_hint" android:inputType="numberDecimal" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:text="@string/publicar_estado_articulo" />
+            <Spinner android:id="@+id/spEstadoArticulo" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:text="@string/publicar_zona" />
+            <Spinner android:id="@+id/spZonaPublicar" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <EditText android:id="@+id/etDireccionEntrega" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                android:hint="@string/publicar_direccion_hint" android:maxLength="255"
+                android:inputType="textPostalAddress|textCapWords" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/publicar_direccion_privacidad" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/pasoRevision" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="20dp">
+            <TextView android:id="@+id/tvResumenPublicacion" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textSize="16sp" />
+        </LinearLayout>
+
+        <ProgressBar android:id="@+id/pbPublicar" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginTop="24dp">
+            <Button android:id="@+id/btnDescartar" style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="@string/publicar_descartar" />
+            <Button android:id="@+id/btnAnterior" android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="@string/publicar_anterior" />
+            <Button android:id="@+id/btnSiguiente" android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="@string/publicar_siguiente" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

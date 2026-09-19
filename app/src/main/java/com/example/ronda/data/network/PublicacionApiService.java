@@ -3,10 +3,21 @@ package com.example.ronda.data.network;
 import com.example.ronda.data.model.CategoriasResponse;
 import com.example.ronda.data.model.PaginaPublicacionesResponse;
 import com.example.ronda.data.model.ZonasResponse;
+import com.example.ronda.data.model.BorradorResponse;
+import com.example.ronda.data.model.CambiarEstadoRequest;
+import com.example.ronda.data.model.GuardarBorradorRequest;
+import com.example.ronda.data.model.MisPublicacionesResponse;
+import com.example.ronda.data.model.PublicacionRequest;
+import com.example.ronda.data.model.PublicacionResponse;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.Body;
+import retrofit2.http.DELETE;
+import retrofit2.http.PATCH;
+import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -60,6 +71,32 @@ public interface PublicacionApiService {
     /** Catalogo de zonas para el filtro. Publico. */
     @GET("api/zonas")
     Call<ZonasResponse> zonas();
+
+    /** Punto 5: crea una publicación y elimina el borrador en el servidor. */
+    @POST("api/publicaciones")
+    Call<PublicacionResponse> crear(@Header("Authorization") String bearer,
+                                    @Body PublicacionRequest request);
+
+    /** Publicaciones de la persona autenticada. */
+    @GET("api/publicaciones/mias")
+    Call<MisPublicacionesResponse> mias(@Header("Authorization") String bearer,
+                                        @Query("estado") String estado);
+
+    /** Pausa o reactiva una publicación propia. */
+    @PATCH("api/publicaciones/{id}/estado")
+    Call<PublicacionResponse> cambiarEstado(@Header("Authorization") String bearer,
+                                            @Path("id") int id,
+                                            @Body CambiarEstadoRequest request);
+
+    @GET("api/publicaciones/borrador")
+    Call<BorradorResponse> obtenerBorrador(@Header("Authorization") String bearer);
+
+    @PUT("api/publicaciones/borrador")
+    Call<BorradorResponse> guardarBorrador(@Header("Authorization") String bearer,
+                                           @Body GuardarBorradorRequest request);
+
+    @DELETE("api/publicaciones/borrador")
+    Call<Void> descartarBorrador(@Header("Authorization") String bearer);
 
     /** Obtiene el detalle completo de una publicacion, incluyendo acciones permitidas segun sesion. */
     @GET("api/publicaciones/{id}")
