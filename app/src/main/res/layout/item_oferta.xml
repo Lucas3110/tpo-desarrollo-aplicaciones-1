@@ -78,6 +78,9 @@
         tools:text="Vence en 47 h"
         tools:visibility="visible" />
 
+    <!-- Con backgroundTint el boton cambia de fondo pero conserva el color de
+         texto del tema (violeta), que sobre el verde y el rojo casi no se lee:
+         por eso se fija el texto en blanco. -->
     <LinearLayout
         android:id="@+id/llAccionesOferta"
         android:layout_width="match_parent"
@@ -94,7 +97,8 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:backgroundTint="@color/estado_aceptada"
-            android:text="@string/oferta_aceptar" />
+            android:text="@string/oferta_aceptar"
+            android:textColor="@color/white" />
 
         <Button
             android:id="@+id/btnRechazarOferta"
@@ -103,6 +107,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:backgroundTint="@color/estado_rechazada"
-            android:text="@string/oferta_rechazar" />
+            android:text="@string/oferta_rechazar"
+            android:textColor="@color/white" />
     </LinearLayout>
 </LinearLayout>
