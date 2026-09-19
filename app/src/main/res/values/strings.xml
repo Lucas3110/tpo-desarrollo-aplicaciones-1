@@ -108,6 +108,28 @@
     <string name="oferta_vence_en_horas">Vence en %1$d h</string>
     <string name="oferta_vence_en_minutos">Vence en %1$d min</string>
 
+    <string name="estado_oferta_pendiente">Pendiente</string>
+    <string name="estado_oferta_aceptada">Aceptada</string>
+    <string name="estado_oferta_rechazada">Rechazada</string>
+    <string name="estado_oferta_vencida">Vencida</string>
+
+    <!-- Mis ofertas (Punto 7) -->
+    <string name="home_mis_ofertas">Mis ofertas</string>
+    <string name="mis_ofertas_titulo">Mis ofertas</string>
+    <string name="mis_ofertas_actualizar">Actualizar</string>
+    <string name="mis_ofertas_tab_enviadas">Enviadas</string>
+    <string name="mis_ofertas_tab_recibidas">Recibidas</string>
+    <string name="mis_ofertas_tab_con_cantidad">%1$s (%2$d)</string>
+    <string name="mis_ofertas_vacio_enviadas">Todavía no hiciste ninguna oferta</string>
+    <string name="mis_ofertas_vacio_recibidas">Todavía no recibiste ofertas</string>
+    <string name="mis_ofertas_error_carga">No pudimos cargar tus ofertas</string>
+    <string name="mis_ofertas_reintentar">Reintentar</string>
+    <string name="mis_ofertas_para">Para %1$s</string>
+    <string name="mis_ofertas_de">De %1$s</string>
+    <string name="mis_ofertas_contraoferta_recibida">Contraoferta del vendedor sobre tu oferta</string>
+    <string name="mis_ofertas_contraoferta_enviada">Tu contraoferta sobre su oferta</string>
+    <string name="mis_ofertas_foto_desc">Foto de la publicación</string>
+
     <!-- Perfil (Punto 2) -->
     <string name="perfil_titulo">Mi perfil</string>
     <string name="perfil_error_carga">No pudimos cargar tu perfil</string>

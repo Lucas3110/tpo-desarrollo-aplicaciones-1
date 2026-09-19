@@ -190,6 +190,7 @@ public class HomeFragment extends Fragment {
         Button btnMiPerfil = view.findViewById(R.id.btnMiPerfil);
         Button btnPublicar = view.findViewById(R.id.btnPublicar);
         Button btnMisPublicaciones = view.findViewById(R.id.btnMisPublicaciones);
+        Button btnMisOfertas = view.findViewById(R.id.btnMisOfertas);
         btnActualizar = view.findViewById(R.id.btnActualizar);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
@@ -235,6 +236,8 @@ public class HomeFragment extends Fragment {
         btnPublicar.setOnClickListener(v -> mostrarTutorialPublicacion());
         btnMisPublicaciones.setOnClickListener(v -> Navigation.findNavController(requireView())
                 .navigate(R.id.action_home_to_mis_publicaciones));
+        btnMisOfertas.setOnClickListener(v ->
+                Navigation.findNavController(requireView()).navigate(R.id.action_home_to_misOfertas));
         btnActualizar.setOnClickListener(v -> {
             // En el vacio "con busqueda" el boton limpia; en el vacio a secas, actualiza.
             if (filtros.hayAlgoAplicado()) {
