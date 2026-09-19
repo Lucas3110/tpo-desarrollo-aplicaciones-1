@@ -20,7 +20,6 @@ import com.example.ronda.data.model.ListaOfertasResponse;
 import com.example.ronda.data.model.OfertaUnicaResponse;
 import com.example.ronda.data.model.OfertarRequest;
 import com.example.ronda.data.network.PublicacionApiService;
-import com.example.ronda.di.NetworkModule;
 import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.model.ErrorResponse;
@@ -47,7 +46,13 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
     private OfertasAdapter adapter;
     @Inject
     PublicacionApiService apiService;
-    private SessionRepository sessionRepository;
+    /**
+     * Se pide con @Inject en vez de hacer new SessionRepository(context):
+     * Hilt entrega el mismo singleton que usan el resto de las pantallas y
+     * le pasa el contexto de la aplicacion, no el del dialogo (clase 4, DI).
+     */
+    @Inject
+    SessionRepository sessionRepository;
 
     public OfertasBottomSheet(int publicacionId, boolean esVendedor, boolean puedeOfertar) {
         this.publicacionId = publicacionId;
@@ -66,9 +71,6 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
         llHacerOferta = view.findViewById(R.id.llHacerOferta);
         etMontoOferta = view.findViewById(R.id.etMontoOferta);
         btnEnviarOferta = view.findViewById(R.id.btnEnviarOferta);
-
-        sessionRepository = new SessionRepository(requireContext());
-        
 
         rvOfertas.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new OfertasAdapter();

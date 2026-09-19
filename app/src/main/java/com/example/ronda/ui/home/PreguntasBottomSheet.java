@@ -20,7 +20,6 @@ import com.example.ronda.data.model.PreguntaUnicaResponse;
 import com.example.ronda.data.model.PreguntarRequest;
 import com.example.ronda.data.model.ResponderRequest;
 import com.example.ronda.data.network.PublicacionApiService;
-import com.example.ronda.di.NetworkModule;
 import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.model.ErrorResponse;
@@ -47,7 +46,9 @@ public class PreguntasBottomSheet extends BottomSheetDialogFragment {
     private PreguntasAdapter adapter;
     @Inject
     PublicacionApiService apiService;
-    private SessionRepository sessionRepository;
+    /** Igual que en OfertasBottomSheet: lo provee Hilt, no se instancia a mano. */
+    @Inject
+    SessionRepository sessionRepository;
 
     public PreguntasBottomSheet(int publicacionId, boolean esVendedor, boolean puedePreguntar) {
         this.publicacionId = publicacionId;
@@ -67,8 +68,6 @@ public class PreguntasBottomSheet extends BottomSheetDialogFragment {
         etNuevaPregunta = view.findViewById(R.id.etNuevaPregunta);
         btnEnviarPregunta = view.findViewById(R.id.btnEnviarPregunta);
 
-        sessionRepository = new SessionRepository(requireContext());
-        
 
         rvPreguntas.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new PreguntasAdapter();
