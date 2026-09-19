@@ -285,6 +285,7 @@ public class LoginFragment extends Fragment {
                                           @NonNull Throwable t) {
                         if (!estaVivo()) return;
                         mostrarCargando(false);
+                        android.util.Log.e("ERROR_RED", "Fallo de conexion", t);
                           Toast.makeText(requireContext(),
                                   R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
                     }

@@ -58,6 +58,9 @@ public class DetallePublicacionFragment extends Fragment {
     @Inject
     Conectividad conectividad;
 
+    @Inject
+    com.example.ronda.data.repository.FavoritosRepository favoritosRepository;
+
     private int publicacionId = -1;
     private PublicacionDetalleResponse.Publicacion mPub;
     private boolean esFavorito = false;
@@ -336,19 +339,35 @@ public class DetallePublicacionFragment extends Fragment {
             btnGuardar.setVisibility(mPub.getAcciones().isPuedeGuardar() ? View.VISIBLE : View.GONE);
             btnGestionar.setVisibility(mPub.getAcciones().isPuedeGestionar() ? View.VISIBLE : View.GONE);
             
-            esFavorito = mPub.isEsFavorito();
-            btnGuardar.setText(esFavorito ? R.string.detalle_quitar_favorito : R.string.detalle_guardar_favorito);
+            if (mPub.isEsMia()) {
+                btnGuardar.setVisibility(View.GONE);
+            } else {
+                btnGuardar.setVisibility(View.VISIBLE);
+                esFavorito = mPub.isEsFavorito();
+                btnGuardar.setText(esFavorito ? R.string.detalle_quitar_favorito : R.string.detalle_guardar_favorito);
+                if (btnGuardar instanceof com.google.android.material.button.MaterialButton) {
+                    ((com.google.android.material.button.MaterialButton) btnGuardar)
+                            .setIconResource(esFavorito ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
+                }
+            }
         }
     }
     
     private void toggleFavorito() {
+        if (!sesion.haySesion()) {
+            Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
+            return;
+        }
         if (esFavorito) {
-            publicacionApi.quitarFavorito(sesion.getBearer(), publicacionId).enqueue(new Callback<Void>() {
+            favoritosRepository.quitarFavorito(publicacionId).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         esFavorito = false;
                         btnGuardar.setText(R.string.detalle_guardar_favorito);
+                        if (btnGuardar instanceof com.google.android.material.button.MaterialButton) {
+                            ((com.google.android.material.button.MaterialButton) btnGuardar).setIconResource(R.drawable.ic_favorite_border);
+                        }
                         Toast.makeText(requireContext(), getString(R.string.accion_quitar_guardar), Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -356,12 +375,15 @@ public class DetallePublicacionFragment extends Fragment {
                 public void onFailure(Call<Void> call, Throwable t) {}
             });
         } else {
-            publicacionApi.agregarFavorito(sesion.getBearer(), publicacionId).enqueue(new Callback<Void>() {
+            favoritosRepository.agregarFavorito(publicacionId).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         esFavorito = true;
                         btnGuardar.setText(R.string.detalle_quitar_favorito);
+                        if (btnGuardar instanceof com.google.android.material.button.MaterialButton) {
+                            ((com.google.android.material.button.MaterialButton) btnGuardar).setIconResource(R.drawable.ic_favorite);
+                        }
                         Toast.makeText(requireContext(), getString(R.string.accion_guardar), Toast.LENGTH_SHORT).show();
                     }
                 }

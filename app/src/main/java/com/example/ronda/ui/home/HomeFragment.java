@@ -46,6 +46,9 @@ import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.util.Conectividad;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.example.ronda.data.repository.FavoritosRepository;
+import com.example.ronda.data.model.GuardarBusquedaRequest;
+import java.util.Map;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -103,6 +106,9 @@ public class HomeFragment extends Fragment {
     @Inject
     Conectividad conectividad;
 
+    @Inject
+    FavoritosRepository favoritosRepository;
+
     /** Que se ve en el area central: una sola de estas vistas a la vez. */
     private enum Estado { CARGANDO, LISTA, VACIO, ERROR }
 
@@ -142,6 +148,7 @@ public class HomeFragment extends Fragment {
     private boolean errorPaginado = false;
     private Snackbar snackbarPaginado;
     private Call<PaginaPublicacionesResponse> llamadaEnCurso;
+    private boolean requiereSincronizacion = false;
 
     // --- Vistas ---
     private PanelFiltros panel;
@@ -230,11 +237,60 @@ public class HomeFragment extends Fragment {
         // El adapter se crea una sola vez y trabaja sobre la misma lista
         // "items"; la vista nueva simplemente se engancha a el.
         if (adapter == null) {
-            adapter = new PublicacionAdapter(items);
+            adapter = new PublicacionAdapter(items, sesion.getUsuarioId(), new PublicacionAdapter.OnItemClickListener() {
+                @Override
+                public void onPublicacionClick(PublicacionItemResponse item) {
+                    requiereSincronizacion = true;
+                    abrirDetalle(item);
+                }
+
+                @Override
+                public void onFavoritoClick(PublicacionItemResponse item) {
+                    if (!sesion.haySesion()) {
+                        Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
+                        return;
+                    }
+                    // Optimistic toggle
+                    boolean eraFavorito = item.isFavorito();
+                    item.setEsFavorito(!eraFavorito);
+                    adapter.notifyDataSetChanged();
+
+                    if (eraFavorito) {
+                        favoritosRepository.quitarFavorito(item.getId()).enqueue(new Callback<Void>() {
+                            @Override
+                            public void onResponse(Call<Void> call, Response<Void> response) {
+                                if (!response.isSuccessful()) {
+                                    item.setEsFavorito(true);
+                                    adapter.notifyDataSetChanged();
+                                }
+                            }
+                            @Override
+                            public void onFailure(Call<Void> call, Throwable t) {
+                                item.setEsFavorito(true);
+                                adapter.notifyDataSetChanged();
+                            }
+                        });
+                    } else {
+                        favoritosRepository.agregarFavorito(item.getId()).enqueue(new Callback<Void>() {
+                            @Override
+                            public void onResponse(Call<Void> call, Response<Void> response) {
+                                if (!response.isSuccessful()) {
+                                    item.setEsFavorito(false);
+                                    adapter.notifyDataSetChanged();
+                                }
+                            }
+                            @Override
+                            public void onFailure(Call<Void> call, Throwable t) {
+                                item.setEsFavorito(false);
+                                adapter.notifyDataSetChanged();
+                            }
+                        });
+                    }
+                }
+            });
         }
         lvPublicaciones.setAdapter(adapter);
-        lvPublicaciones.setOnItemClickListener((parent, fila, posicion, id) ->
-                abrirDetalle(adapter.getItem(posicion)));
+
         lvPublicaciones.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView vista, int estado) {
@@ -261,6 +317,24 @@ public class HomeFragment extends Fragment {
                 .navigate(R.id.action_home_to_mis_publicaciones));
         btnMisOfertas.setOnClickListener(v ->
                 Navigation.findNavController(requireView()).navigate(R.id.action_home_to_misOfertas));
+                
+        Button btnFavoritos = view.findViewById(R.id.btnFavoritos);
+        if (btnFavoritos != null) {
+            btnFavoritos.setOnClickListener(v -> {
+                if (!sesion.haySesion()) {
+                    Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
+                } else {
+                    requiereSincronizacion = true;
+                    Navigation.findNavController(requireView()).navigate(R.id.action_home_to_favoritos);
+                }
+            });
+        }
+        
+        Button btnGuardarBusqueda = view.findViewById(R.id.btnGuardarBusqueda);
+        if (btnGuardarBusqueda != null) {
+            btnGuardarBusqueda.setOnClickListener(v -> guardarBusquedaDialog());
+        }
+
         btnActualizar.setOnClickListener(v -> {
             // En el vacio "con busqueda" el boton limpia; en el vacio a secas, actualiza.
             if (filtros.hayAlgoAplicado()) {
@@ -283,6 +357,86 @@ public class HomeFragment extends Fragment {
             cargarCategorias();
         }
         contarOfertasPendientes();
+        
+        // Listener para filtros de búsqueda guardada
+        Navigation.findNavController(view).getCurrentBackStackEntry().getSavedStateHandle()
+                .getLiveData("busquedaFiltros")
+                .observe(getViewLifecycleOwner(), filtrosRecibidos -> {
+                    if (filtrosRecibidos != null) {
+                        requiereSincronizacion = false; // aplicarFiltrosDeBusqueda ya hace un recargar
+                        aplicarFiltrosDeBusqueda((Map<String, String>) filtrosRecibidos);
+                        Navigation.findNavController(view).getCurrentBackStackEntry()
+                                .getSavedStateHandle().remove("busquedaFiltros");
+                    }
+                });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (requiereSincronizacion && !items.isEmpty()) {
+            requiereSincronizacion = false;
+            recargar();
+        }
+    }
+
+    private void aplicarFiltrosDeBusqueda(Map<String, String> f) {
+        filtros.limpiarTodo();
+        if (f.containsKey("q")) filtros.setQ(f.get("q"));
+        if (f.containsKey("categoriaId")) filtros.setCategoriaId(Integer.parseInt(f.get("categoriaId")));
+        if (f.containsKey("precioMin")) filtros.setPrecioMin(Double.parseDouble(f.get("precioMin")));
+        if (f.containsKey("precioMax")) filtros.setPrecioMax(Double.parseDouble(f.get("precioMax")));
+        if (f.containsKey("zonaId")) {
+            // El listado de filtros usa soloMiZona (boolean) en UI.
+            // Para aplicarlo programaticamente, si tiene zonaId asumimos que es true.
+            filtros.setSoloMiZona(true);
+        }
+        if (f.containsKey("orden")) filtros.setOrden(f.get("orden"));
+        if (f.containsKey("estadoArticulo")) {
+            filtros.setEstadoArticuloDesdeString(f.get("estadoArticulo"));
+        }
+        
+        etBuscar.setText(filtros.getQ() != null ? filtros.getQ() : "");
+        panel.volcar(filtros);
+        panel.actualizarBoton(filtros);
+        recargar();
+    }
+
+    private void guardarBusquedaDialog() {
+        if (!sesion.haySesion()) {
+            Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
+            return;
+        }
+        EditText input = new EditText(requireContext());
+        input.setHint("Nombre de la búsqueda");
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Guardar búsqueda")
+                .setView(input)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Guardar", (dialog, which) -> {
+                    String nombre = input.getText().toString();
+                    Map<String, String> mapFiltros = filtros.toMap();
+                    if (mapFiltros.isEmpty()) {
+                        Toast.makeText(requireContext(), "No hay filtros para guardar", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    GuardarBusquedaRequest req = new GuardarBusquedaRequest(nombre, mapFiltros);
+                    favoritosRepository.guardarBusqueda(req).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            if (response.isSuccessful()) {
+                                Toast.makeText(requireContext(), "Búsqueda guardada", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(requireContext(), "Error al guardar", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+                            Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                })
+                .show();
     }
 
     private void mostrarTutorialPublicacion() {

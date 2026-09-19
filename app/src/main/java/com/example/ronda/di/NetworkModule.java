@@ -192,4 +192,10 @@ public class NetworkModule {
     public OfertaApiService provideOfertaApiService(Retrofit retrofit) {
         return retrofit.create(OfertaApiService.class);
     }
+
+    @Provides
+    @Singleton
+    public com.example.ronda.data.network.FavoritosApiService provideFavoritosApiService(Retrofit retrofit) {
+        return retrofit.create(com.example.ronda.data.network.FavoritosApiService.class);
+    }
 }
