@@ -141,6 +141,21 @@ public class SessionRepository {
         borrarTokenCifrado();
     }
 
+    /**
+     * Borra TODO, incluida la preferencia de biometría y el email.
+     *
+     * Se usa al dar de alta una cuenta nueva. La diferencia con cerrarSesion()
+     * está en quién vuelve: si cerrás sesión, lo normal es que vuelvas vos, y
+     * por eso se conserva la preferencia. Si en cambio se está creando otra
+     * cuenta, la persona es otra, y dejarle la huella y el token cifrado del
+     * anterior significa que la app te ofrece entrar con la sesión de alguien
+     * más.
+     */
+    public void olvidarTodo() {
+        prefs.edit().clear().apply();
+        borrarTokenCifrado();
+    }
+
     // -----------------------------------------------------------------
     // Punto 1 · desbloqueo con biometría
     // -----------------------------------------------------------------
