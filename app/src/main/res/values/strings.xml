@@ -229,4 +229,10 @@
     <string name="mis_pausar_titulo">¿Pausar publicación?</string>
     <string name="mis_reactivar_titulo">¿Reactivar publicación?</string>
     <string name="mis_confirmar">Sí</string>
+    <string name="entrega_titulo">Punto de entrega</string>
+    <string name="entrega_como_llegar">Cómo llegar</string>
+    <string name="entrega_coordenadas">Punto de encuentro: %1$s</string>
+    <string name="entrega_sin_direccion">El vendedor aún no indicó el punto de entrega.</string>
+    <string name="entrega_no_disponible">El punto de entrega no está disponible para tu cuenta.</string>
+    <string name="entrega_sin_maps">No encontramos una aplicación de mapas o navegador para abrir la ruta.</string>
 </resources>
