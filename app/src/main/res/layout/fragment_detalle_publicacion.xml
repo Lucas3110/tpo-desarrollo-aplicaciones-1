@@ -69,7 +69,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Descripción"
+                android:text="@string/detalle_descripcion"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -92,7 +92,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Información del vendedor"
+                android:text="@string/detalle_info_vendedor"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -119,7 +119,7 @@
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Ver perfil público"
+                android:text="@string/detalle_ver_perfil"
                 android:textColor="?attr/colorPrimary" />
 
             <View
@@ -166,7 +166,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Gestionar publicación"
+                    android:text="@string/detalle_gestionar"
                     android:visibility="gone" />
             </LinearLayout>
 
