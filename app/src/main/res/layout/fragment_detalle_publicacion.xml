@@ -140,6 +140,33 @@
                 android:text="@string/detalle_ver_perfil"
                 android:textColor="?attr/colorPrimary" />
 
+            <LinearLayout
+                android:id="@+id/panelEntrega"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/entrega_titulo"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tvDireccionEntrega"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:saveEnabled="false"
+                    android:textSize="16sp" />
+                <Button
+                    android:id="@+id/btnComoLlegar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/entrega_como_llegar" />
+            </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"

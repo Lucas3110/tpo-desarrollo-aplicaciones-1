@@ -1,6 +1,7 @@
 package com.example.ronda.ui.home;
 
 import android.os.Bundle;
+import android.content.DialogInterface;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -48,6 +49,7 @@ import retrofit2.Response;
  */
 @AndroidEntryPoint
 public class OfertasBottomSheet extends BottomSheetDialogFragment {
+    public static final String RESULTADO_CERRADO = "ofertas_cerradas";
 
     private static final String ARG_PUBLICACION_ID = "publicacionId";
     private static final String ARG_ES_VENDEDOR = "esVendedor";
@@ -414,5 +416,12 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
 
     private boolean estaVivo() {
         return isAdded() && getView() != null;
+    }
+
+    @Override public void onDismiss(@NonNull DialogInterface dialog) {
+        super.onDismiss(dialog);
+        if (isAdded()) {
+            getParentFragmentManager().setFragmentResult(RESULTADO_CERRADO, new Bundle());
+        }
     }
 }

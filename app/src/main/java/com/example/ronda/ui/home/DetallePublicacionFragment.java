@@ -1,6 +1,9 @@
 package com.example.ronda.ui.home;
 
 import android.os.Bundle;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.net.Uri;
 import android.text.format.DateFormat;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
@@ -21,6 +24,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ronda.R;
 import com.example.ronda.data.model.PublicacionDetalleResponse;
+import com.example.ronda.data.model.EntregaResponse;
+import com.example.ronda.ui.entrega.EnlaceEntrega;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.PublicacionApiService;
@@ -56,6 +61,10 @@ public class DetallePublicacionFragment extends Fragment {
     private int publicacionId = -1;
     private PublicacionDetalleResponse.Publicacion mPub;
     private boolean esFavorito = false;
+    private Call<PublicacionDetalleResponse> llamadaDetalle;
+    private View panelEntrega;
+    private TextView tvDireccionEntrega;
+    private Button btnComoLlegar;
 
     private TextView tvSinConexionDetalle;
     private ProgressBar progressBar;
@@ -103,6 +112,14 @@ public class DetallePublicacionFragment extends Fragment {
         btnGuardar = view.findViewById(R.id.btnGuardar);
         btnGestionar = view.findViewById(R.id.btnGestionar);
         btnVerPerfil = view.findViewById(R.id.btnVerPerfil);
+        panelEntrega = view.findViewById(R.id.panelEntrega);
+        tvDireccionEntrega = view.findViewById(R.id.tvDireccionEntrega);
+        btnComoLlegar = view.findViewById(R.id.btnComoLlegar);
+        // Antes de salir a Maps, revalidar que el backend siga autorizando la entrega.
+        btnComoLlegar.setOnClickListener(v -> cargarDetallePublicacion(true));
+        getChildFragmentManager().setFragmentResultListener(
+                OfertasBottomSheet.RESULTADO_CERRADO, getViewLifecycleOwner(),
+                (key, result) -> cargarDetallePublicacion());
         
         btnPreguntar.setOnClickListener(v -> {
             if (mPub == null || !hayConexionParaActuar()) return;
@@ -138,9 +155,7 @@ public class DetallePublicacionFragment extends Fragment {
         });
         btnVerPerfil.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_perfil), Toast.LENGTH_SHORT).show());
 
-        if (publicacionId != -1) {
-            cargarDetallePublicacion();
-        } else {
+        if (publicacionId == -1) {
             Toast.makeText(requireContext(), getString(R.string.error_publicacion_id), Toast.LENGTH_SHORT).show();
         }
     }
@@ -224,18 +239,35 @@ public class DetallePublicacionFragment extends Fragment {
         });
     }
     private void cargarDetallePublicacion() {
+        cargarDetallePublicacion(false);
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+        if (publicacionId != -1) cargarDetallePublicacion();
+    }
+
+    private void cargarDetallePublicacion(boolean abrirMapa) {
+        if (!estaVivo() || publicacionId == -1) return;
+        if (llamadaDetalle != null) llamadaDetalle.cancel();
+        mPub = null;
+        panelEntrega.setVisibility(View.GONE);
+        tvDireccionEntrega.setText("");
         mostrarCargando(true);
-        publicacionApi.getDetallePublicacion(sesion.getBearer(), publicacionId).enqueue(new Callback<PublicacionDetalleResponse>() {
+        llamadaDetalle = publicacionApi.getDetallePublicacion(sesion.getBearer(), publicacionId);
+        llamadaDetalle.enqueue(new Callback<PublicacionDetalleResponse>() {
             @Override
             public void onResponse(@NonNull Call<PublicacionDetalleResponse> call, @NonNull Response<PublicacionDetalleResponse> response) {
-                if (!estaVivo()) return;
+                if (!estaVivo() || call.isCanceled() || call != llamadaDetalle) return;
                 mostrarCargando(false);
 
-                if (response.isSuccessful() && response.body() != null) {
+                if (response.isSuccessful() && response.body() != null
+                        && response.body().getPublicacion() != null) {
                     // Punto 6: queda guardado para poder abrirlo sin conexion.
                     cache.guardarDetalle(response.body().getPublicacion());
                     if (tvSinConexionDetalle != null) tvSinConexionDetalle.setVisibility(View.GONE);
                     poblarUi(response.body().getPublicacion());
+                    if (abrirMapa) abrirMapa(mPub.getEntrega());
                 } else {
                     ErrorResponse.Detalle error = ApiErrorParser.parse(response);
                     String mensaje = ApiErrorParser.mensaje(error, getString(R.string.detalle_error_carga));
@@ -244,7 +276,7 @@ public class DetallePublicacionFragment extends Fragment {
             }
             @Override
             public void onFailure(@NonNull Call<PublicacionDetalleResponse> call, @NonNull Throwable t) {
-                if (!estaVivo()) return;
+                if (!estaVivo() || call.isCanceled() || call != llamadaDetalle) return;
                 mostrarCargando(false);
                 // Punto 6: antes de dar error, probamos con lo guardado.
                 mostrarDesdeCache();
@@ -255,6 +287,14 @@ public class DetallePublicacionFragment extends Fragment {
     private void poblarUi(PublicacionDetalleResponse.Publicacion pub) {
         this.mPub = pub;
         scrollView.setVisibility(View.VISIBLE);
+        EntregaResponse entrega = pub.getEntrega();
+        panelEntrega.setVisibility(entrega == null ? View.GONE : View.VISIBLE);
+        btnComoLlegar.setVisibility(entrega != null && entrega.tieneDestino() ? View.VISIBLE : View.GONE);
+        if (entrega != null) {
+            tvDireccionEntrega.setText(!entrega.getDireccion().isEmpty() ? entrega.getDireccion()
+                    : entrega.tieneCoordenadas() ? getString(R.string.entrega_coordenadas, entrega.getDestino())
+                    : getString(R.string.entrega_sin_direccion));
+        }
 
         tvTitulo.setText(pub.getTitulo());
         // Mismo formato de precio que el listado del Home y las ofertas:
@@ -338,5 +378,25 @@ public class DetallePublicacionFragment extends Fragment {
 
     private boolean estaVivo() {
         return isAdded() && getView() != null;
+    }
+
+    private void abrirMapa(EntregaResponse entrega) {
+        String enlace = EnlaceEntrega.crear(entrega);
+        if (enlace == null) {
+            Toast.makeText(requireContext(), R.string.entrega_no_disponible, Toast.LENGTH_LONG).show();
+            return;
+        }
+        // Google Maps maneja esta URL si está instalado; de lo contrario abre el navegador.
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(enlace)));
+        } catch (ActivityNotFoundException | SecurityException e) {
+            Toast.makeText(requireContext(), R.string.entrega_sin_maps, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override public void onDestroyView() {
+        if (llamadaDetalle != null) llamadaDetalle.cancel();
+        mPub = null;
+        super.onDestroyView();
     }
 }
