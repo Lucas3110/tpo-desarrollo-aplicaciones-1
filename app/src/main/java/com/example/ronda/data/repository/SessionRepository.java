@@ -119,8 +119,25 @@ public class SessionRepository {
         return haySesion() ? getBearer() : null;
     }
 
+    /**
+     * Cierra la sesión: se va el token y los datos de la persona.
+     *
+     * NO se borra la preferencia de biometría. Es una preferencia del
+     * dispositivo, no de la sesión: si alguien ya eligió "entrar con huella",
+     * volver a preguntárselo en cada login es molesto y da la sensación de
+     * que la app no se acuerda de nada.
+     *
+     * La copia cifrada del token sí se borra, y esa es la parte que importa:
+     * después de cerrar sesión, la huella no puede resucitar la sesión
+     * anterior. Para volver a entrar hay que poner la contraseña.
+     */
     public void cerrarSesion() {
-        prefs.edit().clear().apply();
+        // El email queda: no es un secreto y sirve para precargar el formulario.
+        prefs.edit()
+                .remove(CLAVE_TOKEN)
+                .remove(CLAVE_ZONA_ID)
+                .remove(CLAVE_ZONA_NOMBRE)
+                .apply();
         borrarTokenCifrado();
     }
 

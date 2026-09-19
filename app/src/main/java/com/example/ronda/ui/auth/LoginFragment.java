@@ -140,12 +140,21 @@ public class LoginFragment extends Fragment {
     /**
      * Despues de un login exitoso, ofrecer el desbloqueo con huella.
      *
-     * Se pregunta una sola vez: si dice que no, no se vuelve a insistir hasta
-     * que cierre sesion. Y solo se ofrece si el dispositivo realmente puede
-     * hacerlo, para no prometer algo que despues falla.
+     * Si ya lo habia activado antes no se vuelve a preguntar: solo se repone
+     * la copia cifrada del token nuevo. Cerrar sesion borra el token cifrado
+     * a proposito — si no, la huella resucitaria una sesion que la persona
+     * cerro — pero deja la preferencia, asi que hay que reponerlo aca.
+     *
+     * Y solo se ofrece si el dispositivo realmente puede hacerlo, para no
+     * prometer algo que despues falla.
      */
     private void ofrecerBiometria(View view, String token) {
-        if (sesion.esBiometriaActivada() || !DesbloqueoBiometrico.estaDisponible(requireContext())) {
+        if (sesion.esBiometriaActivada()) {
+            sesion.guardarTokenCifrado(token);
+            irAlHome(view);
+            return;
+        }
+        if (!DesbloqueoBiometrico.estaDisponible(requireContext())) {
             irAlHome(view);
             return;
         }
