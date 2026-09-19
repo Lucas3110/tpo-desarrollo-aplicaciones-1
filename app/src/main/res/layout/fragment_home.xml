@@ -10,6 +10,10 @@
     android:orientation="vertical"
     tools:context=".ui.home.HomeFragment">
 
+    <!-- Encabezado. Con las pantallas de los Puntos 5 y 7 ya no entran todos
+         los botones en una fila junto al titulo (en 360dp se cortaba el
+         ultimo), asi que el titulo y "Cerrar sesion" quedan arriba y los
+         accesos a las secciones van en una fila que se desplaza sola. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -29,27 +33,6 @@
             android:textStyle="bold" />
 
         <Button
-            android:id="@+id/btnMiPerfil"
-            style="?attr/borderlessButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/home_mi_perfil" />
-
-        <Button
-            android:id="@+id/btnPublicar"
-            style="?attr/borderlessButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/publicar" />
-
-        <Button
-            android:id="@+id/btnMisPublicaciones"
-            style="?attr/borderlessButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/mis_publicaciones_corto" />
-
-        <Button
             android:id="@+id/btnCerrarSesion"
             style="?attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
@@ -57,6 +40,62 @@
             android:text="@string/home_cerrar_sesion" />
 
     </LinearLayout>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnMisOfertas"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="@string/home_mis_ofertas" />
+
+            <Button
+                android:id="@+id/btnPublicar"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="@string/publicar" />
+
+            <Button
+                android:id="@+id/btnMisPublicaciones"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="@string/mis_publicaciones_corto" />
+
+            <Button
+                android:id="@+id/btnMiPerfil"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="@string/home_mi_perfil" />
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
 
     <!-- Buscador: escribe, toca la lupa (o la del teclado) y se pide la
          pagina 1 con q. La "x" aparece solo cuando hay texto. -->

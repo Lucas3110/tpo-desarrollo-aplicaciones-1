@@ -27,6 +27,31 @@
             app:destination="@id/detallePublicacionFragment" />
         <action android:id="@+id/action_home_to_publicar" app:destination="@id/publicarFragment" />
         <action android:id="@+id/action_home_to_mis_publicaciones" app:destination="@id/misPublicacionesFragment" />
+
+        <!-- Punto 7: mis ofertas. -->
+        <action
+            android:id="@+id/action_home_to_misOfertas"
+            app:destination="@id/misOfertasFragment" />
+    </fragment>
+
+    <!-- Punto 7: ofertas y negociacion -->
+    <fragment
+        android:id="@+id/misOfertasFragment"
+        android:name="com.example.ronda.ui.ofertas.MisOfertasFragment"
+        android:label="Mis ofertas"
+        tools:layout="@layout/fragment_mis_ofertas">
+
+        <!-- Tocar una oferta abre la publicacion a la que pertenece. -->
+        <action
+            android:id="@+id/action_misOfertas_to_detalle"
+            app:destination="@id/detallePublicacionFragment" />
+
+        <!-- Sesion vencida (401): se vuelve al login. -->
+        <action
+            android:id="@+id/action_misOfertas_to_auth"
+            app:destination="@id/auth_nav_graph"
+            app:popUpTo="@id/home_nav_graph"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <fragment android:id="@+id/publicarFragment"
