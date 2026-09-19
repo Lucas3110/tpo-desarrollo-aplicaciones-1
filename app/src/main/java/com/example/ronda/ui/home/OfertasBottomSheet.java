@@ -1,6 +1,8 @@
 package com.example.ronda.ui.home;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,65 +12,90 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.ronda.R;
+import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.model.EstadoOfertaRequest;
 import com.example.ronda.data.model.ListaOfertasResponse;
+import com.example.ronda.data.model.OfertaResponse;
 import com.example.ronda.data.model.OfertaUnicaResponse;
 import com.example.ronda.data.model.OfertarRequest;
-import com.example.ronda.data.network.PublicacionApiService;
-import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.data.network.ApiErrorParser;
-import com.example.ronda.data.model.ErrorResponse;
+import com.example.ronda.data.network.OfertaApiService;
+import com.example.ronda.ui.ofertas.FormatoOferta;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
-import dagger.hilt.android.AndroidEntryPoint;
+
 import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * Ofertas de una publicacion, desde su detalle (Puntos 4 y 7).
+ *
+ * Arriba el historial (el vendedor ve todas; un interesado, las suyas y las
+ * contraofertas que recibio) y abajo el formulario para proponer un precio
+ * distinto con un mensaje breve opcional. Usa OfertaApiService, que no
+ * recibe el token: lo agrega el interceptor de OkHttp (clase 5).
+ */
 @AndroidEntryPoint
 public class OfertasBottomSheet extends BottomSheetDialogFragment {
+
+    private static final String ARG_PUBLICACION_ID = "publicacionId";
+    private static final String ARG_ES_VENDEDOR = "esVendedor";
+    private static final String ARG_PUEDE_OFERTAR = "puedeOfertar";
+    private static final String ARG_PRECIO_PUBLICADO = "precioPublicado";
+
+    /** Tope del backend para el mensaje (responde MENSAJE_LARGO si se pasa). */
+    static final int MAX_MENSAJE = 200;
+
     private int publicacionId;
     private boolean esVendedor;
     private boolean puedeOfertar;
+    private double precioPublicado;
 
     private RecyclerView rvOfertas;
     private ProgressBar pbLoading;
     private TextView tvSinOfertas;
     private LinearLayout llHacerOferta;
+    private TextView tvPrecioPublicado;
     private EditText etMontoOferta;
+    private EditText etMensajeOferta;
+    private TextView tvContadorMensaje;
     private Button btnEnviarOferta;
 
     private OfertasAdapter adapter;
-    @Inject
-    PublicacionApiService apiService;
-    /**
-     * Se pide con @Inject en vez de hacer new SessionRepository(context):
-     * Hilt entrega el mismo singleton que usan el resto de las pantallas y
-     * le pasa el contexto de la aplicacion, no el del dialogo (clase 4, DI).
-     */
-    @Inject
-    SessionRepository sessionRepository;
 
-    private static final String ARG_PUBLICACION_ID = "publicacionId";
-    private static final String ARG_ES_VENDEDOR = "esVendedor";
-    private static final String ARG_PUEDE_OFERTAR = "puedeOfertar";
+    @Inject
+    OfertaApiService ofertaApi;
+
+    private Call<ListaOfertasResponse> llamadaLista;
+    private Call<OfertaUnicaResponse> llamadaOfertar;
+    private Call<OfertaUnicaResponse> llamadaResponder;
 
     /**
      * Los Fragments (y este dialogo lo es) los recrea el sistema con el
      * constructor vacio, por ejemplo al rotar la pantalla: si recibieran los
      * datos por constructor, al volver quedarian en cero o directamente no
      * se podrian instanciar. Por eso viajan en el Bundle de argumentos.
+     *
+     * @param precioPublicado para mostrarlo y frenar antes de mandar una
+     *                        oferta que lo supere (el backend igual lo valida).
      */
-    public static OfertasBottomSheet newInstance(int publicacionId, boolean esVendedor, boolean puedeOfertar) {
+    public static OfertasBottomSheet newInstance(int publicacionId, boolean esVendedor,
+                                                 boolean puedeOfertar, double precioPublicado) {
         Bundle args = new Bundle();
         args.putInt(ARG_PUBLICACION_ID, publicacionId);
         args.putBoolean(ARG_ES_VENDEDOR, esVendedor);
         args.putBoolean(ARG_PUEDE_OFERTAR, puedeOfertar);
+        args.putDouble(ARG_PRECIO_PUBLICADO, precioPublicado);
         OfertasBottomSheet dialogo = new OfertasBottomSheet();
         dialogo.setArguments(args);
         return dialogo;
@@ -81,18 +108,23 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
         publicacionId = args.getInt(ARG_PUBLICACION_ID);
         esVendedor = args.getBoolean(ARG_ES_VENDEDOR);
         puedeOfertar = args.getBoolean(ARG_PUEDE_OFERTAR);
+        precioPublicado = args.getDouble(ARG_PRECIO_PUBLICADO);
     }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.bottom_sheet_ofertas, container, false);
-        
+
         rvOfertas = view.findViewById(R.id.rvOfertas);
         pbLoading = view.findViewById(R.id.pbLoadingOfertas);
         tvSinOfertas = view.findViewById(R.id.tvSinOfertas);
         llHacerOferta = view.findViewById(R.id.llHacerOferta);
+        tvPrecioPublicado = view.findViewById(R.id.tvPrecioPublicado);
         etMontoOferta = view.findViewById(R.id.etMontoOferta);
+        etMensajeOferta = view.findViewById(R.id.etMensajeOferta);
+        tvContadorMensaje = view.findViewById(R.id.tvContadorMensaje);
         btnEnviarOferta = view.findViewById(R.id.btnEnviarOferta);
 
         rvOfertas.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -100,95 +132,235 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
         rvOfertas.setAdapter(adapter);
 
         if (puedeOfertar) {
-            llHacerOferta.setVisibility(View.VISIBLE);
-            btnEnviarOferta.setOnClickListener(v -> hacerOferta());
+            configurarFormulario();
         }
 
         cargarOfertas();
-
         return view;
     }
+
+    private void configurarFormulario() {
+        llHacerOferta.setVisibility(View.VISIBLE);
+        if (precioPublicado > 0) {
+            tvPrecioPublicado.setText(getString(R.string.oferta_precio_publicado,
+                    FormatoOferta.precio(precioPublicado)));
+            tvPrecioPublicado.setVisibility(View.VISIBLE);
+        }
+        actualizarContador();
+        etMensajeOferta.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                actualizarContador();
+            }
+        });
+        btnEnviarOferta.setOnClickListener(v -> hacerOferta());
+    }
+
+    private void actualizarContador() {
+        tvContadorMensaje.setText(getString(R.string.oferta_mensaje_contador,
+                etMensajeOferta.getText().length(), MAX_MENSAJE));
+    }
+
+    // -----------------------------------------------------------------
+    // Historial
+    // -----------------------------------------------------------------
 
     private void cargarOfertas() {
         pbLoading.setVisibility(View.VISIBLE);
         tvSinOfertas.setVisibility(View.GONE);
-        
-        apiService.listarOfertas("Bearer " + sessionRepository.getToken(), publicacionId).enqueue(new Callback<ListaOfertasResponse>() {
+
+        llamadaLista = ofertaApi.deLaPublicacion(publicacionId);
+        llamadaLista.enqueue(new Callback<ListaOfertasResponse>() {
             @Override
-            public void onResponse(Call<ListaOfertasResponse> call, Response<ListaOfertasResponse> response) {
+            public void onResponse(@NonNull Call<ListaOfertasResponse> call,
+                                   @NonNull Response<ListaOfertasResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
                 pbLoading.setVisibility(View.GONE);
+
                 if (response.isSuccessful() && response.body() != null) {
-                    if (response.body().getOfertas().isEmpty()) {
-                        tvSinOfertas.setVisibility(View.VISIBLE);
-                    } else {
-                        adapter.setOfertas(response.body().getOfertas(), response.body().isEsVendedor(), (ofertaId, estado) -> responderOferta(ofertaId, estado));
-                    }
+                    ListaOfertasResponse lista = response.body();
+                    boolean vacia = lista.getOfertas() == null || lista.getOfertas().isEmpty();
+                    tvSinOfertas.setVisibility(vacia ? View.VISIBLE : View.GONE);
+                    adapter.setOfertas(lista.getOfertas(), lista.isEsVendedor(),
+                            OfertasBottomSheet.this::responderOferta);
                 } else {
-                    ErrorResponse.Detalle err = ApiErrorParser.parse(response);
-                    String msg = ApiErrorParser.mensaje(err, "Error del servidor");
-                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+                    ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                    manejarError(response.code(), error, getString(R.string.ofertas_error_carga));
                 }
             }
 
             @Override
-            public void onFailure(Call<ListaOfertasResponse> call, Throwable t) {
+            public void onFailure(@NonNull Call<ListaOfertasResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
                 pbLoading.setVisibility(View.GONE);
-                Toast.makeText(getContext(), getString(R.string.error_sin_conexion), Toast.LENGTH_SHORT).show();
+                avisar(getString(R.string.error_sin_conexion));
             }
         });
     }
 
+    // -----------------------------------------------------------------
+    // Ofertar
+    // -----------------------------------------------------------------
+
     private void hacerOferta() {
-        String texto = etMontoOferta.getText().toString();
-        if (texto.trim().isEmpty()) return;
-        
-        double monto = 0;
-        try {
-            monto = Double.parseDouble(texto);
-        } catch (NumberFormatException e) {
+        Double monto = leerMonto();
+        if (monto == null) return;
+
+        String mensaje = etMensajeOferta.getText().toString().trim();
+        if (mensaje.length() > MAX_MENSAJE) {
+            etMensajeOferta.setError(getString(R.string.oferta_error_mensaje_largo, MAX_MENSAJE));
+            etMensajeOferta.requestFocus();
             return;
         }
 
         btnEnviarOferta.setEnabled(false);
-        apiService.hacerOferta("Bearer " + sessionRepository.getToken(), publicacionId, new OfertarRequest(monto)).enqueue(new Callback<OfertaUnicaResponse>() {
+        llamadaOfertar = ofertaApi.ofertar(publicacionId, new OfertarRequest(monto, mensaje));
+        llamadaOfertar.enqueue(new Callback<OfertaUnicaResponse>() {
             @Override
-            public void onResponse(Call<OfertaUnicaResponse> call, Response<OfertaUnicaResponse> response) {
+            public void onResponse(@NonNull Call<OfertaUnicaResponse> call,
+                                   @NonNull Response<OfertaUnicaResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
                 btnEnviarOferta.setEnabled(true);
+
                 if (response.isSuccessful()) {
                     etMontoOferta.setText("");
+                    etMensajeOferta.setText("");
+                    avisar(getString(R.string.oferta_enviada));
                     cargarOfertas();
                 } else {
-                    ErrorResponse.Detalle err = ApiErrorParser.parse(response);
-                    String msg = ApiErrorParser.mensaje(err, "Error del servidor");
-                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+                    ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                    manejarError(response.code(), error, getString(R.string.oferta_error_enviar));
                 }
             }
 
             @Override
-            public void onFailure(Call<OfertaUnicaResponse> call, Throwable t) {
+            public void onFailure(@NonNull Call<OfertaUnicaResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
                 btnEnviarOferta.setEnabled(true);
-                Toast.makeText(getContext(), getString(R.string.error_sin_conexion), Toast.LENGTH_SHORT).show();
+                avisar(getString(R.string.error_sin_conexion));
             }
         });
     }
 
+    /**
+     * Valida el monto antes de molestar al servidor: obligatorio, mayor a 0
+     * y no mayor al precio publicado. El error se muestra en el campo.
+     */
+    @Nullable
+    private Double leerMonto() {
+        String texto = etMontoOferta.getText().toString().trim();
+        if (texto.isEmpty()) {
+            etMontoOferta.setError(getString(R.string.oferta_error_monto_vacio));
+            etMontoOferta.requestFocus();
+            return null;
+        }
+        double monto;
+        try {
+            // El teclado numerico puede poner coma como separador decimal.
+            monto = Double.parseDouble(texto.replace(',', '.'));
+        } catch (NumberFormatException e) {
+            monto = 0;
+        }
+        if (monto <= 0) {
+            etMontoOferta.setError(getString(R.string.oferta_error_monto_invalido));
+            etMontoOferta.requestFocus();
+            return null;
+        }
+        if (precioPublicado > 0 && monto > precioPublicado) {
+            etMontoOferta.setError(getString(R.string.oferta_error_mayor_al_precio,
+                    FormatoOferta.precio(precioPublicado)));
+            etMontoOferta.requestFocus();
+            return null;
+        }
+        return monto;
+    }
+
+    // -----------------------------------------------------------------
+    // Aceptar / rechazar
+    // -----------------------------------------------------------------
+
     private void responderOferta(int ofertaId, String estado) {
-        apiService.responderOferta("Bearer " + sessionRepository.getToken(), ofertaId, new EstadoOfertaRequest(estado)).enqueue(new Callback<OfertaUnicaResponse>() {
+        llamadaResponder = ofertaApi.responder(ofertaId, new EstadoOfertaRequest(estado));
+        llamadaResponder.enqueue(new Callback<OfertaUnicaResponse>() {
             @Override
-            public void onResponse(Call<OfertaUnicaResponse> call, Response<OfertaUnicaResponse> response) {
+            public void onResponse(@NonNull Call<OfertaUnicaResponse> call,
+                                   @NonNull Response<OfertaUnicaResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
+
                 if (response.isSuccessful()) {
-                    cargarOfertas();
+                    avisar(getString(OfertaResponse.ACEPTADA.equals(estado)
+                            ? R.string.oferta_aceptada_ok : R.string.oferta_rechazada_ok));
                 } else {
-                    ErrorResponse.Detalle err = ApiErrorParser.parse(response);
-                    String msg = ApiErrorParser.mensaje(err, "Error del servidor");
-                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+                    ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                    manejarError(response.code(), error, getString(R.string.oferta_error_responder));
                 }
+                // Con exito o con error (vencida, ya respondida) el estado cambio: se refresca.
+                cargarOfertas();
             }
 
             @Override
-            public void onFailure(Call<OfertaUnicaResponse> call, Throwable t) {
-                Toast.makeText(getContext(), getString(R.string.error_sin_conexion), Toast.LENGTH_SHORT).show();
+            public void onFailure(@NonNull Call<OfertaUnicaResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
+                avisar(getString(R.string.error_sin_conexion));
             }
         });
+    }
+
+    // -----------------------------------------------------------------
+    // Errores y ciclo de vida
+    // -----------------------------------------------------------------
+
+    /**
+     * Errores que SI respondio el backend. Se decide por el codigo estable:
+     * los de validacion van al campo que corresponde, el resto se muestra
+     * tal cual lo mando el servidor.
+     */
+    private void manejarError(int httpCode, ErrorResponse.Detalle error, String porDefecto) {
+        String codigo = ApiErrorParser.codigo(error);
+        String mensaje = ApiErrorParser.mensaje(error, porDefecto);
+        if (httpCode == 401) {
+            avisar(getString(R.string.home_sesion_vencida));
+            dismiss();
+            return;
+        }
+        if ("MONTO_INVALIDO".equals(codigo) || "OFERTA_MAYOR_AL_PRECIO".equals(codigo)) {
+            etMontoOferta.setError(mensaje);
+            etMontoOferta.requestFocus();
+            return;
+        }
+        if ("MENSAJE_LARGO".equals(codigo)) {
+            etMensajeOferta.setError(mensaje);
+            etMensajeOferta.requestFocus();
+            return;
+        }
+        avisar(mensaje);
+    }
+
+    private void avisar(String mensaje) {
+        Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onDestroyView() {
+        cancelar(llamadaLista);
+        cancelar(llamadaOfertar);
+        cancelar(llamadaResponder);
+        super.onDestroyView();
+    }
+
+    private void cancelar(@Nullable Call<?> call) {
+        if (call != null) call.cancel();
+    }
+
+    private boolean estaVivo() {
+        return isAdded() && getView() != null;
     }
 }

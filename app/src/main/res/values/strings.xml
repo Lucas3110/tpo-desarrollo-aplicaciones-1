@@ -75,6 +75,39 @@
     <string name="home_detalle_pendiente">Muy pronto vas a poder ver el detalle de \"%1$s\"</string>
     <string name="home_mi_perfil">Mi perfil</string>
 
+    <!-- Ofertas y negociación (Puntos 4 y 7) -->
+    <string name="ofertas_titulo">Ofertas</string>
+    <string name="ofertas_vacio">Todavía no hay ofertas</string>
+    <string name="ofertas_error_carga">No pudimos cargar las ofertas</string>
+    <string name="oferta_precio_publicado">Precio publicado: %1$s</string>
+    <string name="oferta_monto_hint">Tu oferta</string>
+    <string name="oferta_mensaje_hint">Mensaje breve para el vendedor (opcional)</string>
+    <string name="oferta_mensaje_contador">%1$d/%2$d</string>
+    <string name="oferta_enviar">Ofertar</string>
+    <string name="oferta_enviada">Oferta enviada</string>
+    <string name="oferta_error_monto_vacio">Escribí cuánto ofrecés</string>
+    <string name="oferta_error_monto_invalido">La oferta tiene que ser mayor a 0</string>
+    <string name="oferta_error_mayor_al_precio">La oferta no puede superar el precio publicado (%1$s)</string>
+    <string name="oferta_error_mensaje_largo">El mensaje no puede tener más de %1$d caracteres</string>
+    <string name="oferta_error_enviar">No pudimos enviar la oferta</string>
+    <string name="oferta_error_responder">No pudimos responder la oferta</string>
+    <string name="oferta_aceptar">Aceptar</string>
+    <string name="oferta_rechazar">Rechazar</string>
+    <string name="oferta_aceptada_ok">Aceptaste la oferta</string>
+    <string name="oferta_rechazada_ok">Rechazaste la oferta</string>
+    <string name="oferta_de">Oferta de %1$s</string>
+    <string name="oferta_tuya">Tu oferta</string>
+    <string name="oferta_contraoferta_tuya">Tu contraoferta</string>
+    <string name="oferta_contraoferta_del_vendedor">Contraoferta del vendedor</string>
+    <string name="oferta_mensaje_formato">“%1$s”</string>
+    <string name="oferta_vencida">Vencida</string>
+    <plurals name="oferta_vence_en_dias">
+        <item quantity="one">Vence en %1$d día</item>
+        <item quantity="other">Vence en %1$d días</item>
+    </plurals>
+    <string name="oferta_vence_en_horas">Vence en %1$d h</string>
+    <string name="oferta_vence_en_minutos">Vence en %1$d min</string>
+
     <!-- Perfil (Punto 2) -->
     <string name="perfil_titulo">Mi perfil</string>
     <string name="perfil_error_carga">No pudimos cargar tu perfil</string>
