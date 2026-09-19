@@ -17,7 +17,14 @@
             app:destination="@id/auth_nav_graph"
             app:popUpTo="@id/home_nav_graph"
             app:popUpToInclusive="true" />
-            <action
+
+        <!-- Punto 2: mi perfil. -->
+        <action
+            android:id="@+id/action_home_to_perfil"
+            app:destination="@id/perfilFragment" />
+
+        <!-- Punto 4: detalle de una publicacion. -->
+        <action
             android:id="@+id/action_home_to_detalle"
             app:destination="@id/detallePublicacionFragment" />
     </fragment>
@@ -29,11 +36,6 @@
         <argument
             android:name="publicacionId"
             app:argType="integer" />
-
-        <!-- Punto 2: mi perfil. -->
-        <action
-            android:id="@+id/action_home_to_perfil"
-            app:destination="@id/perfilFragment" />
     </fragment>
 
     <!-- Punto 2 -->
