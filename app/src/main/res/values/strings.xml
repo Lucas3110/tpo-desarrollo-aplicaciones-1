@@ -114,6 +114,28 @@
     <string name="error_login_generico">No pudimos ingresar</string>
     <string name="error_email_para_codigo">Escribí tu email para enviarte el código</string>
     <string name="error_sin_conexion">No pudimos conectarnos con el servidor. Revisá tu conexión e intentá nuevamente.</string>
+
+    <string name="accion_preguntar">Abrir chat de preguntas...</string>
+    <string name="accion_ofertar">Abrir flujo de oferta...</string>
+    <string name="accion_guardar">Guardado en favoritos!</string>
+    <string name="accion_quitar_guardar">Quitado de favoritos</string>
+    <string name="accion_gestionar">Abrir gestión de publicación...</string>
+    <string name="accion_perfil">Ver perfil público...</string>
+    <string name="reputacion_formato">Reputación: %1$.1f estrellas (%2 operaciones)</string>
+    <string name="reputacion_vacia">Aún no tiene calificaciones</string>
+    <string name="error_publicacion_id">Falta el ID de la publicación</string>
     <string name="error_telefono_invalido">El teléfono solo puede tener números, espacios, guiones y paréntesis</string>
     <string name="error_telefono_largo">El teléfono no puede tener más de 30 caracteres</string>
+
+
+
+    <string name="detalle_descripcion">DescripciA3n</string>
+    <string name="detalle_info_vendedor">InformaciA3n del vendedor</string>
+    <string name="detalle_ver_perfil">Ver perfil pAblico</string>
+    <string name="detalle_preguntar">Preguntar</string>
+    <string name="detalle_ofertar">Ofertar</string>
+    <string name="detalle_guardar_favorito">Guardar en Favoritos</string>
+    <string name="detalle_gestionar">Gestionar publicaciA3n</string>
+    <string name="precio_formato">$ %1$.2f</string>
+
 </resources>

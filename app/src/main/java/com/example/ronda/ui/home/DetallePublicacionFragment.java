@@ -1,0 +1,236 @@
+package com.example.ronda.ui.home;
+
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.ronda.R;
+import com.example.ronda.data.model.PublicacionDetalleResponse;
+import com.example.ronda.data.network.ApiErrorParser;
+import com.example.ronda.data.model.ErrorResponse;
+import com.example.ronda.data.network.PublicacionApiService;
+import com.example.ronda.data.repository.SessionRepository;
+
+import javax.inject.Inject;
+import dagger.hilt.android.AndroidEntryPoint;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+@AndroidEntryPoint
+public class DetallePublicacionFragment extends Fragment {
+
+    @Inject
+    PublicacionApiService publicacionApi;
+
+    @Inject
+    SessionRepository sesion;
+
+    private int publicacionId = -1;
+    private PublicacionDetalleResponse.Publicacion mPub;
+    private boolean esFavorito = false;
+
+    private ProgressBar progressBar;
+    private ScrollView scrollView;
+    private RecyclerView rvFotos;
+    private TextView tvEstadoArticulo, tvTitulo, tvPrecio, tvDescripcion, tvVendedorNombre, tvReputacion;
+    private Button btnPreguntar, btnOfertar, btnGuardar, btnGestionar, btnVerPerfil;
+
+    public DetallePublicacionFragment() {}
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            publicacionId = getArguments().getInt("publicacionId", -1);
+        }
+    }
+
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_detalle_publicacion, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        progressBar = view.findViewById(R.id.progressBar);
+        scrollView = view.findViewById(R.id.scrollView);
+        
+        rvFotos = view.findViewById(R.id.rvFotos);
+        rvFotos.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        
+        tvEstadoArticulo = view.findViewById(R.id.tvEstadoArticulo);
+        tvTitulo = view.findViewById(R.id.tvTitulo);
+        tvPrecio = view.findViewById(R.id.tvPrecio);
+        tvDescripcion = view.findViewById(R.id.tvDescripcion);
+        tvVendedorNombre = view.findViewById(R.id.tvVendedorNombre);
+        tvReputacion = view.findViewById(R.id.tvReputacion);
+        
+        btnPreguntar = view.findViewById(R.id.btnPreguntar);
+        btnOfertar = view.findViewById(R.id.btnOfertar);
+        btnGuardar = view.findViewById(R.id.btnGuardar);
+        btnGestionar = view.findViewById(R.id.btnGestionar);
+        btnVerPerfil = view.findViewById(R.id.btnVerPerfil);
+        
+        btnPreguntar.setOnClickListener(v -> {
+            if (mPub == null) return;
+            boolean esVendedor = mPub.isEsMia();
+            boolean puedePreguntar = mPub.getAcciones().isPuedePreguntar();
+            PreguntasBottomSheet bottomSheet = new PreguntasBottomSheet(mPub.getId(), esVendedor, puedePreguntar);
+            bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
+        });
+        btnOfertar.setOnClickListener(v -> {
+            if (mPub == null) return;
+            boolean esVendedor = mPub.isEsMia();
+            boolean puedeOfertar = mPub.getAcciones().isPuedeOfertar();
+            OfertasBottomSheet bottomSheet = new OfertasBottomSheet(mPub.getId(), esVendedor, puedeOfertar);
+            bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
+        });
+        btnGuardar.setOnClickListener(v -> toggleFavorito());
+        btnGestionar.setOnClickListener(v -> {
+            if (mPub == null) return;
+            new android.app.AlertDialog.Builder(requireContext())
+                .setTitle("Gestionar Publicación")
+                .setItems(new CharSequence[]{"Ver Preguntas", "Ver Ofertas"}, (dialog, which) -> {
+                    if (which == 0) {
+                        PreguntasBottomSheet bottomSheet = new PreguntasBottomSheet(mPub.getId(), true, false);
+                        bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
+                    } else {
+                        OfertasBottomSheet bottomSheet = new OfertasBottomSheet(mPub.getId(), true, false);
+                        bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
+                    }
+                })
+                .show();
+        });
+        btnVerPerfil.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_perfil), Toast.LENGTH_SHORT).show());
+
+        if (publicacionId != -1) {
+            cargarDetallePublicacion();
+        } else {
+            Toast.makeText(requireContext(), getString(R.string.error_publicacion_id), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void cargarDetallePublicacion() {
+        mostrarCargando(true);
+        publicacionApi.getDetallePublicacion(sesion.getBearer(), publicacionId).enqueue(new Callback<PublicacionDetalleResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<PublicacionDetalleResponse> call, @NonNull Response<PublicacionDetalleResponse> response) {
+                if (!estaVivo()) return;
+                mostrarCargando(false);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    poblarUi(response.body().getPublicacion());
+                } else {
+                    ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                    String mensaje = ApiErrorParser.mensaje(error, "Ocurrió un error inesperado");
+                    Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<PublicacionDetalleResponse> call, @NonNull Throwable t) {
+                if (!estaVivo()) return;
+                mostrarCargando(false);
+                Toast.makeText(requireContext(), R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void poblarUi(PublicacionDetalleResponse.Publicacion pub) {
+        this.mPub = pub;
+        scrollView.setVisibility(View.VISIBLE);
+
+        tvTitulo.setText(pub.getTitulo());
+        tvPrecio.setText(getString(R.string.precio_formato, pub.getPrecio()));
+        tvDescripcion.setText(pub.getDescripcion());
+        
+        if (pub.getFotos() != null && !pub.getFotos().isEmpty()) {
+            FotosAdapter adapter = new FotosAdapter(pub.getFotos());
+            rvFotos.setAdapter(adapter);
+            rvFotos.setVisibility(View.VISIBLE);
+        } else {
+            rvFotos.setVisibility(View.GONE);
+        }
+
+        String fechaSimple = pub.getPublicadoEn() != null ? pub.getPublicadoEn().split("T")[0] : "";
+        String cat = pub.getCategoria() != null ? pub.getCategoria().getNombre() : "";
+        tvEstadoArticulo.setText(cat + " | " + pub.getEstadoArticuloTexto() + " | " + fechaSimple);
+
+        if (pub.getVendedor() != null) {
+            tvVendedorNombre.setText(pub.getVendedor().getNombre() + " - " + pub.getVendedor().getZona().getNombre());
+            
+            PublicacionDetalleResponse.Reputacion rep = pub.getVendedor().getReputacion();
+            if (rep != null && rep.getPromedioEstrellas() != null) {
+                tvReputacion.setText(String.format(getString(R.string.reputacion_formato), 
+                        rep.getPromedioEstrellas(), rep.getCantidadCalificaciones()));
+            } else {
+                tvReputacion.setText(getString(R.string.reputacion_vacia));
+            }
+        }
+
+        if (mPub.getAcciones() != null) {
+            // Mostrar siempre los botones para permitir abrir los historiales.
+            btnPreguntar.setVisibility(pub.getAcciones().isPuedePreguntar() ? View.VISIBLE : View.GONE);
+            // Ofertas requiere estar autenticado (el backend rechaza listarOfertas si no hay token).
+            btnOfertar.setVisibility(mPub.getAcciones().isPuedeOfertar() ? View.VISIBLE : View.GONE);
+            btnGuardar.setVisibility(mPub.getAcciones().isPuedeGuardar() ? View.VISIBLE : View.GONE);
+            btnGestionar.setVisibility(mPub.getAcciones().isPuedeGestionar() ? View.VISIBLE : View.GONE);
+            
+            esFavorito = mPub.isEsFavorito();
+            btnGuardar.setText(esFavorito ? "Quitar de Favoritos" : "Guardar en Favoritos");
+        }
+    }
+    
+    private void toggleFavorito() {
+        if (esFavorito) {
+            publicacionApi.quitarFavorito(sesion.getBearer(), publicacionId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        esFavorito = false;
+                        btnGuardar.setText("Guardar en Favoritos");
+                        Toast.makeText(requireContext(), getString(R.string.accion_quitar_guardar), Toast.LENGTH_SHORT).show();
+                    }
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {}
+            });
+        } else {
+            publicacionApi.agregarFavorito(sesion.getBearer(), publicacionId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        esFavorito = true;
+                        btnGuardar.setText("Quitar de Favoritos");
+                        Toast.makeText(requireContext(), getString(R.string.accion_guardar), Toast.LENGTH_SHORT).show();
+                    }
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {}
+            });
+        }
+    }
+
+    private void mostrarCargando(boolean cargando) {
+        progressBar.setVisibility(cargando ? View.VISIBLE : View.GONE);
+        if (cargando) scrollView.setVisibility(View.GONE);
+    }
+
+    private boolean estaVivo() {
+        return isAdded() && getView() != null;
+    }
+}
