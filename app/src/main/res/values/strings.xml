@@ -173,6 +173,5 @@
     <string name="detalle_gestionar_ver_ofertas">Ver ofertas</string>
     <string name="detalle_quitar_favorito">Quitar de favoritos</string>
     <string name="detalle_error_carga">No pudimos cargar la publicación</string>
-    <string name="precio_formato">$ %1$.2f</string>
 
 </resources>
