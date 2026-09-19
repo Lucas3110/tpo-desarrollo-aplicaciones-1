@@ -2,8 +2,15 @@ package com.example.ronda.data.repository;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
+
+import androidx.security.crypto.EncryptedSharedPreferences;
+import androidx.security.crypto.MasterKey;
 
 import com.example.ronda.data.model.ZonaResponse;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -25,18 +32,28 @@ import dagger.hilt.android.qualifiers.ApplicationContext;
 @Singleton
 public class SessionRepository {
 
+    private static final String TAG = "SessionRepository";
+
     private static final String ARCHIVO = "sesion_ronda";
     private static final String CLAVE_TOKEN = "token";
     private static final String CLAVE_EMAIL = "email";
     private static final String CLAVE_ZONA_ID = "zonaId";
     private static final String CLAVE_ZONA_NOMBRE = "zonaNombre";
+    private static final String CLAVE_BIOMETRIA = "biometriaActivada";
     private static final int SIN_ZONA = -1;
 
+    /** Archivo aparte, cifrado, sólo para la copia del token del Punto 1. */
+    private static final String ARCHIVO_CIFRADO = "sesion_ronda_cifrada";
+    private static final String CLAVE_TOKEN_CIFRADO = "tokenCifrado";
+
+    private final Context contexto;
     private final SharedPreferences prefs;
+    private SharedPreferences prefsCifradas;
 
     @Inject
     public SessionRepository(@ApplicationContext Context contexto) {
-        prefs = contexto.getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE);
+        this.contexto = contexto;
+        this.prefs = contexto.getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE);
     }
 
     public void guardarSesion(String token, String email) {
@@ -102,7 +119,115 @@ public class SessionRepository {
         return haySesion() ? getBearer() : null;
     }
 
+    /**
+     * Cierra la sesión: se va el token y los datos de la persona.
+     *
+     * NO se borra la preferencia de biometría. Es una preferencia del
+     * dispositivo, no de la sesión: si alguien ya eligió "entrar con huella",
+     * volver a preguntárselo en cada login es molesto y da la sensación de
+     * que la app no se acuerda de nada.
+     *
+     * La copia cifrada del token sí se borra, y esa es la parte que importa:
+     * después de cerrar sesión, la huella no puede resucitar la sesión
+     * anterior. Para volver a entrar hay que poner la contraseña.
+     */
     public void cerrarSesion() {
+        // El email queda: no es un secreto y sirve para precargar el formulario.
+        prefs.edit()
+                .remove(CLAVE_TOKEN)
+                .remove(CLAVE_ZONA_ID)
+                .remove(CLAVE_ZONA_NOMBRE)
+                .apply();
+        borrarTokenCifrado();
+    }
+
+    /**
+     * Borra TODO, incluida la preferencia de biometría y el email.
+     *
+     * Se usa al dar de alta una cuenta nueva. La diferencia con cerrarSesion()
+     * está en quién vuelve: si cerrás sesión, lo normal es que vuelvas vos, y
+     * por eso se conserva la preferencia. Si en cambio se está creando otra
+     * cuenta, la persona es otra, y dejarle la huella y el token cifrado del
+     * anterior significa que la app te ofrece entrar con la sesión de alguien
+     * más.
+     */
+    public void olvidarTodo() {
         prefs.edit().clear().apply();
+        borrarTokenCifrado();
+    }
+
+    // -----------------------------------------------------------------
+    // Punto 1 · desbloqueo con biometría
+    // -----------------------------------------------------------------
+    //
+    // La huella sola no alcanza: el sensor devuelve true o false, pero no sabe
+    // nada de la sesión en el backend. Lo que hace la biometría acá es abrir el
+    // candado sobre un token que ya estaba guardado — igual que la app del
+    // banco cuando pide huella para ver el saldo.
+    //
+    // Por eso el token vive en dos lugares:
+    //   plano   (sesion_ronda)         -> se lee en cada request para el header
+    //                                     Authorization; tiene que ser rápido.
+    //   cifrado (sesion_ronda_cifrada) -> sólo si la persona activó biometría.
+    //                                     Es el que se recupera DESPUÉS de
+    //                                     validar la huella.
+    //
+    // La diferencia importa: el archivo plano lo puede leer cualquiera con
+    // acceso al almacenamiento interno (un celular rooteado, un adb backup).
+    // La copia cifrada usa una llave del Keystore del dispositivo, que nunca
+    // sale del hardware, así que aunque alguien lea el archivo no puede
+    // reactivar la sesión sin pasar antes por el sensor.
+
+    public boolean esBiometriaActivada() {
+        return prefs.getBoolean(CLAVE_BIOMETRIA, false);
+    }
+
+    public void setBiometriaActivada(boolean activada) {
+        prefs.edit().putBoolean(CLAVE_BIOMETRIA, activada).apply();
+        if (!activada) borrarTokenCifrado();
+    }
+
+    public void guardarTokenCifrado(String token) {
+        SharedPreferences cifradas = prefsCifradas();
+        if (cifradas == null) return;
+        cifradas.edit().putString(CLAVE_TOKEN_CIFRADO, token).apply();
+    }
+
+    public String getTokenCifrado() {
+        SharedPreferences cifradas = prefsCifradas();
+        return cifradas == null ? null : cifradas.getString(CLAVE_TOKEN_CIFRADO, null);
+    }
+
+    private void borrarTokenCifrado() {
+        SharedPreferences cifradas = prefsCifradas();
+        if (cifradas != null) cifradas.edit().remove(CLAVE_TOKEN_CIFRADO).apply();
+    }
+
+    /**
+     * Construye (una sola vez) el archivo cifrado.
+     *
+     * Devuelve null si el dispositivo no puede crearlo — hay equipos viejos o
+     * con el Keystore roto donde EncryptedSharedPreferences falla. En ese caso
+     * la app sigue andando sin biometría en vez de crashear: es una comodidad,
+     * no el mecanismo de autenticación.
+     */
+    private SharedPreferences prefsCifradas() {
+        if (prefsCifradas != null) return prefsCifradas;
+        try {
+            MasterKey llave = new MasterKey.Builder(contexto)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build();
+
+            prefsCifradas = EncryptedSharedPreferences.create(
+                    contexto,
+                    ARCHIVO_CIFRADO,
+                    llave,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM);
+            return prefsCifradas;
+        } catch (GeneralSecurityException | IOException e) {
+            Log.e(TAG, "No pude abrir las preferencias cifradas", e);
+            return null;
+        }
     }
 }
