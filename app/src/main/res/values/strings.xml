@@ -115,6 +115,7 @@
 
     <!-- Mis ofertas (Punto 7) -->
     <string name="home_mis_ofertas">Mis ofertas</string>
+    <string name="home_mis_ofertas_con_pendientes">Mis ofertas (%1$d)</string>
     <string name="mis_ofertas_titulo">Mis ofertas</string>
     <string name="mis_ofertas_actualizar">Actualizar</string>
     <string name="mis_ofertas_tab_enviadas">Enviadas</string>
