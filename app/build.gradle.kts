@@ -85,6 +85,10 @@ dependencies {
     // EncryptedSharedPreferences: guarda la copia del token con una llave del
     // Keystore, que es lo que la huella desbloquea.
     implementation(libs.security.crypto)
+    // Room: la cache local del modo sin conexion (Punto 6). Como el proyecto
+    // es Java va con annotationProcessor, no con kapt.
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
