@@ -3,6 +3,28 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+/**
+ * Direccion del backend.
+ *
+ * Por defecto apunta al emulador: 10.0.2.2 es el alias que redirige al
+ * localhost de la PC ("localhost" NO sirve, desde el emulador apunta al
+ * propio emulador).
+ *
+ * Para probar en un celular fisico hay que poner la IP de la PC en
+ * `local.properties`, que NO se commitea:
+ *
+ *     ronda.baseUrl=http://192.168.0.153:3000/
+ *
+ * La IP la imprime el backend al arrancar, en la linea "Celular (WiFi) -> ...".
+ *
+ * Esta como propiedad y no como constante en el codigo a proposito: antes la
+ * IP vivia en NetworkModule.java, y cada vez que alguien la cambiaba para
+ * probar en su celular se la llevaba puesta en un commit y rompia el emulador
+ * de todos los demas.
+ */
+val urlDelBackend: String =
+    (project.findProperty("ronda.baseUrl") as String?) ?: "http://10.0.2.2:3000/"
+
 android {
     namespace = "com.example.ronda"
     compileSdk {
@@ -17,6 +39,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "BASE_URL", "\"$urlDelBackend\"")
+    }
+
+    // Desde AGP 8 hay que pedirlo explicitamente para que se genere
+    // BuildConfig con nuestros campos.
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -50,7 +80,13 @@ dependencies {
     // Glide: descarga, cachea y muestra la fotoPrincipal (una URL) de cada
     // publicacion en el listado. Sin annotationProcessor: no hace falta.
     implementation(libs.glide)
+    // Biometria: desbloqueo de la sesion con la huella del dispositivo (Punto 1)
+    implementation(libs.biometric)
+    // EncryptedSharedPreferences: guarda la copia del token con una llave del
+    // Keystore, que es lo que la huella desbloquea.
+    implementation(libs.security.crypto)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
 }
+

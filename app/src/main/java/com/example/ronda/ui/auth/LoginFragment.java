@@ -11,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
@@ -97,6 +98,90 @@ public class LoginFragment extends Fragment {
             return;
         }
 
+        // Punto 1: si la persona activo el desbloqueo biometrico, la sesion
+        // queda detras de la huella. Si no lo activo, el auto-login es el de
+        // siempre: no le pedimos algo que nunca eligio.
+        if (!sesion.esBiometriaActivada()) {
+            validarSesionYEntrar(view);
+            return;
+        }
+
+        DesbloqueoBiometrico.pedir(this, new DesbloqueoBiometrico.Callback() {
+            @Override
+            public void onDesbloqueado() {
+                // La huella no reemplaza al token: lo que hace es autorizar que
+                // recuperemos la copia cifrada y la usemos como sesion activa.
+                String token = sesion.getTokenCifrado();
+                if (token != null) {
+                    sesion.guardarSesion(token, sesion.getEmail());
+                }
+                validarSesionYEntrar(view);
+            }
+
+            @Override
+            public void onNoDisponible() {
+                // El dispositivo dejo de tener biometria utilizable (por ejemplo
+                // borraron todas las huellas). Se desactiva la preferencia para
+                // no dejar a la persona trabada pidiendole algo imposible.
+                sesion.setBiometriaActivada(false);
+                validarSesionYEntrar(view);
+            }
+
+            @Override
+            public void onCancelado() {
+                // Se queda en el login y puede entrar con email y contrasena.
+                if (!estaVivo()) return;
+                Toast.makeText(requireContext(),
+                        R.string.biometria_cancelada, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Despues de un login exitoso, ofrecer el desbloqueo con huella.
+     *
+     * Si ya lo habia activado antes no se vuelve a preguntar: solo se repone
+     * la copia cifrada del token nuevo. Cerrar sesion borra el token cifrado
+     * a proposito — si no, la huella resucitaria una sesion que la persona
+     * cerro — pero deja la preferencia, asi que hay que reponerlo aca.
+     *
+     * Y solo se ofrece si el dispositivo realmente puede hacerlo, para no
+     * prometer algo que despues falla.
+     */
+    private void ofrecerBiometria(View view, String token) {
+        if (sesion.esBiometriaActivada()) {
+            sesion.guardarTokenCifrado(token);
+            irAlHome(view);
+            return;
+        }
+        if (!DesbloqueoBiometrico.estaDisponible(requireContext())) {
+            irAlHome(view);
+            return;
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.biometria_activar_titulo)
+                .setMessage(R.string.biometria_activar_mensaje)
+                .setPositiveButton(R.string.biometria_activar_si, (d, cual) -> {
+                    sesion.setBiometriaActivada(true);
+                    sesion.guardarTokenCifrado(token);
+                    irAlHome(view);
+                })
+                .setNegativeButton(R.string.biometria_activar_no, (d, cual) -> irAlHome(view))
+                .setCancelable(false)
+                .show();
+    }
+
+    private void irAlHome(View view) {
+        if (!estaVivo()) return;
+        Navigation.findNavController(view).navigate(R.id.action_auth_to_home);
+    }
+
+    // Valida contra el backend que el token guardado siga sirviendo y, si es
+    // asi, entra directo al Home.
+    private void validarSesionYEntrar(View view) {
+        if (!estaVivo()) return;
+
         mostrarCargando(true);
 
         authApi.me(sesion.getBearer())
@@ -169,8 +254,9 @@ public class LoginFragment extends Fragment {
                             sesion.guardarSesion(cuerpo.getToken(),
                                     cuerpo.getUsuario().getEmail());
                             sesion.guardarZona(cuerpo.getUsuario().getZona());
-                            Navigation.findNavController(view)
-                                    .navigate(R.id.action_auth_to_home);
+                            // Punto 1: recien ahora hay un token que guardar
+                            // cifrado, asi que es el momento de ofrecer la huella.
+                            ofrecerBiometria(view, cuerpo.getToken());
                         } else {
                             mostrarErrorDeLogin(view, response, email);
                         }
@@ -181,8 +267,8 @@ public class LoginFragment extends Fragment {
                                           @NonNull Throwable t) {
                         if (!estaVivo()) return;
                         mostrarCargando(false);
-                        Toast.makeText(requireContext(),
-                                R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
+                          Toast.makeText(requireContext(),
+                                  R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -246,8 +332,8 @@ public class LoginFragment extends Fragment {
                                           @NonNull Throwable t) {
                         if (!estaVivo()) return;
                         mostrarCargando(false);
-                        Toast.makeText(requireContext(),
-                                R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
+                          Toast.makeText(requireContext(),
+                                  R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -269,3 +355,4 @@ public class LoginFragment extends Fragment {
         return isAdded() && getView() != null;
     }
 }
+

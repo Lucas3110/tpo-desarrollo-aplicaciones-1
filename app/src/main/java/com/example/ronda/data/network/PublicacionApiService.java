@@ -97,4 +97,35 @@ public interface PublicacionApiService {
 
     @DELETE("api/publicaciones/borrador")
     Call<Void> descartarBorrador(@Header("Authorization") String bearer);
+
+    /** Obtiene el detalle completo de una publicacion, incluyendo acciones permitidas segun sesion. */
+    @GET("api/publicaciones/{id}")
+    Call<com.example.ronda.data.model.PublicacionDetalleResponse> getDetallePublicacion(@Header("Authorization") String token, @Path("id") int id);
+
+    @retrofit2.http.POST("api/publicaciones/{id}/favorito")
+    Call<Void> agregarFavorito(@Header("Authorization") String token, @Path("id") int id);
+
+    @retrofit2.http.DELETE("api/publicaciones/{id}/favorito")
+    Call<Void> quitarFavorito(@Header("Authorization") String token, @Path("id") int id);
+
+    // --- Punto 4: Interacciones ---
+
+    @GET("api/publicaciones/{id}/preguntas")
+    Call<com.example.ronda.data.model.ListaPreguntasResponse> listarPreguntas(@Path("id") int id);
+
+    @retrofit2.http.POST("api/publicaciones/{id}/preguntas")
+    Call<com.example.ronda.data.model.PreguntaUnicaResponse> hacerPregunta(@Header("Authorization") String token, @Path("id") int id, @retrofit2.http.Body com.example.ronda.data.model.PreguntarRequest request);
+
+    @retrofit2.http.POST("api/preguntas/{id}/respuesta")
+    Call<com.example.ronda.data.model.PreguntaUnicaResponse> responderPregunta(@Header("Authorization") String token, @Path("id") int id, @retrofit2.http.Body com.example.ronda.data.model.ResponderRequest request);
+
+    @GET("api/publicaciones/{id}/ofertas")
+    Call<com.example.ronda.data.model.ListaOfertasResponse> listarOfertas(@Header("Authorization") String token, @Path("id") int id);
+
+    @retrofit2.http.POST("api/publicaciones/{id}/ofertas")
+    Call<com.example.ronda.data.model.OfertaUnicaResponse> hacerOferta(@Header("Authorization") String token, @Path("id") int id, @retrofit2.http.Body com.example.ronda.data.model.OfertarRequest request);
+
+    @retrofit2.http.PATCH("api/ofertas/{id}")
+    Call<com.example.ronda.data.model.OfertaUnicaResponse> responderOferta(@Header("Authorization") String token, @Path("id") int id, @retrofit2.http.Body com.example.ronda.data.model.EstadoOfertaRequest request);
+
 }

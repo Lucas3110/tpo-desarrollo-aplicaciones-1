@@ -5,6 +5,21 @@
     <!-- Necesario para poder hablar con la API -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!--
+      Android 16 (API 36) estrenó la "Local Network Protection": INTERNET ya no
+      alcanza para conectarse a una direccion de la RED LOCAL, hace falta este
+      permiso aparte y ademas concederlo en tiempo de ejecucion.
+
+      Nos afecta de lleno porque el backend de desarrollo corre en la PC:
+        10.0.2.2       -> asi ve el emulador al localhost de la maquina
+        192.168.x.x    -> la PC vista desde un celular en la misma WiFi
+
+      Sin esto, en un emulador con Android 16+ las requests no fallan con un
+      error claro: se quedan colgadas hasta el timeout, como si el servidor no
+      existiera. En dispositivos con Android 15 o anterior el permiso se ignora.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
     <application
         android:name=".MyApp"
         android:allowBackup="true"
@@ -31,3 +46,4 @@
     </application>
 
 </manifest>
+

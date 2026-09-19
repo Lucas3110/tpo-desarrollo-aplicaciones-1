@@ -21,6 +21,7 @@ import com.example.ronda.data.model.RegistroResponse;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.AuthApiService;
+import com.example.ronda.data.repository.SessionRepository;
 
 import javax.inject.Inject;
 
@@ -39,6 +40,9 @@ public class RegistroFragment extends Fragment {
     // Hilt lo crea y lo inyecta: ya no hay que pedirlo con getInstance().
     @Inject
     AuthApiService authApi;
+
+    @Inject
+    SessionRepository sesion;
 
     private EditText etNombre;
     private EditText etEmail;
@@ -159,6 +163,13 @@ public class RegistroFragment extends Fragment {
     }
 
     private void irAVerificarCodigo(View view, String email) {
+        // La cuenta nueva ya existe, asi que lo que quedaba de la anterior
+        // sobra. Sin esto la sesion de quien venia usando la app sobrevive al
+        // alta: al volver al login, el auto-login la levanta y la persona
+        // termina entrando con la cuenta de otro. Y si esa cuenta tenia el
+        // desbloqueo con huella activado, encima se lo ofrece.
+        sesion.olvidarTodo();
+
         Bundle args = new Bundle();
         args.putString("email", email);
         args.putString("proposito", "REGISTRO");
