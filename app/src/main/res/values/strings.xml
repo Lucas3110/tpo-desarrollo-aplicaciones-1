@@ -220,4 +220,13 @@
     <string name="detalle_quitar_favorito">Quitar de favoritos</string>
     <string name="detalle_error_carga">No pudimos cargar la publicación</string>
 
+    <string name="publicar_direccion_hint">Dirección de entrega (opcional, incluí ciudad)</string>
+    <string name="publicar_direccion_privacidad">El barrio es público. La dirección exacta sólo la ven vos y la persona cuya oferta aceptes.</string>
+    <string name="publicar_direccion_resumen">Dirección de entrega: %1$s</string>
+    <string name="publicar_direccion_larga">La dirección admite hasta 255 caracteres</string>
+    <string name="publicar_foto_permiso">No pudimos conservar el acceso a alguna foto. Quizás debas volver a elegirla al reabrir la app.</string>
+    <string name="publicar_limite_fotos">Sólo se permiten 10 fotos</string>
+    <string name="mis_pausar_titulo">¿Pausar publicación?</string>
+    <string name="mis_reactivar_titulo">¿Reactivar publicación?</string>
+    <string name="mis_confirmar">Sí</string>
 </resources>

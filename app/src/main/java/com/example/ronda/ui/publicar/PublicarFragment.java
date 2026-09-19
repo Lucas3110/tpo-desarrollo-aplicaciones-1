@@ -1,6 +1,12 @@
 package com.example.ronda.ui.publicar;
 
 import android.net.Uri;
+import android.content.Context;
+import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.io.IOException;
 
 import javax.inject.Inject;
 
@@ -58,6 +65,10 @@ public class PublicarFragment extends Fragment {
     @Inject SessionRepository sesion;
 
     private int paso = 1;
+    private Double latitud, longitud;
+    private String direccionResuelta = "";
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private int consultaDireccion = 0;
     private final List<Uri> fotos = new ArrayList<>();
     private final List<CategoriaResponse> categorias = new ArrayList<>();
     private final List<ZonaResponse> zonas = new ArrayList<>();
@@ -68,19 +79,29 @@ public class PublicarFragment extends Fragment {
     private View pasoFotos, pasoDatos, pasoRevision;
     private TextView tvPaso, tvTituloPaso, tvFotosElegidas, tvResumen;
     private LinearLayout contenedorFotos;
-    private EditText etTitulo, etDescripcion, etPrecio;
+    private EditText etTitulo, etDescripcion, etPrecio, etDireccion;
     private Spinner spCategoria, spEstado, spZona;
     private Button btnAnterior, btnSiguiente, btnDescartar;
     private ProgressBar progreso;
 
     private final ActivityResultLauncher<String[]> selectorFotos = registerForActivityResult(
             new ActivityResultContracts.OpenMultipleDocuments(), uris -> {
+                if (!estaVivo() || uris.isEmpty()) return;
                 fotos.clear();
                 int limite = Math.min(uris.size(), 10);
-                for (int i = 0; i < limite; i++) fotos.add(uris.get(i));
+                boolean permisoFallido = false;
+                for (int i = 0; i < limite; i++) {
+                    Uri uri = uris.get(i);
+                    try {
+                        requireContext().getContentResolver().takePersistableUriPermission(
+                                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    } catch (SecurityException e) { permisoFallido = true; }
+                    fotos.add(uri);
+                }
+                if (permisoFallido) Toast.makeText(requireContext(), R.string.publicar_foto_permiso, Toast.LENGTH_LONG).show();
                 mostrarFotos();
                 guardarBorrador(false);
-                if (uris.size() > 10) Toast.makeText(requireContext(), "Sólo se permiten 10 fotos", Toast.LENGTH_SHORT).show();
+                if (uris.size() > 10) Toast.makeText(requireContext(), R.string.publicar_limite_fotos, Toast.LENGTH_SHORT).show();
             });
 
     @Nullable @Override
@@ -97,6 +118,7 @@ public class PublicarFragment extends Fragment {
         tvResumen = view.findViewById(R.id.tvResumenPublicacion); contenedorFotos = view.findViewById(R.id.contenedorFotos);
         etTitulo = view.findViewById(R.id.etTituloPublicacion); etDescripcion = view.findViewById(R.id.etDescripcion);
         etPrecio = view.findViewById(R.id.etPrecio); spCategoria = view.findViewById(R.id.spCategoriaPublicar);
+        etDireccion = view.findViewById(R.id.etDireccionEntrega);
         spEstado = view.findViewById(R.id.spEstadoArticulo); spZona = view.findViewById(R.id.spZonaPublicar);
         btnAnterior = view.findViewById(R.id.btnAnterior); btnSiguiente = view.findViewById(R.id.btnSiguiente);
         btnDescartar = view.findViewById(R.id.btnDescartar); progreso = view.findViewById(R.id.pbPublicar);
@@ -164,11 +186,18 @@ public class PublicarFragment extends Fragment {
         if (d == null) return;
         etTitulo.setText(texto(d.get("titulo"))); etDescripcion.setText(texto(d.get("descripcion")));
         etPrecio.setText(texto(d.get("precio")));
+        etDireccion.setText(texto(d.get("direccion")));
+        direccionResuelta = texto(etDireccion);
+        Double lat = d.get("latitud") instanceof Number ? ((Number) d.get("latitud")).doubleValue() : null;
+        Double lng = d.get("longitud") instanceof Number ? ((Number) d.get("longitud")).doubleValue() : null;
+        latitud = PublicacionRequest.coordenadasValidas(lat, lng) ? lat : null;
+        longitud = PublicacionRequest.coordenadasValidas(lat, lng) ? lng : null;
         seleccionarPorId(spCategoria, categorias, entero(d.get("categoriaId")));
         seleccionarPorId(spZona, zonas, entero(d.get("zonaId")));
         String estado = texto(d.get("estadoArticulo"));
         if ("COMO_NUEVO".equals(estado)) spEstado.setSelection(1); else if ("USADO".equals(estado)) spEstado.setSelection(2);
         Object lista = d.get("fotosLocales");
+        fotos.clear();
         if (lista instanceof List<?>) for (Object item : (List<?>) lista) if (item != null) fotos.add(Uri.parse(item.toString()));
         mostrarFotos(); mostrarPaso();
     }
@@ -177,12 +206,15 @@ public class PublicarFragment extends Fragment {
         if (paso == 1) { paso = 2; guardarBorrador(false); mostrarPaso(); return; }
         if (paso == 2) {
             if (!datosValidos()) return;
-            paso = 3; guardarBorrador(false); mostrarPaso(); return;
+            resolverDireccion(); return;
         }
         publicar();
     }
 
     private boolean datosValidos() {
+        if (texto(etDireccion).length() > 255) {
+            etDireccion.setError(getString(R.string.publicar_direccion_larga)); return false;
+        }
         if (texto(etTitulo).isEmpty() || texto(etDescripcion).isEmpty() || categorias.isEmpty() || zonas.isEmpty()) {
             Toast.makeText(requireContext(), R.string.publicar_campos_requeridos, Toast.LENGTH_SHORT).show(); return false;
         }
@@ -208,7 +240,8 @@ public class PublicarFragment extends Fragment {
         String zona = zonas.isEmpty() ? "-" : zonas.get(spZona.getSelectedItemPosition()).getNombre();
         return texto(etTitulo) + "\n\n" + texto(etDescripcion) + "\n\n$ " + texto(etPrecio)
                 + "\n" + cat + " · " + spEstado.getSelectedItem() + "\nEntrega en " + zona
-                + "\n" + getString(R.string.publicar_fotos_cantidad, fotos.size());
+                + "\n" + getString(R.string.publicar_fotos_cantidad, fotos.size())
+                + (texto(etDireccion).isEmpty() ? "" : "\n" + getString(R.string.publicar_direccion_resumen, texto(etDireccion)));
     }
 
     private void mostrarFotos() {
@@ -236,6 +269,11 @@ public class PublicarFragment extends Fragment {
     private Map<String, Object> datosBorrador() {
         Map<String, Object> d = new HashMap<>(); d.put("titulo", texto(etTitulo)); d.put("descripcion", texto(etDescripcion));
         d.put("precio", texto(etPrecio)); d.put("estadoArticulo", estadoCodigo());
+        d.put("direccion", texto(etDireccion));
+        if (texto(etDireccion).equals(direccionResuelta)
+                && PublicacionRequest.coordenadasValidas(latitud, longitud)) {
+            d.put("latitud", latitud); d.put("longitud", longitud);
+        }
         if (!categorias.isEmpty()) d.put("categoriaId", categorias.get(spCategoria.getSelectedItemPosition()).getId());
         if (!zonas.isEmpty()) d.put("zonaId", zonas.get(spZona.getSelectedItemPosition()).getId());
         List<String> locales = new ArrayList<>(); for (Uri uri : fotos) locales.add(uri.toString()); d.put("fotosLocales", locales);
@@ -245,11 +283,14 @@ public class PublicarFragment extends Fragment {
     private void publicar() {
         if (!datosValidos()) { paso = 2; mostrarPaso(); return; }
         bloquear(true);
-        // El backend actual no tiene upload: los content:// locales no son URLs públicas.
-        // Se envía la lista vacía hasta que el backend incorpore almacenamiento de archivos.
+        // Según el contrato de la demo, estas URI sólo sirven en el dispositivo de origen.
+        List<String> fotosLocales = new ArrayList<>();
+        for (Uri uri : fotos) fotosLocales.add(uri.toString());
+        boolean mismaDireccion = texto(etDireccion).equals(direccionResuelta);
         PublicacionRequest req = new PublicacionRequest(texto(etTitulo), texto(etDescripcion),
                 categorias.get(spCategoria.getSelectedItemPosition()).getId(), Double.parseDouble(texto(etPrecio)),
-                estadoCodigo(), zonas.get(spZona.getSelectedItemPosition()).getId(), new ArrayList<>());
+                estadoCodigo(), zonas.get(spZona.getSelectedItemPosition()).getId(), fotosLocales,
+                texto(etDireccion), mismaDireccion ? latitud : null, mismaDireccion ? longitud : null);
         llamada = api.crear(sesion.getBearer(), req);
         ((Call<PublicacionResponse>) llamada).enqueue(new Callback<PublicacionResponse>() {
             @Override public void onResponse(@NonNull Call<PublicacionResponse> c, @NonNull Response<PublicacionResponse> r) {
@@ -290,5 +331,55 @@ public class PublicarFragment extends Fragment {
     private boolean estaVivo() { return isAdded() && getView() != null; }
     private void irAlLogin() { sesion.cerrarSesion(); Navigation.findNavController(requireView()).navigate(R.id.action_publicar_to_auth); }
     @Override public void onPause() { super.onPause(); if (getView() != null && !salidaDefinitiva) guardarBorrador(false); }
-    @Override public void onDestroyView() { if (llamada != null) llamada.cancel(); super.onDestroyView(); }
+    @Override public void onDestroyView() {
+        consultaDireccion++;
+        handler.removeCallbacksAndMessages(null);
+        if (llamada != null) llamada.cancel();
+        super.onDestroyView();
+    }
+
+    private void resolverDireccion() {
+        String direccion = texto(etDireccion);
+        latitud = null; longitud = null; direccionResuelta = direccion;
+        if (direccion.isEmpty() || !Geocoder.isPresent()) {
+            paso = 3; guardarBorrador(false); mostrarPaso(); return;
+        }
+        bloquear(true);
+        etDireccion.setEnabled(false);
+        int consulta = ++consultaDireccion;
+        Context contexto = requireContext().getApplicationContext();
+        // No se bloquea la UI ni se impide publicar cuando el proveedor no responde.
+        Runnable timeout = () -> terminarDireccion(consulta, direccion, null, null);
+        handler.postDelayed(timeout, 8000);
+        new Thread(() -> {
+            Double lat = null, lng = null;
+            try {
+                List<Address> resultados = new Geocoder(contexto, new Locale("es", "AR"))
+                        .getFromLocationName(direccion + ", Argentina", 1);
+                if (resultados != null && !resultados.isEmpty()) {
+                    Address resultado = resultados.get(0);
+                    if (resultado.hasLatitude() && resultado.hasLongitude()) {
+                        lat = resultado.getLatitude(); lng = resultado.getLongitude();
+                    }
+                }
+            } catch (IOException | IllegalArgumentException | SecurityException e) {
+                // La dirección textual sigue siendo válida sin coordenadas.
+            }
+            final Double latFinal = lat, lngFinal = lng;
+            handler.post(() -> {
+                handler.removeCallbacks(timeout);
+                terminarDireccion(consulta, direccion, latFinal, lngFinal);
+            });
+        }, "direccion-entrega").start();
+    }
+
+    private void terminarDireccion(int consulta, String direccion, Double lat, Double lng) {
+        if (!estaVivo() || consulta != consultaDireccion) return;
+        consultaDireccion++;
+        bloquear(false);
+        etDireccion.setEnabled(true);
+        if (!direccion.equals(texto(etDireccion))) return;
+        if (PublicacionRequest.coordenadasValidas(lat, lng)) { latitud = lat; longitud = lng; }
+        paso = 3; guardarBorrador(false); mostrarPaso();
+    }
 }

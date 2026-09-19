@@ -49,6 +49,12 @@
                 android:layout_marginTop="12dp" android:text="@string/publicar_zona" />
             <Spinner android:id="@+id/spZonaPublicar" android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
+            <EditText android:id="@+id/etDireccionEntrega" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                android:hint="@string/publicar_direccion_hint" android:maxLength="255"
+                android:inputType="textPostalAddress|textCapWords" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/publicar_direccion_privacidad" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/pasoRevision" android:layout_width="match_parent"

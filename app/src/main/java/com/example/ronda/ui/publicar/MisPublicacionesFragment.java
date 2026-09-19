@@ -82,11 +82,10 @@ public class MisPublicacionesFragment extends Fragment {
 
     private void confirmarCambio(PublicacionItemResponse item) {
         String nuevo = "ACTIVA".equals(item.getEstado()) ? "PAUSADA" : "ACTIVA";
-        String accion = "ACTIVA".equals(nuevo) ? "reactivar" : "pausar";
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                .setTitle("¿" + Character.toUpperCase(accion.charAt(0)) + accion.substring(1) + " publicación?")
+                .setTitle("ACTIVA".equals(nuevo) ? R.string.mis_reactivar_titulo : R.string.mis_pausar_titulo)
                 .setMessage(item.getTitulo()).setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton("Sí", (d, w) -> cambiarEstado(item, nuevo)).show();
+                .setPositiveButton(R.string.mis_confirmar, (d, w) -> cambiarEstado(item, nuevo)).show();
     }
     private void cambiarEstado(PublicacionItemResponse item, String nuevo) {
         llamada = api.cambiarEstado(sesion.getBearer(), item.getId(), new CambiarEstadoRequest(nuevo));
