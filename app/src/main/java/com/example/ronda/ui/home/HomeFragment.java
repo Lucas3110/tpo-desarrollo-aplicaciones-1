@@ -31,11 +31,13 @@ import com.example.ronda.R;
 import com.example.ronda.data.model.CategoriaResponse;
 import com.example.ronda.data.model.CategoriasResponse;
 import com.example.ronda.data.model.ErrorResponse;
+import com.example.ronda.data.model.MisOfertasResponse;
 import com.example.ronda.data.model.PaginaPublicacionesResponse;
 import com.example.ronda.data.model.PerfilResponse;
 import com.example.ronda.data.model.PublicacionItemResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.AuthApiService;
+import com.example.ronda.data.network.OfertaApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.repository.SessionRepository;
 import com.google.android.material.snackbar.Snackbar;
@@ -85,6 +87,10 @@ public class HomeFragment extends Fragment {
     @Inject
     SessionRepository sesion;
 
+    /** Solo para el contador de ofertas recibidas que esperan respuesta. */
+    @Inject
+    OfertaApiService ofertaApi;
+
     /** Que se ve en el area central: una sola de estas vistas a la vez. */
     private enum Estado { CARGANDO, LISTA, VACIO, ERROR }
 
@@ -108,6 +114,8 @@ public class HomeFragment extends Fragment {
     /** Catalogo para el Spinner; vive aca (no en el panel) para sobrevivir al back stack. */
     private List<CategoriaResponse> categorias;
     private Call<CategoriasResponse> llamadaCategorias;
+    private Call<MisOfertasResponse> llamadaMisOfertas;
+    private Button btnMisOfertas;
     private boolean panelAbierto = false;
     private PublicacionAdapter adapter;
     private int total = 0;
@@ -190,7 +198,7 @@ public class HomeFragment extends Fragment {
         Button btnMiPerfil = view.findViewById(R.id.btnMiPerfil);
         Button btnPublicar = view.findViewById(R.id.btnPublicar);
         Button btnMisPublicaciones = view.findViewById(R.id.btnMisPublicaciones);
-        Button btnMisOfertas = view.findViewById(R.id.btnMisOfertas);
+        btnMisOfertas = view.findViewById(R.id.btnMisOfertas);
         btnActualizar = view.findViewById(R.id.btnActualizar);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
@@ -259,6 +267,7 @@ public class HomeFragment extends Fragment {
         if (categorias == null) {
             cargarCategorias();
         }
+        contarOfertasPendientes();
     }
 
     private void mostrarTutorialPublicacion() {
@@ -269,6 +278,43 @@ public class HomeFragment extends Fragment {
                 .setPositiveButton(R.string.tutorial_empezar, (dialogo, cual) ->
                         Navigation.findNavController(requireView()).navigate(R.id.action_home_to_publicar))
                 .show();
+    }
+
+    // -----------------------------------------------------------------
+    // Indicador de ofertas recibidas que esperan respuesta
+    // -----------------------------------------------------------------
+
+    /**
+     * "Mis ofertas (2)" si hay ofertas recibidas esperando mi respuesta. Se
+     * pide cada vez que se arma la vista (al entrar y al volver de otra
+     * pantalla), asi el numero acompaña lo que se acepto o rechazo. Es un
+     * adorno: si falla, el boton queda sin numero y no se molesta a nadie.
+     */
+    private void contarOfertasPendientes() {
+        if (!sesion.haySesion()) return;
+        llamadaMisOfertas = ofertaApi.misOfertas();
+        llamadaMisOfertas.enqueue(new Callback<MisOfertasResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<MisOfertasResponse> call,
+                                   @NonNull Response<MisOfertasResponse> response) {
+                llamadaMisOfertas = null;
+                if (call.isCanceled() || !estaVivo()) return;
+                if (response.isSuccessful() && response.body() != null) {
+                    mostrarPendientes(response.body().getPendientesRecibidas());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<MisOfertasResponse> call, @NonNull Throwable t) {
+                llamadaMisOfertas = null;
+            }
+        });
+    }
+
+    private void mostrarPendientes(int pendientes) {
+        btnMisOfertas.setText(pendientes > 0
+                ? getString(R.string.home_mis_ofertas_con_pendientes, pendientes)
+                : getString(R.string.home_mis_ofertas));
     }
 
     // -----------------------------------------------------------------
@@ -824,6 +870,10 @@ public class HomeFragment extends Fragment {
         if (llamadaCategorias != null) {
             llamadaCategorias.cancel();
             llamadaCategorias = null;
+        }
+        if (llamadaMisOfertas != null) {
+            llamadaMisOfertas.cancel();
+            llamadaMisOfertas = null;
         }
         super.onDestroyView();
     }
