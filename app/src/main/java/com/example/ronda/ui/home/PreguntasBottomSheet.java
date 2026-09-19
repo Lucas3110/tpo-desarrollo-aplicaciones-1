@@ -50,10 +50,33 @@ public class PreguntasBottomSheet extends BottomSheetDialogFragment {
     @Inject
     SessionRepository sessionRepository;
 
-    public PreguntasBottomSheet(int publicacionId, boolean esVendedor, boolean puedePreguntar) {
-        this.publicacionId = publicacionId;
-        this.esVendedor = esVendedor;
-        this.puedePreguntar = puedePreguntar;
+    private static final String ARG_PUBLICACION_ID = "publicacionId";
+    private static final String ARG_ES_VENDEDOR = "esVendedor";
+    private static final String ARG_PUEDE_PREGUNTAR = "puedePreguntar";
+
+    /**
+     * Los Fragments (y este dialogo lo es) los recrea el sistema con el
+     * constructor vacio, por ejemplo al rotar la pantalla: si recibieran los
+     * datos por constructor, al volver quedarian en cero o directamente no
+     * se podrian instanciar. Por eso viajan en el Bundle de argumentos.
+     */
+    public static PreguntasBottomSheet newInstance(int publicacionId, boolean esVendedor, boolean puedePreguntar) {
+        Bundle args = new Bundle();
+        args.putInt(ARG_PUBLICACION_ID, publicacionId);
+        args.putBoolean(ARG_ES_VENDEDOR, esVendedor);
+        args.putBoolean(ARG_PUEDE_PREGUNTAR, puedePreguntar);
+        PreguntasBottomSheet dialogo = new PreguntasBottomSheet();
+        dialogo.setArguments(args);
+        return dialogo;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Bundle args = requireArguments();
+        publicacionId = args.getInt(ARG_PUBLICACION_ID);
+        esVendedor = args.getBoolean(ARG_ES_VENDEDOR);
+        puedePreguntar = args.getBoolean(ARG_PUEDE_PREGUNTAR);
     }
 
     @Nullable

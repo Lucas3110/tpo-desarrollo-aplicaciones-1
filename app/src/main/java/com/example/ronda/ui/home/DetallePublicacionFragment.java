@@ -90,14 +90,14 @@ public class DetallePublicacionFragment extends Fragment {
             if (mPub == null) return;
             boolean esVendedor = mPub.isEsMia();
             boolean puedePreguntar = mPub.getAcciones().isPuedePreguntar();
-            PreguntasBottomSheet bottomSheet = new PreguntasBottomSheet(mPub.getId(), esVendedor, puedePreguntar);
+            PreguntasBottomSheet bottomSheet = PreguntasBottomSheet.newInstance(mPub.getId(), esVendedor, puedePreguntar);
             bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
         });
         btnOfertar.setOnClickListener(v -> {
             if (mPub == null) return;
             boolean esVendedor = mPub.isEsMia();
             boolean puedeOfertar = mPub.getAcciones().isPuedeOfertar();
-            OfertasBottomSheet bottomSheet = new OfertasBottomSheet(mPub.getId(), esVendedor, puedeOfertar);
+            OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), esVendedor, puedeOfertar);
             bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
         });
         btnGuardar.setOnClickListener(v -> toggleFavorito());
@@ -107,10 +107,10 @@ public class DetallePublicacionFragment extends Fragment {
                 .setTitle("Gestionar Publicación")
                 .setItems(new CharSequence[]{"Ver Preguntas", "Ver Ofertas"}, (dialog, which) -> {
                     if (which == 0) {
-                        PreguntasBottomSheet bottomSheet = new PreguntasBottomSheet(mPub.getId(), true, false);
+                        PreguntasBottomSheet bottomSheet = PreguntasBottomSheet.newInstance(mPub.getId(), true, false);
                         bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
                     } else {
-                        OfertasBottomSheet bottomSheet = new OfertasBottomSheet(mPub.getId(), true, false);
+                        OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), true, false);
                         bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
                     }
                 })
