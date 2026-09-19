@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -29,13 +30,22 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
         void onOferta(OfertaResponse oferta);
     }
 
+    /** Que quiere hacer la persona con una oferta que espera su respuesta. */
+    public enum Accion { ACEPTAR, RECHAZAR, CONTRAOFERTAR }
+
+    public interface OnAccionListener {
+        void onAccion(OfertaResponse oferta, Accion accion);
+    }
+
     private final OnOfertaClickListener listener;
+    private final OnAccionListener accionListener;
     private List<OfertaResponse> ofertas = new ArrayList<>();
     /** Que pestaña se esta mostrando: cambia "Para ..." por "De ...". */
     private boolean enviadas = true;
 
-    public MisOfertasAdapter(OnOfertaClickListener listener) {
+    public MisOfertasAdapter(OnOfertaClickListener listener, OnAccionListener accionListener) {
         this.listener = listener;
+        this.accionListener = accionListener;
     }
 
     public void mostrar(List<OfertaResponse> nuevas, boolean enviadas) {
@@ -73,6 +83,23 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onOferta(o);
         });
+
+        // Responde quien NO propuso el monto: el backend ya lo resolvio en
+        // esperaMiRespuesta. Contraofertar es solo del vendedor (o sea, cuando
+        // lo que espera mi respuesta es una oferta del comprador) y exige la
+        // publicacion activa.
+        boolean esperaMiRespuesta = o.isEsperaMiRespuesta();
+        boolean puedoContraofertar = esperaMiRespuesta && !o.laPropusoElVendedor()
+                && (pub == null || pub.estaActiva());
+        holder.llAcciones.setVisibility(esperaMiRespuesta ? View.VISIBLE : View.GONE);
+        holder.btnContraofertar.setVisibility(puedoContraofertar ? View.VISIBLE : View.GONE);
+        holder.btnAceptar.setOnClickListener(v -> avisar(o, Accion.ACEPTAR));
+        holder.btnRechazar.setOnClickListener(v -> avisar(o, Accion.RECHAZAR));
+        holder.btnContraofertar.setOnClickListener(v -> avisar(o, Accion.CONTRAOFERTAR));
+    }
+
+    private void avisar(OfertaResponse oferta, Accion accion) {
+        if (accionListener != null) accionListener.onAccion(oferta, accion);
     }
 
     @Override
@@ -90,6 +117,8 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
         final ImageView ivFoto;
         final TextView tvTituloPublicacion, tvMonto, tvEstado, tvContraparte, tvMensaje,
                 tvContraoferta, tvFecha, tvVence;
+        final View llAcciones;
+        final Button btnAceptar, btnRechazar, btnContraofertar;
 
         ViewHolder(View v) {
             super(v);
@@ -102,6 +131,10 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
             tvContraoferta = v.findViewById(R.id.tvContraoferta);
             tvFecha = v.findViewById(R.id.tvFecha);
             tvVence = v.findViewById(R.id.tvVence);
+            llAcciones = v.findViewById(R.id.llAcciones);
+            btnAceptar = v.findViewById(R.id.btnAceptar);
+            btnRechazar = v.findViewById(R.id.btnRechazar);
+            btnContraofertar = v.findViewById(R.id.btnContraofertar);
         }
 
         /** Igual que en el Home: con foto se muestra via Glide, sin foto se oculta. */

@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -18,6 +19,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ronda.R;
 import com.example.ronda.data.model.ErrorResponse;
+import com.example.ronda.data.model.EstadoOfertaRequest;
+import com.example.ronda.data.model.OfertaUnicaResponse;
+import com.example.ronda.data.model.OfertarRequest;
 import com.example.ronda.data.model.MisOfertasResponse;
 import com.example.ronda.data.model.OfertaResponse;
 import com.example.ronda.data.network.ApiErrorParser;
@@ -67,6 +71,7 @@ public class MisOfertasFragment extends Fragment {
     private MisOfertasResponse datos;
     private int tabActual = TAB_ENVIADAS;
     private Call<MisOfertasResponse> llamada;
+    private Call<OfertaUnicaResponse> llamadaAccion;
 
     private enum Estado { CARGANDO, LISTA, VACIO, ERROR }
 
@@ -91,7 +96,7 @@ public class MisOfertasFragment extends Fragment {
         Button btnActualizar = view.findViewById(R.id.btnActualizar);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
-        adapter = new MisOfertasAdapter(this::abrirDetalle);
+        adapter = new MisOfertasAdapter(this::abrirDetalle, this::onAccion);
         rvOfertas.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvOfertas.setAdapter(adapter);
 
@@ -99,7 +104,104 @@ public class MisOfertasFragment extends Fragment {
         btnActualizar.setOnClickListener(v -> cargar());
         btnReintentar.setOnClickListener(v -> cargar());
 
+        escucharContraoferta();
         cargar();
+    }
+
+    // -----------------------------------------------------------------
+    // Aceptar / rechazar / contraofertar
+    // -----------------------------------------------------------------
+
+    private void onAccion(OfertaResponse oferta, MisOfertasAdapter.Accion accion) {
+        switch (accion) {
+            case ACEPTAR:
+                confirmar(oferta, R.string.oferta_confirmar_aceptar_titulo,
+                        R.string.oferta_confirmar_aceptar_mensaje, R.string.oferta_aceptar,
+                        () -> responder(oferta.getId(), OfertaResponse.ACEPTADA));
+                break;
+            case RECHAZAR:
+                confirmar(oferta, R.string.oferta_confirmar_rechazar_titulo,
+                        R.string.oferta_confirmar_rechazar_mensaje, R.string.oferta_rechazar,
+                        () -> responder(oferta.getId(), OfertaResponse.RECHAZADA));
+                break;
+            case CONTRAOFERTAR:
+                ContraofertaDialogFragment.newInstance(oferta)
+                        .show(getChildFragmentManager(), ContraofertaDialogFragment.CLAVE_RESULTADO);
+                break;
+        }
+    }
+
+    /** Aceptar cierra el trato y rechazar es definitivo: se pide confirmacion. */
+    private void confirmar(OfertaResponse oferta, int titulo, int mensaje, int botonOk, Runnable alConfirmar) {
+        String pub = oferta.getPublicacion() != null ? oferta.getPublicacion().getTitulo() : "";
+        new AlertDialog.Builder(requireContext())
+                .setTitle(titulo)
+                .setMessage(getString(mensaje, FormatoOferta.precio(oferta.getMonto()), pub))
+                .setPositiveButton(botonOk, (dialogo, cual) -> alConfirmar.run())
+                .setNegativeButton(R.string.accion_cancelar, null)
+                .show();
+    }
+
+    /** El dialogo de contraoferta devuelve lo cargado por la API de resultados de Fragments. */
+    private void escucharContraoferta() {
+        getChildFragmentManager().setFragmentResultListener(ContraofertaDialogFragment.CLAVE_RESULTADO,
+                getViewLifecycleOwner(), (clave, resultado) -> contraofertar(
+                        resultado.getInt(ContraofertaDialogFragment.RES_OFERTA_ID),
+                        resultado.getDouble(ContraofertaDialogFragment.RES_MONTO),
+                        resultado.getString(ContraofertaDialogFragment.RES_MENSAJE)));
+    }
+
+    private void responder(int ofertaId, String estado) {
+        boolean acepta = OfertaResponse.ACEPTADA.equals(estado);
+        llamadaAccion = ofertaApi.responder(ofertaId, new EstadoOfertaRequest(estado));
+        llamadaAccion.enqueue(callbackDeAccion(
+                getString(acepta ? R.string.oferta_aceptada_ok : R.string.oferta_rechazada_ok),
+                getString(R.string.oferta_error_responder)));
+    }
+
+    private void contraofertar(int ofertaId, double monto, String mensaje) {
+        llamadaAccion = ofertaApi.contraofertar(ofertaId, new OfertarRequest(monto, mensaje));
+        llamadaAccion.enqueue(callbackDeAccion(
+                getString(R.string.contraoferta_enviada),
+                getString(R.string.contraoferta_error_enviar)));
+    }
+
+    /**
+     * Las tres acciones terminan igual: un aviso y se vuelve a pedir la lista,
+     * tambien si el backend contesto que la oferta ya vencio o ya fue
+     * respondida (OFERTA_VENCIDA, OFERTA_YA_RESPONDIDA), porque justamente
+     * lo que se ve quedo viejo.
+     */
+    private Callback<OfertaUnicaResponse> callbackDeAccion(String textoOk, String textoErrorPorDefecto) {
+        return new Callback<OfertaUnicaResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<OfertaUnicaResponse> call,
+                                   @NonNull Response<OfertaUnicaResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
+
+                if (response.code() == 401) {
+                    volverAlLogin();
+                    return;
+                }
+                if (response.isSuccessful()) {
+                    avisar(textoOk);
+                } else {
+                    ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                    avisar(ApiErrorParser.mensaje(error, textoErrorPorDefecto));
+                }
+                cargar();
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<OfertaUnicaResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
+                avisar(getString(R.string.error_sin_conexion));
+            }
+        };
+    }
+
+    private void avisar(String mensaje) {
+        Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
     }
 
     private void configurarTabs() {
@@ -229,6 +331,7 @@ public class MisOfertasFragment extends Fragment {
     @Override
     public void onDestroyView() {
         if (llamada != null) llamada.cancel();
+        if (llamadaAccion != null) llamadaAccion.cancel();
         super.onDestroyView();
     }
 

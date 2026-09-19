@@ -27,6 +27,7 @@ import com.example.ronda.data.model.OfertaUnicaResponse;
 import com.example.ronda.data.model.OfertarRequest;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.OfertaApiService;
+import com.example.ronda.ui.ofertas.ContraofertaDialogFragment;
 import com.example.ronda.ui.ofertas.FormatoOferta;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
@@ -79,6 +80,7 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
     private Call<ListaOfertasResponse> llamadaLista;
     private Call<OfertaUnicaResponse> llamadaOfertar;
     private Call<OfertaUnicaResponse> llamadaResponder;
+    private Call<OfertaUnicaResponse> llamadaContraofertar;
 
     /**
      * Los Fragments (y este dialogo lo es) los recrea el sistema con el
@@ -135,8 +137,18 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
             configurarFormulario();
         }
 
+        escucharContraoferta();
         cargarOfertas();
         return view;
+    }
+
+    /** El dialogo de contraoferta devuelve lo cargado por la API de resultados de Fragments. */
+    private void escucharContraoferta() {
+        getChildFragmentManager().setFragmentResultListener(ContraofertaDialogFragment.CLAVE_RESULTADO,
+                this, (clave, resultado) -> contraofertar(
+                        resultado.getInt(ContraofertaDialogFragment.RES_OFERTA_ID),
+                        resultado.getDouble(ContraofertaDialogFragment.RES_MONTO),
+                        resultado.getString(ContraofertaDialogFragment.RES_MENSAJE)));
     }
 
     private void configurarFormulario() {
@@ -190,7 +202,8 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
                     boolean vacia = lista.getOfertas() == null || lista.getOfertas().isEmpty();
                     tvSinOfertas.setVisibility(vacia ? View.VISIBLE : View.GONE);
                     adapter.setOfertas(lista.getOfertas(), lista.isEsVendedor(),
-                            OfertasBottomSheet.this::responderOferta);
+                            OfertasBottomSheet.this::responderOferta,
+                            OfertasBottomSheet.this::abrirContraoferta);
                 } else {
                     ErrorResponse.Detalle error = ApiErrorParser.parse(response);
                     manejarError(response.code(), error, getString(R.string.ofertas_error_carga));
@@ -315,6 +328,44 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
     }
 
     // -----------------------------------------------------------------
+    // Contraofertar (solo el vendedor, sobre una oferta del comprador)
+    // -----------------------------------------------------------------
+
+    private void abrirContraoferta(OfertaResponse oferta) {
+        ContraofertaDialogFragment.newInstance(oferta, precioPublicado, tituloPublicacion())
+                .show(getChildFragmentManager(), ContraofertaDialogFragment.CLAVE_RESULTADO);
+    }
+
+    private String tituloPublicacion() {
+        return getString(R.string.ofertas_titulo);
+    }
+
+    private void contraofertar(int ofertaId, double monto, String mensaje) {
+        llamadaContraofertar = ofertaApi.contraofertar(ofertaId, new OfertarRequest(monto, mensaje));
+        llamadaContraofertar.enqueue(new Callback<OfertaUnicaResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<OfertaUnicaResponse> call,
+                                   @NonNull Response<OfertaUnicaResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
+
+                if (response.isSuccessful()) {
+                    avisar(getString(R.string.contraoferta_enviada));
+                } else {
+                    ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                    manejarError(response.code(), error, getString(R.string.contraoferta_error_enviar));
+                }
+                cargarOfertas();
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<OfertaUnicaResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
+                avisar(getString(R.string.error_sin_conexion));
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------
     // Errores y ciclo de vida
     // -----------------------------------------------------------------
 
@@ -353,6 +404,7 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
         cancelar(llamadaLista);
         cancelar(llamadaOfertar);
         cancelar(llamadaResponder);
+        cancelar(llamadaContraofertar);
         super.onDestroyView();
     }
 

@@ -32,16 +32,23 @@ public class OfertasAdapter extends RecyclerView.Adapter<OfertasAdapter.ViewHold
     private List<OfertaResponse> ofertas = new ArrayList<>();
     private boolean esVendedor;
     private OnResponderOfertaClickListener listener;
+    private OnContraofertarClickListener contraofertaListener;
 
     public interface OnResponderOfertaClickListener {
         void onResponder(int ofertaId, String estado);
     }
 
+    public interface OnContraofertarClickListener {
+        void onContraofertar(OfertaResponse oferta);
+    }
+
     public void setOfertas(List<OfertaResponse> ofertas, boolean esVendedor,
-                           OnResponderOfertaClickListener listener) {
+                           OnResponderOfertaClickListener listener,
+                           OnContraofertarClickListener contraofertaListener) {
         this.ofertas = ofertas != null ? ofertas : new ArrayList<OfertaResponse>();
         this.esVendedor = esVendedor;
         this.listener = listener;
+        this.contraofertaListener = contraofertaListener;
         notifyDataSetChanged();
     }
 
@@ -77,7 +84,12 @@ public class OfertasAdapter extends RecyclerView.Adapter<OfertasAdapter.ViewHold
         holder.tvVenceOferta.setVisibility(vence != null ? View.VISIBLE : View.GONE);
 
         boolean puedoResponder = o.puedoResponderla(esVendedor);
+        boolean puedoContraofertar = o.puedoContraofertarla(esVendedor);
         holder.llAccionesOferta.setVisibility(puedoResponder ? View.VISIBLE : View.GONE);
+        holder.btnContraofertarOferta.setVisibility(puedoContraofertar ? View.VISIBLE : View.GONE);
+        holder.btnContraofertarOferta.setOnClickListener(v -> {
+            if (contraofertaListener != null) contraofertaListener.onContraofertar(o);
+        });
         holder.btnAceptarOferta.setOnClickListener(v -> {
             if (listener != null) listener.onResponder(o.getId(), OfertaResponse.ACEPTADA);
         });
@@ -138,7 +150,7 @@ public class OfertasAdapter extends RecyclerView.Adapter<OfertasAdapter.ViewHold
     static class ViewHolder extends RecyclerView.ViewHolder {
         final TextView tvMontoOferta, tvEstadoOferta, tvAutorOferta, tvMensajeOferta, tvFechaOferta, tvVenceOferta;
         final LinearLayout llAccionesOferta;
-        final Button btnAceptarOferta, btnRechazarOferta;
+        final Button btnAceptarOferta, btnRechazarOferta, btnContraofertarOferta;
 
         ViewHolder(View v) {
             super(v);
@@ -151,6 +163,7 @@ public class OfertasAdapter extends RecyclerView.Adapter<OfertasAdapter.ViewHold
             llAccionesOferta = v.findViewById(R.id.llAccionesOferta);
             btnAceptarOferta = v.findViewById(R.id.btnAceptarOferta);
             btnRechazarOferta = v.findViewById(R.id.btnRechazarOferta);
+            btnContraofertarOferta = v.findViewById(R.id.btnContraofertarOferta);
         }
     }
 }

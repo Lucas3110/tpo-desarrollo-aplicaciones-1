@@ -94,7 +94,7 @@
             android:id="@+id/btnAceptarOferta"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:backgroundTint="@color/estado_aceptada"
             android:text="@string/oferta_aceptar"
@@ -104,10 +104,23 @@
             android:id="@+id/btnRechazarOferta"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:backgroundTint="@color/estado_rechazada"
             android:text="@string/oferta_rechazar"
             android:textColor="@color/white" />
+
+        <Button
+            android:id="@+id/btnContraofertarOferta"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1.3"
+            android:minWidth="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="@string/oferta_contraofertar" />
     </LinearLayout>
 </LinearLayout>
