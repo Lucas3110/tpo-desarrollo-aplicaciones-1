@@ -22,6 +22,7 @@ import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.repository.SessionRepository;
+import com.example.ronda.ui.ofertas.FormatoOferta;
 
 import javax.inject.Inject;
 import dagger.hilt.android.AndroidEntryPoint;
@@ -157,7 +158,9 @@ public class DetallePublicacionFragment extends Fragment {
         scrollView.setVisibility(View.VISIBLE);
 
         tvTitulo.setText(pub.getTitulo());
-        tvPrecio.setText(getString(R.string.precio_formato, pub.getPrecio()));
+        // Mismo formato de precio que el listado del Home y las ofertas:
+        // "$ 95.000" en vez de "$ 95000.00".
+        tvPrecio.setText(FormatoOferta.precio(pub.getPrecio()));
         tvDescripcion.setText(pub.getDescripcion());
         
         if (pub.getFotos() != null && !pub.getFotos().isEmpty()) {
