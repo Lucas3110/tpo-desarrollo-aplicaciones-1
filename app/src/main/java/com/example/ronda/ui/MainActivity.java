@@ -1,11 +1,15 @@
 package com.example.ronda.ui;
 
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -27,6 +31,14 @@ import dagger.hilt.android.AndroidEntryPoint;
  */
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
+
+    /**
+     * No se usa Manifest.permission.ACCESS_LOCAL_NETWORK porque esa constante
+     * solo existe compilando contra API 36+. Con el texto plano, el codigo
+     * sigue compilando con cualquier compileSdk.
+     */
+    private static final String PERMISO_RED_LOCAL = "android.permission.ACCESS_LOCAL_NETWORK";
+    private static final int PEDIDO_RED_LOCAL = 1001;
 
     @Inject
     AuthEventBus eventosDeAuth;
@@ -56,6 +68,33 @@ public class MainActivity extends AppCompatActivity {
             navController = navHostFragment.getNavController();
             observarSesionExpirada();
         }
+
+        pedirAccesoALaRedLocal();
+    }
+
+    /**
+     * Android 16 (API 36) estrenó la "Local Network Protection": el permiso
+     * INTERNET dejó de alcanzar para conectarse a una dirección de la red
+     * local, y hace falta ACCESS_LOCAL_NETWORK concedido en runtime.
+     *
+     * Nos pega de lleno porque el backend de desarrollo vive en la PC, que
+     * desde el emulador es 10.0.2.2 y desde un celular es una IP 192.168.x.x.
+     *
+     * Lo feo del caso es cómo falla si no está: las requests no dan un error
+     * de permisos, se quedan colgadas hasta el timeout como si el servidor no
+     * existiera. Por eso conviene pedirlo apenas arranca la app y no cuando
+     * ya hay una pantalla esperando datos.
+     *
+     * En Android 15 o anterior el permiso no existe y esto no hace nada.
+     */
+    private void pedirAccesoALaRedLocal() {
+        if (Build.VERSION.SDK_INT < 36) return;
+
+        if (ContextCompat.checkSelfPermission(this, PERMISO_RED_LOCAL)
+                == PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        ActivityCompat.requestPermissions(this, new String[]{PERMISO_RED_LOCAL}, PEDIDO_RED_LOCAL);
     }
 
     /**

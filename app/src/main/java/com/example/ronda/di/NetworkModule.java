@@ -1,7 +1,6 @@
 package com.example.ronda.di;
 
-import android.os.Build;
-
+import com.example.ronda.BuildConfig;
 import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.network.UsuarioApiService;
@@ -36,19 +35,18 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class NetworkModule {
 
     /**
-     * Direcciones de la PC vistas desde el dispositivo.
+     * Direccion del backend, inyectada en tiempo de compilacion desde
+     * app/build.gradle.kts.
      *
-     * 10.0.2.2 es el alias que el emulador redirige al localhost de la máquina.
-     * Ojo: "localhost" NO sirve, porque desde el emulador apunta al emulador.
+     * Por defecto es http://10.0.2.2:3000/ (el emulador). Para probar en un
+     * celular fisico, cada uno pone la IP de su PC en local.properties:
+     *
+     *     ronda.baseUrl=http://192.168.0.153:3000/
+     *
+     * local.properties no se commitea, asi que nadie le rompe la
+     * configuracion a los demas.
      */
-    private static final String URL_EMULADOR = "http://10.0.2.2:3000/";
-
-    /**
-     * Para un celular físico en la misma WiFi. Hay que actualizarla con la IP
-     * que imprime el backend al arrancar, en la línea "Celular (WiFi) -> ...".
-     * Cambia al cambiar de red (casa, facultad, hotspot).
-     */
-    private static final String URL_RED_LOCAL = "http://192.168.1.37:3000/";
+    private static final String BASE_URL = BuildConfig.BASE_URL;
 
     /** Cuanto se espera al servidor antes de dar la request por fallida. */
     private static final long TIMEOUT_SEGUNDOS = 15;
@@ -104,7 +102,7 @@ public class NetworkModule {
     @Singleton
     public Retrofit provideRetrofit(OkHttpClient cliente) {
         return new Retrofit.Builder()
-                .baseUrl(getBaseUrl())
+                .baseUrl(BASE_URL)
                 .client(cliente)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
@@ -134,25 +132,4 @@ public class NetworkModule {
         return retrofit.create(UsuarioApiService.class);
     }
 
-    /**
-     * El emulador y un celular real llegan a la PC por direcciones distintas,
-     * así que se elige según dónde esté corriendo. De esta forma el mismo
-     * código funciona en los dos lados sin editarlo antes de cada prueba.
-     */
-    private static String getBaseUrl() {
-        return esEmulador() ? URL_EMULADOR : URL_RED_LOCAL;
-    }
-
-    /** Heurística estándar: los emuladores se identifican en Build. */
-    private static boolean esEmulador() {
-        return Build.FINGERPRINT.startsWith("generic")
-                || Build.FINGERPRINT.startsWith("unknown")
-                || Build.MODEL.contains("google_sdk")
-                || Build.MODEL.contains("Emulator")
-                || Build.MODEL.contains("Android SDK built for")
-                || Build.MANUFACTURER.contains("Genymotion")
-                || Build.PRODUCT.contains("sdk")
-                || Build.HARDWARE.contains("goldfish")
-                || Build.HARDWARE.contains("ranchu");
-    }
 }
