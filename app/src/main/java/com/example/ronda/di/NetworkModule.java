@@ -1,7 +1,10 @@
 package com.example.ronda.di;
 
+import android.util.Log;
+
 import com.example.ronda.BuildConfig;
 import com.example.ronda.data.network.AuthApiService;
+import com.example.ronda.data.network.OfertaApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.network.UsuarioApiService;
 import com.example.ronda.data.repository.SessionRepository;
@@ -16,6 +19,7 @@ import dagger.hilt.InstallIn;
 import dagger.hilt.components.SingletonComponent;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -34,17 +38,24 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @InstallIn(SingletonComponent.class)
 public class NetworkModule {
 
+    private static final String CABECERA_AUTH = "Authorization";
+    private static final String TAG_RED = "RondaRed";
+
     /**
      * Direccion del backend, inyectada en tiempo de compilacion desde
      * app/build.gradle.kts.
      *
-     * Por defecto es http://10.0.2.2:3000/ (el emulador). Para probar en un
-     * celular fisico, cada uno pone la IP de su PC en local.properties:
+     * Por defecto es http://10.0.2.2:3000/ (el alias con el que el emulador
+     * ve el localhost de la PC). Para probar en un celular fisico, cada uno
+     * pone la IP de SU maquina en local.properties:
      *
      *     ronda.baseUrl=http://192.168.0.153:3000/
      *
      * local.properties no se commitea, asi que nadie le rompe la
-     * configuracion a los demas.
+     * configuracion a los demas. Antes esto eran dos constantes en este
+     * archivo mas una heuristica que miraba Build.FINGERPRINT para adivinar
+     * si estabamos en un emulador; se saco porque la IP hardcodeada terminaba
+     * commiteada y rompiendole el entorno al resto.
      */
     private static final String BASE_URL = BuildConfig.BASE_URL;
 
@@ -52,22 +63,62 @@ public class NetworkModule {
     private static final long TIMEOUT_SEGUNDOS = 15;
 
     /**
-     * Retrofit usa OkHttp por debajo. Se configura el cliente a mano para
-     * fijar los timeouts (apunte "API REST y Retrofit", consideracion 3):
-     * si el celular apunta a una IP que no responde, la app espera 15 s y
-     * cae en onFailure con un IOException, en vez del default de 10 s.
+     * Retrofit usa OkHttp por debajo. Se configura el cliente a mano por tres
+     * motivos:
      *
-     * Ademas lleva el interceptor que detecta la sesion vencida (Punto 1).
+     * 1. Los timeouts (apunte "API REST y Retrofit", consideracion 3): si el
+     *    celular apunta a una IP que no responde, la app espera 15 s y cae en
+     *    onFailure con un IOException, en vez del default de 10 s.
+     *
+     * 2. El interceptor del JWT (clase 5, "JWT + LocalStorage"), que le pone
+     *    la cabecera Authorization a cada request.
+     *
+     * 3. El interceptor de sesion vencida (Punto 1), que reacciona al 401.
+     *
+     * El orden importa: primero se pone el token y despues se mira la
+     * respuesta. Los interceptores corren en el orden en que se agregan para
+     * la ida, y al reves para la vuelta.
      */
     @Provides
     @Singleton
     public OkHttpClient provideOkHttpClient(SessionRepository sesion, AuthEventBus eventos) {
         return new OkHttpClient.Builder()
+                .addInterceptor(interceptorDeJwt(sesion))
+                .addInterceptor(interceptorDeSesionVencida(sesion, eventos))
                 .connectTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
                 .readTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
                 .writeTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
-                .addInterceptor(interceptorDeSesionVencida(sesion, eventos))
                 .build();
+    }
+
+    /**
+     * Antes de enviar cada request lee el token guardado en SessionRepository
+     * (nuestro "TokenManager") y, si hay sesion, agrega sola la cabecera
+     * Authorization. Asi las interfaces nuevas no tienen que recibir el bearer
+     * a mano en cada metodo.
+     *
+     * Si una request ya trae la cabecera (las interfaces de los Puntos 1 a 4
+     * la pasan con @Header), se respeta tal cual: nunca se manda dos veces.
+     */
+    private static Interceptor interceptorDeJwt(SessionRepository sesion) {
+        return cadena -> {
+            Request original = cadena.request();
+            String token = sesion.getToken();
+
+            if (token == null || original.header(CABECERA_AUTH) != null) {
+                // Sin sesion (login, registro, OTP) o ya venia puesta.
+                return cadena.proceed(original);
+            }
+
+            Request conToken = original.newBuilder()
+                    .header(CABECERA_AUTH, "Bearer " + token)
+                    .build();
+
+            // Para verificar en Logcat que el token viaja (hands-on de la clase 5).
+            Log.d(TAG_RED, "JWT agregado a " + original.method() + " "
+                    + original.url().encodedPath());
+            return cadena.proceed(conToken);
+        };
     }
 
     /**
@@ -132,4 +183,13 @@ public class NetworkModule {
         return retrofit.create(UsuarioApiService.class);
     }
 
+    /**
+     * Ofertas y negociacion del Punto 7. Es la primera interfaz que no recibe
+     * el token por parametro: se lo pone el interceptor del JWT.
+     */
+    @Provides
+    @Singleton
+    public OfertaApiService provideOfertaApiService(Retrofit retrofit) {
+        return retrofit.create(OfertaApiService.class);
+    }
 }

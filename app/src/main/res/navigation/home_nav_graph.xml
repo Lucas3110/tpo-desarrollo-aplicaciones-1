@@ -22,6 +22,20 @@
         <action
             android:id="@+id/action_home_to_perfil"
             app:destination="@id/perfilFragment" />
+
+        <!-- Punto 4: detalle de una publicacion. -->
+        <action
+            android:id="@+id/action_home_to_detalle"
+            app:destination="@id/detallePublicacionFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/detallePublicacionFragment"
+        android:name="com.example.ronda.ui.home.DetallePublicacionFragment"
+        android:label="Detalle de Publicación"
+        tools:layout="@layout/fragment_detalle_publicacion">
+        <argument
+            android:name="publicacionId"
+            app:argType="integer" />
     </fragment>
 
     <!-- Punto 2 -->
@@ -42,3 +56,5 @@
     <!-- Los Puntos 3 a 6 cuelgan sus pantallas de aca -->
 
 </navigation>
+
+
