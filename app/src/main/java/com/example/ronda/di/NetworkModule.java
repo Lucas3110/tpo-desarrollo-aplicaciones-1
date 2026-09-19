@@ -5,6 +5,7 @@ import android.os.Build;
 import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.network.UsuarioApiService;
+import com.example.ronda.data.repository.SessionRepository;
 
 import java.util.concurrent.TimeUnit;
 
@@ -14,7 +15,9 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.hilt.InstallIn;
 import dagger.hilt.components.SingletonComponent;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -55,15 +58,46 @@ public class NetworkModule {
      * fijar los timeouts (apunte "API REST y Retrofit", consideracion 3):
      * si el celular apunta a una IP que no responde, la app espera 15 s y
      * cae en onFailure con un IOException, en vez del default de 10 s.
+     *
+     * Ademas lleva el interceptor que detecta la sesion vencida (Punto 1).
      */
     @Provides
     @Singleton
-    public OkHttpClient provideOkHttpClient() {
+    public OkHttpClient provideOkHttpClient(SessionRepository sesion, AuthEventBus eventos) {
         return new OkHttpClient.Builder()
                 .connectTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
                 .readTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
                 .writeTimeout(TIMEOUT_SEGUNDOS, TimeUnit.SECONDS)
+                .addInterceptor(interceptorDeSesionVencida(sesion, eventos))
                 .build();
+    }
+
+    /**
+     * Un 401 del backend significa que el token ya no sirve: vencio (dura 7
+     * dias) o el usuario dejo de existir. Sin esto, la app se quedaria
+     * mostrando errores sueltos en cada pantalla sin entender por que.
+     *
+     * Se hace en el interceptor y no en cada Fragment porque el 401 puede
+     * llegar en cualquier request, y repetir el chequeo en los 20 callbacks
+     * de la app seria imposible de mantener.
+     *
+     * Esto es lo que le da sentido real al desbloqueo biometrico: la sesion
+     * puede morir, y entonces volver a entrar significa algo.
+     */
+    private static Interceptor interceptorDeSesionVencida(SessionRepository sesion,
+                                                          AuthEventBus eventos) {
+        return cadena -> {
+            Response respuesta = cadena.proceed(cadena.request());
+
+            if (respuesta.code() == 401 && sesion.haySesion()) {
+                // Ojo: sin el chequeo de haySesion, un login con contrasena
+                // incorrecta (que tambien responde 401) dispararia el evento
+                // y patearia a una pantalla de login en la que ya estamos.
+                sesion.cerrarSesion();
+                eventos.emitirSesionExpirada();
+            }
+            return respuesta;
+        };
     }
 
     @Provides
@@ -83,11 +117,9 @@ public class NetworkModule {
     }
 
     /**
-     * Interfaz del Punto 3. Cada interfaz de Retrofit necesita su propio
-     * @Provides: sin esto, un Fragment que la pida con @Inject no compila
-     * ("PublicacionApiService cannot be provided without an @Provides-annotated
-     * method"). Cuando se sumen las de los Puntos 4, 5 y 6, se agregan acá
-     * copiando este mismo método.
+     * Cada interfaz de Retrofit necesita su propio @Provides: sin esto, un
+     * Fragment que la pida con @Inject no compila ("PublicacionApiService
+     * cannot be provided without an @Provides-annotated method").
      */
     @Provides
     @Singleton

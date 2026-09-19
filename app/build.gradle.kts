@@ -50,6 +50,11 @@ dependencies {
     // Glide: descarga, cachea y muestra la fotoPrincipal (una URL) de cada
     // publicacion en el listado. Sin annotationProcessor: no hace falta.
     implementation(libs.glide)
+    // Biometria: desbloqueo de la sesion con la huella del dispositivo (Punto 1)
+    implementation(libs.biometric)
+    // EncryptedSharedPreferences: guarda la copia del token con una llave del
+    // Keystore, que es lo que la huella desbloquea.
+    implementation(libs.security.crypto)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
