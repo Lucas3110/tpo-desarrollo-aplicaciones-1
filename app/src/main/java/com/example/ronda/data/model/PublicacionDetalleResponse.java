@@ -35,6 +35,10 @@ public class PublicacionDetalleResponse {
         private boolean esMia;
         @SerializedName("esFavorito")
         private boolean esFavorito;
+        @SerializedName("entrega")
+        private EntregaResponse entrega;
+
+        public EntregaResponse getEntrega() { return entrega; }
 
         public int getId() { return id; }
         public String getTitulo() { return titulo; }
