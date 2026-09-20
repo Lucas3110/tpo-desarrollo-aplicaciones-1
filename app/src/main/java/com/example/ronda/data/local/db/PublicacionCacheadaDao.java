@@ -24,25 +24,28 @@ public abstract class PublicacionCacheadaDao {
      * json_detalle con null y la persona perdería lo que ya había abierto.
      * Acá el detalle sólo se toca si viene uno nuevo.
      */
-    @Query("INSERT INTO publicaciones_cache (id, json_listado, json_detalle, guardado_en) "
-            + "VALUES (:id, :jsonListado, NULL, :guardadoEn) "
-            + "ON CONFLICT(id) DO UPDATE SET json_listado = :jsonListado, guardado_en = :guardadoEn")
-    public abstract void guardarListado(int id, String jsonListado, long guardadoEn);
+    @Query("INSERT INTO publicaciones_cache "
+            + "(id, json_listado, json_detalle, guardado_en, lote_carga, posicion) "
+            + "VALUES (:id, :jsonListado, NULL, :guardadoEn, :lote, :posicion) "
+            + "ON CONFLICT(id) DO UPDATE SET json_listado = :jsonListado, "
+            + "guardado_en = :guardadoEn, lote_carga = :lote, posicion = :posicion")
+    public abstract void guardarListado(int id, String jsonListado, long guardadoEn,
+                                        long lote, int posicion);
 
     /** Ídem, del otro lado: guardar el detalle no borra el resumen del listado. */
-    @Query("INSERT INTO publicaciones_cache (id, json_listado, json_detalle, guardado_en) "
-            + "VALUES (:id, NULL, :jsonDetalle, :guardadoEn) "
+    @Query("INSERT INTO publicaciones_cache "
+            + "(id, json_listado, json_detalle, guardado_en, lote_carga, posicion) "
+            + "VALUES (:id, NULL, :jsonDetalle, :guardadoEn, 0, 0) "
             + "ON CONFLICT(id) DO UPDATE SET json_detalle = :jsonDetalle, guardado_en = :guardadoEn")
     public abstract void guardarDetalle(int id, String jsonDetalle, long guardadoEn);
 
     /**
-     * Lo último que se cargó bien en el Home, lo más reciente primero.
-     *
-     * Ordena por `guardado_en` y no por fecha de publicación a propósito: sin
-     * conexión lo que importa es mostrar lo último que la persona llegó a ver.
+     * Lo ultimo que se cargo bien en el Home, en el mismo orden en que lo
+     * mando el servidor: primero la carga mas reciente y, dentro de ella, la
+     * posicion original. Abrir un detalle no reordena nada.
      */
     @Query("SELECT * FROM publicaciones_cache WHERE json_listado IS NOT NULL "
-            + "ORDER BY guardado_en DESC LIMIT :limite")
+            + "ORDER BY lote_carga DESC, posicion ASC, id ASC LIMIT :limite")
     public abstract List<PublicacionCacheada> ultimasVistas(int limite);
 
     @Query("SELECT * FROM publicaciones_cache WHERE id = :id LIMIT 1")

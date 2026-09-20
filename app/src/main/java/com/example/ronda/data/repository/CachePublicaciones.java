@@ -88,8 +88,14 @@ public class CachePublicaciones {
     // Guardar
     // -----------------------------------------------------------------
 
-    /** Se llama cada vez que el Home trae una página con éxito. */
-    public void guardarListado(List<PublicacionItemResponse> items) {
+    /**
+     * Se llama cada vez que el Home trae una pagina con exito.
+     *
+     * lote identifica la carga completa: es el mismo valor para todas las
+     * paginas de un mismo scroll, asi la segunda no se adelanta a la primera.
+     * desde es el indice absoluto del primer item de esta pagina.
+     */
+    public void guardarListado(List<PublicacionItemResponse> items, long lote, int desde) {
         if (items == null || items.isEmpty()) return;
 
         final List<PublicacionItemResponse> copia = new ArrayList<>(items);
@@ -99,8 +105,10 @@ public class CachePublicaciones {
                 // Una sola transacción: sin esto serían 20 escrituras sueltas
                 // a disco, y podría quedar media página guardada si algo falla.
                 base.runInTransaction(() -> {
-                    for (PublicacionItemResponse item : copia) {
-                        dao.guardarListado(item.getId(), gson.toJson(item), ahora);
+                    for (int i = 0; i < copia.size(); i++) {
+                        PublicacionItemResponse item = copia.get(i);
+                        dao.guardarListado(item.getId(), gson.toJson(item), ahora,
+                                lote, desde + i);
                     }
                     dao.podar(MAXIMO);
                 });

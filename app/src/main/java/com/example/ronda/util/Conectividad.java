@@ -4,7 +4,6 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
@@ -64,31 +63,44 @@ public class Conectividad {
         return estado;
     }
 
+    /**
+     * Se escucha la red *por defecto*, no cualquiera que cumpla un filtro.
+     *
+     * La diferencia importa: con registerNetworkCallback(request, ...) el
+     * onLost llega por una red puntual, y ahi volver a preguntar
+     * hayInternet() es una carrera — a veces el sistema todavia no termino de
+     * dar de baja la red y contesta que si, se publica "hay internet" y como
+     * despues no llega ningun callback mas, la pantalla queda mintiendo.
+     *
+     * Con la red por defecto no hay ambiguedad: si se perdio, no hay salida a
+     * internet, y se publica false sin volver a preguntar nada.
+     */
     private void registrarEscucha() {
         if (gestor == null) return;
 
-        NetworkRequest pedido = new NetworkRequest.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .build();
-
-        gestor.registerNetworkCallback(pedido, new ConnectivityManager.NetworkCallback() {
+        gestor.registerDefaultNetworkCallback(new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(@NonNull Network red) {
-                // postValue y no setValue: esto llega en un hilo del sistema.
+                // Recien aparece: todavia puede no estar validada, asi que se
+                // consulta. El onCapabilitiesChanged de abajo lo corrige.
                 estado.postValue(hayInternet());
             }
 
             @Override
             public void onLost(@NonNull Network red) {
-                estado.postValue(hayInternet());
+                // postValue y no setValue: esto llega en un hilo del sistema.
+                estado.postValue(false);
             }
 
             @Override
             public void onCapabilitiesChanged(@NonNull Network red,
                                               @NonNull NetworkCapabilities caps) {
                 // Es el que avisa cuando una red pasa a estar validada, o sea
-                // cuando el WiFi del bar finalmente deja pasar tráfico.
-                estado.postValue(hayInternet());
+                // cuando el WiFi del bar finalmente deja pasar trafico. Se lee
+                // de las capacidades que llegan, no del estado global.
+                estado.postValue(
+                        caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                                && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED));
             }
         });
     }
