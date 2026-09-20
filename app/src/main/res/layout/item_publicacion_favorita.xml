@@ -97,7 +97,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Favorito"
+        android:contentDescription="@string/favoritos_marcar"
         android:src="@drawable/ic_favorite" />
 
 </LinearLayout>

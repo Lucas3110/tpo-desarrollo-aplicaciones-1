@@ -75,22 +75,29 @@ public class FavoritosAdapter extends ListAdapter<PublicacionItemResponse, Favor
 
             if (item.getNovedad() != null && item.getNovedad().isCambioDePrecio()) {
                 tvNovedad.setVisibility(View.VISIBLE);
-                String texto = item.getNovedad().isBajoDePrecio() ? "Bajó de precio" : "Subió de precio";
-                tvNovedad.setText(texto + " (era " + formatearPrecio(item.getNovedad().getPrecioAnterior()) + ")");
+                int plantilla = item.getNovedad().isBajoDePrecio()
+                        ? R.string.favoritos_bajo_de_precio
+                        : R.string.favoritos_subio_de_precio;
+                tvNovedad.setText(itemView.getContext().getString(plantilla,
+                        formatearPrecio(item.getNovedad().getPrecioAnterior())));
             } else {
                 tvNovedad.setVisibility(View.GONE);
             }
 
+            // Mismo criterio que el listado del Home: el hueco se conserva
+            // aunque no haya foto, asi las filas quedan alineadas.
+            ivFoto.setVisibility(View.VISIBLE);
             if (item.getFotoPrincipal() != null && !item.getFotoPrincipal().isEmpty()) {
-                ivFoto.setVisibility(View.VISIBLE);
+                ivFoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 Glide.with(ivFoto.getContext())
                         .load(item.getFotoPrincipal())
-                        .placeholder(R.drawable.bg_estado_articulo)
+                        .placeholder(R.drawable.bg_sin_foto)
                         .centerCrop()
                         .into(ivFoto);
             } else {
-                ivFoto.setVisibility(View.GONE);
                 Glide.with(ivFoto.getContext()).clear(ivFoto);
+                ivFoto.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                ivFoto.setImageResource(R.drawable.bg_sin_foto);
             }
 
             btnFavorito.setImageResource(item.isFavorito() ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);

@@ -254,6 +254,14 @@ public class HomeFragment extends Fragment {
                         Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
                         return;
                     }
+                    // Guardar en favoritos es una de las acciones que el punto 6
+                    // pide frenar sin conexion: sin esto el corazon se pintaba
+                    // y un segundo despues se despintaba solo.
+                    if (!conectividad.hayInternet()) {
+                        Toast.makeText(requireContext(), R.string.sin_conexion_accion,
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     // Optimistic toggle
                     boolean eraFavorito = item.isFavorito();
                     item.setEsFavorito(!eraFavorito);
@@ -423,31 +431,35 @@ public class HomeFragment extends Fragment {
             return;
         }
         EditText input = new EditText(requireContext());
-        input.setHint("Nombre de la búsqueda");
+        input.setHint(R.string.busqueda_guardar_nombre_hint);
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Guardar búsqueda")
+                .setTitle(R.string.busqueda_guardar_titulo)
                 .setView(input)
-                .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Guardar", (dialog, which) -> {
+                .setNegativeButton(R.string.accion_cancelar, null)
+                .setPositiveButton(R.string.busqueda_guardar_accion, (dialog, which) -> {
                     String nombre = input.getText().toString();
                     Map<String, String> mapFiltros = filtros.toMap();
                     if (mapFiltros.isEmpty()) {
-                        Toast.makeText(requireContext(), "No hay filtros para guardar", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), R.string.busqueda_sin_filtros,
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
                     GuardarBusquedaRequest req = new GuardarBusquedaRequest(nombre, mapFiltros);
                     favoritosRepository.guardarBusqueda(req).enqueue(new Callback<Void>() {
                         @Override
                         public void onResponse(Call<Void> call, Response<Void> response) {
-                            if (response.isSuccessful()) {
-                                Toast.makeText(requireContext(), "Búsqueda guardada", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(requireContext(), "Error al guardar", Toast.LENGTH_SHORT).show();
-                            }
+                            if (!estaVivo()) return;
+                            Toast.makeText(requireContext(),
+                                    response.isSuccessful()
+                                            ? R.string.busqueda_guardada_ok
+                                            : R.string.busqueda_guardar_error,
+                                    Toast.LENGTH_SHORT).show();
                         }
                         @Override
                         public void onFailure(Call<Void> call, Throwable t) {
-                            Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                            if (!estaVivo() || call.isCanceled()) return;
+                            Toast.makeText(requireContext(),
+                                    R.string.publicar_error_conexion, Toast.LENGTH_SHORT).show();
                         }
                     });
                 })
@@ -458,7 +470,7 @@ public class HomeFragment extends Fragment {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.tutorial_titulo)
                 .setMessage(R.string.tutorial_mensaje)
-                .setNegativeButton(android.R.string.cancel, null)
+                .setNegativeButton(R.string.accion_cancelar, null)
                 .setPositiveButton(R.string.tutorial_empezar, (dialogo, cual) ->
                         Navigation.findNavController(requireView()).navigate(R.id.action_home_to_publicar))
                 .show();
@@ -1098,8 +1110,14 @@ public class HomeFragment extends Fragment {
         View raiz = getView();
         if (raiz == null) return;
 
+        // Tambien los controles de adentro del panel: si quedaba abierto al
+        // cortarse la red, se podia aplicar un filtro igual y el resultado era
+        // la cache entera, como si la busqueda hubiera encontrado todo.
         int[] ids = {R.id.etBuscar, R.id.btnBuscar, R.id.btnLimpiarBusqueda,
-                R.id.btnFiltros, R.id.spOrden};
+                R.id.btnFiltros, R.id.spOrden,
+                R.id.spCategoria, R.id.etPrecioMin, R.id.etPrecioMax,
+                R.id.cbNuevo, R.id.cbComoNuevo, R.id.cbUsado, R.id.cbSoloMiZona,
+                R.id.btnLimpiarFiltros, R.id.btnAplicarFiltros, R.id.btnGuardarBusqueda};
         for (int id : ids) {
             View control = raiz.findViewById(id);
             if (control == null) continue;

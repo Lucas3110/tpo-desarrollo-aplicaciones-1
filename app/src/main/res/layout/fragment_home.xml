@@ -111,7 +111,7 @@
                 android:minWidth="0dp"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
-                android:text="Favoritos" />
+                android:text="@string/home_boton_favoritos" />
 
         </LinearLayout>
 
@@ -311,7 +311,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:text="Guardar Búsqueda"
+                android:text="@string/home_guardar_busqueda"
                 style="?attr/materialButtonOutlinedStyle" />
 
         </LinearLayout>

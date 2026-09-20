@@ -24,7 +24,11 @@ class MisPublicacionesAdapter extends BaseAdapter {
         View v = convertida != null ? convertida : LayoutInflater.from(parent.getContext()).inflate(R.layout.item_mi_publicacion, parent, false);
         PublicacionItemResponse item = getItem(p);
         ((TextView)v.findViewById(R.id.tvTituloMia)).setText(item.getTitulo());
-        String precio = NumberFormat.getCurrencyInstance(new Locale("es", "AR")).format(item.getPrecio());
+        NumberFormat formato = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("es-AR"));
+        // Mismo formato que el listado: sin los ,00 cuando el precio es redondo.
+        formato.setMinimumFractionDigits(0);
+        formato.setMaximumFractionDigits(2);
+        String precio = formato.format(item.getPrecio());
         ((TextView)v.findViewById(R.id.tvDatosMia)).setText(precio + " · " + item.getEstado());
         Button boton = v.findViewById(R.id.btnCambiarEstado);
         boolean vendida = "VENDIDA".equals(item.getEstado()); boton.setVisibility(vendida ? View.GONE : View.VISIBLE);

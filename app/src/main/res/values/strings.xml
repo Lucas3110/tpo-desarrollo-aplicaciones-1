@@ -72,7 +72,6 @@
     <string name="home_url_base">Servidor: %1$s</string>
     <string name="home_sesion_vencida">Tu sesión venció, volvé a ingresar</string>
     <string name="home_foto_desc">Foto del artículo</string>
-    <string name="home_detalle_pendiente">Muy pronto vas a poder ver el detalle de \"%1$s\"</string>
     <string name="home_mi_perfil">Mi perfil</string>
 
     <!-- Ofertas y negociación (Puntos 4 y 7) -->
@@ -291,7 +290,10 @@
     <string name="publicar_borrador_guardado">Borrador guardado</string>
     <string name="publicar_exito">¡Tu publicación ya está activa!</string>
     <string name="publicar_error_conexion">No pudimos comunicarnos con el servidor</string>
-    <string name="publicar_fotos_cantidad">%1$d foto(s) seleccionada(s)</string>
+    <plurals name="publicar_fotos_cantidad">
+        <item quantity="one">%1$d foto seleccionada</item>
+        <item quantity="other">%1$d fotos seleccionadas</item>
+    </plurals>
     <string name="publicar_paso">Paso %1$d de 3</string>
     <string name="publicar_paso_fotos">Fotos del artículo</string>
     <string name="publicar_paso_datos">Contanos qué vendés</string>
@@ -301,7 +303,7 @@
     <string name="publicar_descartar_confirmacion">Se eliminará el borrador y no podrás recuperarlo.</string>
     <string name="publicar_descartar_titulo">¿Descartar publicación?</string>
     <string name="publicar_descartar_si">Sí, descartar</string>
-    <string name="mias_resumen">%1$d activas · %2$d pausadas · %3$d vendidas</string>
+    <string name="mias_resumen">Activas: %1$d · Pausadas: %2$d · Vendidas: %3$d</string>
     <string name="mias_vacio">No tenés publicaciones con este estado.</string>
     <string name="mias_error">No pudimos cargar tus publicaciones. Tocá para reintentar.</string>
     <string name="mias_pausar">Pausar</string>
@@ -322,7 +324,7 @@
     <string name="detalle_ver_perfil">Ver perfil público</string>
     <string name="detalle_preguntar">Preguntar</string>
     <string name="detalle_ofertar">Ofertar</string>
-    <string name="detalle_guardar_favorito">Guardar en Favoritos</string>
+    <string name="detalle_guardar_favorito">Guardar en favoritos</string>
     <string name="detalle_gestionar">Gestionar publicación</string>
     <string name="detalle_gestionar_ver_preguntas">Ver preguntas</string>
     <string name="detalle_gestionar_ver_ofertas">Ver ofertas</string>
@@ -351,4 +353,37 @@
     <string name="entrega_sin_direccion">El vendedor aún no indicó el punto de entrega.</string>
     <string name="entrega_no_disponible">El punto de entrega no está disponible para tu cuenta.</string>
     <string name="entrega_sin_maps">No encontramos una aplicación de mapas o navegador para abrir la ruta.</string>
+    <!-- Punto 10: favoritos y busquedas guardadas -->
+    <string name="favoritos_tab_favoritos">Favoritos</string>
+    <string name="favoritos_tab_busquedas">Búsquedas</string>
+    <string name="favoritos_reintentar">Reintentar</string>
+    <string name="favoritos_vacio">No tenés favoritos guardados</string>
+    <string name="favoritos_busquedas_vacio">No tenés búsquedas guardadas</string>
+    <string name="favoritos_marcar">Favorito</string>
+    <string name="favoritos_bajo_de_precio">Bajó de precio (era %1$s)</string>
+    <string name="favoritos_subio_de_precio">Subió de precio (era %1$s)</string>
+    <plurals name="favoritos_novedades">
+        <item quantity="one">%d nuevo</item>
+        <item quantity="other">%d nuevos</item>
+    </plurals>
+    <string name="home_boton_favoritos">Favoritos</string>
+    <string name="home_guardar_busqueda">Guardar búsqueda</string>
+    <string name="busqueda_guardar_titulo">Guardar búsqueda</string>
+    <string name="busqueda_guardar_nombre_hint">Nombre de la búsqueda</string>
+    <string name="busqueda_guardar_accion">Guardar</string>
+    <string name="busqueda_guardada_ok">Búsqueda guardada</string>
+    <string name="busqueda_guardar_error">No pudimos guardar la búsqueda</string>
+    <string name="busqueda_sin_filtros">Aplicá algún filtro antes de guardar la búsqueda</string>
+
+    <!-- Punto 4: preguntas y respuestas -->
+    <string name="preguntas_titulo">Preguntas</string>
+    <string name="preguntas_vacio">Nadie preguntó nada todavía. ¡Sé el primero!</string>
+    <string name="preguntas_hint">Escribí tu pregunta…</string>
+    <string name="preguntas_responder_hint">Escribí tu respuesta…</string>
+    <string name="preguntas_responder">Responder</string>
+    <string name="preguntas_enviar">Enviar</string>
+
+    <!-- Punto 5: publicar -->
+    <string name="publicar_fotos_ninguna">Todavía no elegiste fotos</string>
+    <string name="publicar_resumen_precio">$ %1$s</string>
 </resources>

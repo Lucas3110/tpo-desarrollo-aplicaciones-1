@@ -13,6 +13,10 @@ public class BusquedaGuardadaDto {
     @SerializedName("filtros")
     private Map<String, String> filtros;
 
+    /** Los filtros en una linea legible; lo arma el backend. */
+    @SerializedName("resumen")
+    private String resumen;
+
     @SerializedName("novedades")
     private int novedades;
 
@@ -32,6 +36,10 @@ public class BusquedaGuardadaDto {
 
     public Map<String, String> getFiltros() {
         return filtros;
+    }
+
+    public String getResumen() {
+        return resumen;
     }
 
     public int getNovedades() {

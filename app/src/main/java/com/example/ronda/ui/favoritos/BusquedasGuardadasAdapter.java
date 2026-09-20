@@ -13,9 +13,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.ronda.R;
 import com.example.ronda.data.model.BusquedaGuardadaDto;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class BusquedasGuardadasAdapter extends ListAdapter<BusquedaGuardadaDto, BusquedasGuardadasAdapter.ViewHolder> {
 
@@ -58,21 +55,21 @@ public class BusquedasGuardadasAdapter extends ListAdapter<BusquedaGuardadaDto, 
         void bind(BusquedaGuardadaDto item, OnItemClickListener listener) {
             tvNombreBusqueda.setText(item.getNombre());
             
-            Map<String, String> filtros = item.getFiltros();
-            if (filtros != null && !filtros.isEmpty()) {
-                List<String> listFiltros = new ArrayList<>();
-                for (Map.Entry<String, String> entry : filtros.entrySet()) {
-                    listFiltros.add(entry.getKey() + ": " + entry.getValue());
-                }
-                tvFiltros.setText(String.join(", ", listFiltros));
+            // El resumen lo arma el backend, que es el unico que puede traducir
+            // el id de la categoria a su nombre sin pedir el catalogo entero.
+            String resumen = item.getResumen();
+            if (resumen != null && !resumen.trim().isEmpty()) {
+                tvFiltros.setText(resumen);
                 tvFiltros.setVisibility(View.VISIBLE);
             } else {
                 tvFiltros.setVisibility(View.GONE);
             }
 
-            if (item.getNovedades() > 0) {
+            int novedades = item.getNovedades();
+            if (novedades > 0) {
                 tvNovedadesBusqueda.setVisibility(View.VISIBLE);
-                tvNovedadesBusqueda.setText(item.getNovedades() + " nuevos");
+                tvNovedadesBusqueda.setText(itemView.getResources()
+                        .getQuantityString(R.plurals.favoritos_novedades, novedades, novedades));
             } else {
                 tvNovedadesBusqueda.setVisibility(View.GONE);
             }
