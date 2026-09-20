@@ -105,6 +105,14 @@ public class MisOfertasFragment extends Fragment {
         btnReintentar.setOnClickListener(v -> cargar());
 
         escucharContraoferta();
+
+        // Al volver de otra pantalla, Navigation destruye la vista pero no el
+        // Fragment: lo que ya se habia traido sigue en memoria y se pinta sin
+        // esperar al servidor.
+        if (datos != null) {
+            actualizarTitulosDeTabs();
+            mostrarTab();
+        }
         cargar();
     }
 
@@ -232,7 +240,9 @@ public class MisOfertasFragment extends Fragment {
     // -----------------------------------------------------------------
 
     private void cargar() {
-        mostrarEstado(Estado.CARGANDO);
+        // El spinner solo cuando no hay nada para mostrar: si las ofertas ya
+        // estan en pantalla, el refresco pasa por atras.
+        if (datos == null) mostrarEstado(Estado.CARGANDO);
 
         llamada = ofertaApi.misOfertas();
         llamada.enqueue(new Callback<MisOfertasResponse>() {
@@ -325,6 +335,14 @@ public class MisOfertasFragment extends Fragment {
     }
 
     private void mostrarError(String mensaje) {
+        // Un refresco que falla no borra una lista que sigue valiendo. Sin
+        // esto, volver del detalle sin conexion dejaba la pantalla en blanco
+        // aunque las ofertas estuvieran cargadas.
+        if (datos != null) {
+            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
+            mostrarTab();
+            return;
+        }
         tvError.setText(mensaje);
         mostrarEstado(Estado.ERROR);
     }
