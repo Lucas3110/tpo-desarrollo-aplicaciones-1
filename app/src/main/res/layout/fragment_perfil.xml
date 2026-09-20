@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Mi perfil (Punto 2): ver y editar nombre, telefono y zona (el email es de
-     solo lectura) y ver la reputacion. Mismo esquema que las pantallas de
+<!-- Mi perfil (Punto 2): ver y editar foto, nombre, telefono y zona (el email
+     es de solo lectura) y ver la reputacion. Mismo esquema que las pantallas de
      auth: ScrollView + LinearLayout vertical. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -65,6 +65,42 @@
             android:orientation="vertical"
             android:visibility="gone"
             tools:visibility="visible">
+
+            <!-- Foto de perfil: se elige de la galeria y se aplica con
+                 "Guardar cambios", igual que el resto de los datos. -->
+            <ImageView
+                android:id="@+id/ivFoto"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center_horizontal"
+                android:contentDescription="@string/perfil_foto_desc"
+                android:scaleType="centerCrop"
+                tools:src="@drawable/ic_persona" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnCambiarFoto"
+                    style="?attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/perfil_foto_cambiar" />
+
+                <Button
+                    android:id="@+id/btnQuitarFoto"
+                    style="?attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/perfil_foto_quitar"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"

@@ -164,6 +164,11 @@
     <string name="perfil_guardado">Datos actualizados</string>
     <string name="perfil_error_guardar">No pudimos guardar los cambios</string>
     <string name="perfil_reintentar">Reintentar</string>
+    <string name="perfil_foto_desc">Foto de perfil</string>
+    <string name="perfil_foto_cambiar">Cambiar foto</string>
+    <string name="perfil_foto_quitar">Quitar foto</string>
+    <string name="perfil_foto_pendiente">Tocá “Guardar cambios” para aplicar la foto</string>
+    <string name="perfil_foto_permiso">No pudimos conservar el acceso a la foto. Quizás debas volver a elegirla al reabrir la app.</string>
     <string name="perfil_reputacion_titulo">Reputación</string>
     <string name="perfil_reputacion_estrellas">4,5 ★ · 12 calificaciones</string>
     <string name="perfil_reputacion_operaciones">8 ventas · 3 compras concretadas</string>

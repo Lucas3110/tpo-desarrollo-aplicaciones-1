@@ -1,6 +1,8 @@
 package com.example.ronda.ui.perfil;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,11 +12,14 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -44,8 +49,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Mi perfil (Punto 2): ver y editar los datos personales (nombre, telefono y
- * zona; el email es de solo lectura). La reputacion se muestra fija.
+ * Mi perfil (Punto 2): ver y editar los datos personales (foto, nombre,
+ * telefono y zona; el email es de solo lectura). La reputacion se muestra fija.
  *
  * GET /usuarios/me trae los datos y PUT /usuarios/me los guarda. El catalogo
  * de zonas del Spinner sale de GET /zonas (misma interfaz del Punto 3). Se
@@ -54,6 +59,12 @@ import retrofit2.Response;
  *
  * Cada campo arranca bloqueado y se habilita tocando el lapiz que tiene al
  * lado. "Guardar cambios" hace el PUT y vuelve a bloquear todo.
+ *
+ * La foto se guarda como URL, no como archivo: se elige de la galeria, se
+ * conserva la Uri con permiso persistente y va en el mismo PUT. OJO: el
+ * backend reemplaza la foto en cada guardado, asi que el PUT siempre lleva la
+ * actual (si no, se borraria). Una Uri de la galeria (content://) solo la ve
+ * este celular: en el perfil de otra persona, en otro dispositivo, no carga.
  */
 @AndroidEntryPoint
 public class PerfilFragment extends Fragment {
@@ -81,14 +92,37 @@ public class PerfilFragment extends Fragment {
     private ImageButton btnEditarTelefono;
     private ImageButton btnEditarZona;
     private Button btnGuardar;
+    private ImageView ivFoto;
+    private Button btnCambiarFoto;
+    private Button btnQuitarFoto;
 
     private UsuarioResponse datos;
+    /**
+     * Foto que se va a guardar: la del servidor o la recien elegida (aun sin
+     * guardar). Null o vacia = sin foto.
+     */
+    @Nullable
+    private String fotoUrl;
     /** Paralelo al adapter del Spinner. La posicion 0 es "Sin zona" (null). */
     private final List<ZonaResponse> zonasSpinner = new ArrayList<>();
     private Call<PerfilResponse> llamadaDatos;
     private Call<ZonasResponse> llamadaZonas;
     private Call<PerfilResponse> llamadaGuardar;
     private boolean guardando = false;
+
+    /** Galeria del sistema, filtrada a imagenes. Devuelve una Uri con permiso persistible. */
+    private final ActivityResultLauncher<String[]> selectorFoto = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri == null || !estaVivo()) return;
+                try {
+                    requireContext().getContentResolver().takePersistableUriPermission(
+                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (SecurityException e) {
+                    Toast.makeText(requireContext(), R.string.perfil_foto_permiso,
+                            Toast.LENGTH_LONG).show();
+                }
+                cambiarFoto(uri);
+            });
 
     @Nullable
     @Override
@@ -115,7 +149,12 @@ public class PerfilFragment extends Fragment {
         btnEditarTelefono = view.findViewById(R.id.btnEditarTelefono);
         btnEditarZona = view.findViewById(R.id.btnEditarZona);
         btnGuardar = view.findViewById(R.id.btnGuardar);
+        ivFoto = view.findViewById(R.id.ivFoto);
+        btnCambiarFoto = view.findViewById(R.id.btnCambiarFoto);
+        btnQuitarFoto = view.findViewById(R.id.btnQuitarFoto);
 
+        btnCambiarFoto.setOnClickListener(v -> selectorFoto.launch(new String[]{"image/*"}));
+        btnQuitarFoto.setOnClickListener(v -> cambiarFoto(null));
         btnReintentar.setOnClickListener(v -> cargar());
         btnGuardar.setOnClickListener(v -> guardar());
         btnEditarNombre.setOnClickListener(v -> habilitarEdicion(etNombre));
@@ -171,7 +210,26 @@ public class PerfilFragment extends Fragment {
         etNombre.setText(datos.getNombre());
         tvEmail.setText(datos.getEmail());
         etTelefono.setText(datos.getTelefono() != null ? datos.getTelefono() : "");
+        fotoUrl = datos.getFotoUrl();
+        mostrarFoto();
         bloquearCampos();
+    }
+
+    /** Dibuja la foto que se va a guardar y muestra "Quitar" solo si hay una. */
+    private void mostrarFoto() {
+        FormatoPerfil.cargarAvatar(ivFoto, fotoUrl);
+        boolean hayFoto = fotoUrl != null && !fotoUrl.isEmpty();
+        btnQuitarFoto.setVisibility(hayFoto ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Elegir o quitar la foto solo cambia lo que se ve: se aplica al tocar
+     * "Guardar cambios", como el resto de los datos.
+     */
+    private void cambiarFoto(@Nullable Uri uri) {
+        fotoUrl = uri != null ? uri.toString() : null;
+        mostrarFoto();
+        Toast.makeText(requireContext(), R.string.perfil_foto_pendiente, Toast.LENGTH_SHORT).show();
     }
 
     /** Deja los campos en modo lectura: se editan tocando el lapiz de al lado. */
@@ -304,7 +362,7 @@ public class PerfilFragment extends Fragment {
         btnGuardar.setEnabled(false);
 
         EditarPerfilRequest body = new EditarPerfilRequest(
-                nombre, telefono.isEmpty() ? null : telefono, zonaId);
+                nombre, telefono.isEmpty() ? null : telefono, zonaId, fotoUrl);
         llamadaGuardar = usuarioApi.actualizarMisDatos(sesion.getBearer(), body);
         llamadaGuardar.enqueue(new Callback<PerfilResponse>() {
             @Override
