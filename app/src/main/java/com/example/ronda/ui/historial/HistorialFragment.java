@@ -99,6 +99,13 @@ public class HistorialFragment extends Fragment {
     private Long desdeMs;
     @Nullable
     private Long hastaMs;
+    /**
+     * Lo ultimo que trajo el servidor. Se conserva en el Fragment porque
+     * Navigation destruye la vista al navegar pero no el Fragment: al volver
+     * del detalle se repinta esto en vez de dejar la pantalla en blanco
+     * mientras se pide todo otra vez.
+     */
+    private HistorialResponse datos;
     private Call<HistorialResponse> llamada;
     private Call<CalificacionUnicaResponse> llamadaCalificar;
 
@@ -172,6 +179,7 @@ public class HistorialFragment extends Fragment {
         btnActualizar.setOnClickListener(v -> cargar());
         btnReintentar.setOnClickListener(v -> cargar());
 
+        if (datos != null) mostrar(datos);
         cargar();
     }
 
@@ -275,7 +283,8 @@ public class HistorialFragment extends Fragment {
 
     private void cargar() {
         if (llamada != null) llamada.cancel();
-        mostrarEstado(Estado.CARGANDO);
+        // Con el historial ya en pantalla el refresco pasa por atras.
+        if (datos == null) mostrarEstado(Estado.CARGANDO);
 
         llamada = operacionApi.historial(tipoParametro(),
                 desdeMs != null ? aIso(desdeMs) : null,
@@ -296,7 +305,8 @@ public class HistorialFragment extends Fragment {
                     mostrarError(ApiErrorParser.mensaje(error, getString(R.string.historial_error_carga)));
                     return;
                 }
-                mostrar(response.body());
+                datos = response.body();
+                mostrar(datos);
             }
 
             @Override
@@ -415,6 +425,14 @@ public class HistorialFragment extends Fragment {
     }
 
     private void mostrarError(String mensaje) {
+        // Sin conexion, volver del detalle dejaba el historial vacio aunque
+        // las operaciones siguieran cargadas. Misma regla que en Mis ofertas,
+        // Mi perfil, Mis avisos y Favoritos.
+        if (datos != null) {
+            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
+            mostrar(datos);
+            return;
+        }
         tvError.setText(mensaje);
         mostrarEstado(Estado.ERROR);
     }
