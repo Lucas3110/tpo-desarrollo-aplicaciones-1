@@ -4,8 +4,6 @@ import android.os.Bundle;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
-import android.text.format.DateFormat;
-import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,7 +32,6 @@ import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.util.Conectividad;
 import com.example.ronda.ui.ofertas.FormatoOferta;
 
-import java.util.Date;
 
 import javax.inject.Inject;
 import dagger.hilt.android.AndroidEntryPoint;
@@ -57,6 +54,9 @@ public class DetallePublicacionFragment extends Fragment {
 
     @Inject
     Conectividad conectividad;
+
+    @Inject
+    com.example.ronda.data.repository.FavoritosRepository favoritosRepository;
 
     private int publicacionId = -1;
     private PublicacionDetalleResponse.Publicacion mPub;
@@ -115,8 +115,12 @@ public class DetallePublicacionFragment extends Fragment {
         panelEntrega = view.findViewById(R.id.panelEntrega);
         tvDireccionEntrega = view.findViewById(R.id.tvDireccionEntrega);
         btnComoLlegar = view.findViewById(R.id.btnComoLlegar);
-        // Antes de salir a Maps, revalidar que el backend siga autorizando la entrega.
-        btnComoLlegar.setOnClickListener(v -> cargarDetallePublicacion(true));
+        // Antes de salir a Maps, revalidar que el backend siga autorizando la
+        // entrega: sin red no se puede, y conviene decirlo en vez de abrir
+        // Maps con una direccion que quiza ya no corresponda.
+        btnComoLlegar.setOnClickListener(v -> {
+            if (hayConexionParaActuar()) cargarDetallePublicacion(true);
+        });
         getChildFragmentManager().setFragmentResultListener(
                 OfertasBottomSheet.RESULTADO_CERRADO, getViewLifecycleOwner(),
                 (key, result) -> cargarDetallePublicacion());
@@ -194,23 +198,13 @@ public class DetallePublicacionFragment extends Fragment {
             }
 
             poblarUi(guardado.publicacion);
-            mostrarAvisoSinConexion(guardado.guardadoEn);
+            mostrarAvisoSinConexion();
         });
     }
 
-    private void mostrarAvisoSinConexion(long guardadoEn) {
+    private void mostrarAvisoSinConexion() {
         if (tvSinConexionDetalle == null) return;
-
-        CharSequence cuando;
-        int plantilla;
-        if (DateUtils.isToday(guardadoEn)) {
-            cuando = DateFormat.getTimeFormat(requireContext()).format(new Date(guardadoEn));
-            plantilla = R.string.sin_conexion_datos_de;
-        } else {
-            cuando = DateUtils.getRelativeTimeSpanString(guardadoEn);
-            plantilla = R.string.sin_conexion_datos_de_fecha;
-        }
-        tvSinConexionDetalle.setText(getString(plantilla, cuando));
+        tvSinConexionDetalle.setText(R.string.sin_conexion_aviso);
         tvSinConexionDetalle.setVisibility(View.VISIBLE);
     }
 
@@ -235,13 +229,40 @@ public class DetallePublicacionFragment extends Fragment {
      */
     private void observarConexion() {
         conectividad.getEstado().observe(getViewLifecycleOwner(), hayInternet -> {
-            if (!Boolean.TRUE.equals(hayInternet) || !estaVivo()) return;
+            if (!estaVivo()) return;
+            boolean hay = Boolean.TRUE.equals(hayInternet);
+            atenuarAccionesSinConexion(hay);
+
+            if (!hay) {
+                // Lo que se esta viendo puede ser la copia guardada: se avisa
+                // aunque el detalle haya entrado con red y se haya caido despues.
+                if (mPub != null) mostrarAvisoSinConexion();
+                return;
+            }
+
             if (tvSinConexionDetalle == null
                     || tvSinConexionDetalle.getVisibility() != View.VISIBLE) return;
             if (publicacionId == -1) return;
 
+            Toast.makeText(requireContext(), R.string.sin_conexion_volvio, Toast.LENGTH_SHORT).show();
             cargarDetallePublicacion();
         });
+    }
+
+    /**
+     * Los botones que necesitan red se ven apagados mientras no la hay.
+     *
+     * Siguen respondiendo al toque a proposito: asi se puede explicar por que
+     * no se puede, que es la otra mitad de lo que pide el enunciado. Un boton
+     * que directamente no reacciona deja a la persona sin saber si la app se
+     * colgo o si le falta conexion.
+     */
+    private void atenuarAccionesSinConexion(boolean hayInternet) {
+        float opacidad = hayInternet ? 1f : 0.4f;
+        for (Button boton : new Button[]{btnPreguntar, btnOfertar, btnGuardar, btnGestionar,
+                btnComoLlegar}) {
+            if (boton != null) boton.setAlpha(opacidad);
+        }
     }
     private void cargarDetallePublicacion() {
         cargarDetallePublicacion(false);
@@ -341,19 +362,35 @@ public class DetallePublicacionFragment extends Fragment {
             btnGuardar.setVisibility(mPub.getAcciones().isPuedeGuardar() ? View.VISIBLE : View.GONE);
             btnGestionar.setVisibility(mPub.getAcciones().isPuedeGestionar() ? View.VISIBLE : View.GONE);
             
-            esFavorito = mPub.isEsFavorito();
-            btnGuardar.setText(esFavorito ? R.string.detalle_quitar_favorito : R.string.detalle_guardar_favorito);
+            if (mPub.isEsMia()) {
+                btnGuardar.setVisibility(View.GONE);
+            } else {
+                btnGuardar.setVisibility(View.VISIBLE);
+                esFavorito = mPub.isEsFavorito();
+                btnGuardar.setText(esFavorito ? R.string.detalle_quitar_favorito : R.string.detalle_guardar_favorito);
+                if (btnGuardar instanceof com.google.android.material.button.MaterialButton) {
+                    ((com.google.android.material.button.MaterialButton) btnGuardar)
+                            .setIconResource(esFavorito ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
+                }
+            }
         }
     }
     
     private void toggleFavorito() {
+        if (!sesion.haySesion()) {
+            Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
+            return;
+        }
         if (esFavorito) {
-            publicacionApi.quitarFavorito(sesion.getBearer(), publicacionId).enqueue(new Callback<Void>() {
+            favoritosRepository.quitarFavorito(publicacionId).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         esFavorito = false;
                         btnGuardar.setText(R.string.detalle_guardar_favorito);
+                        if (btnGuardar instanceof com.google.android.material.button.MaterialButton) {
+                            ((com.google.android.material.button.MaterialButton) btnGuardar).setIconResource(R.drawable.ic_favorite_border);
+                        }
                         Toast.makeText(requireContext(), getString(R.string.accion_quitar_guardar), Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -361,12 +398,15 @@ public class DetallePublicacionFragment extends Fragment {
                 public void onFailure(Call<Void> call, Throwable t) {}
             });
         } else {
-            publicacionApi.agregarFavorito(sesion.getBearer(), publicacionId).enqueue(new Callback<Void>() {
+            favoritosRepository.agregarFavorito(publicacionId).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
                         esFavorito = true;
                         btnGuardar.setText(R.string.detalle_quitar_favorito);
+                        if (btnGuardar instanceof com.google.android.material.button.MaterialButton) {
+                            ((com.google.android.material.button.MaterialButton) btnGuardar).setIconResource(R.drawable.ic_favorite);
+                        }
                         Toast.makeText(requireContext(), getString(R.string.accion_guardar), Toast.LENGTH_SHORT).show();
                     }
                 }

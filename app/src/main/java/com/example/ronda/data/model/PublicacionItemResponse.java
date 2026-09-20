@@ -58,6 +58,9 @@ public class PublicacionItemResponse {
     @SerializedName("esFavorito")
     private Boolean esFavorito;
 
+    @SerializedName("vendedorId")
+    private int vendedorId;
+
     public int getId() {
         return id;
     }
@@ -105,5 +108,44 @@ public class PublicacionItemResponse {
     /** false si el campo no vino (sin sesion) o si no esta guardada. */
     public boolean isFavorito() {
         return Boolean.TRUE.equals(esFavorito);
+    }
+    
+    public int getVendedorId() {
+        return vendedorId;
+    }
+    
+    public void setEsFavorito(Boolean esFavorito) {
+        this.esFavorito = esFavorito;
+    }
+
+    /** Punto 10: Datos adicionales de novedad que envía el listado de favoritos */
+    @SerializedName("novedad")
+    private NovedadFavorito novedad;
+
+    public NovedadFavorito getNovedad() {
+        return novedad;
+    }
+
+    public static class NovedadFavorito {
+        @SerializedName("cambioDePrecio")
+        private boolean cambioDePrecio;
+        
+        @SerializedName("precioAnterior")
+        private double precioAnterior;
+        
+        @SerializedName("bajoDePrecio")
+        private boolean bajoDePrecio;
+
+        public boolean isCambioDePrecio() {
+            return cambioDePrecio;
+        }
+
+        public double getPrecioAnterior() {
+            return precioAnterior;
+        }
+
+        public boolean isBajoDePrecio() {
+            return bajoDePrecio;
+        }
     }
 }

@@ -28,7 +28,6 @@
         <action android:id="@+id/action_home_to_publicar" app:destination="@id/publicarFragment" />
         <action android:id="@+id/action_home_to_mis_publicaciones" app:destination="@id/misPublicacionesFragment" />
 
-        <!-- Punto 7: mis ofertas. -->
         <action
             android:id="@+id/action_home_to_misOfertas"
             app:destination="@id/misOfertasFragment" />
@@ -60,6 +59,10 @@
             app:destination="@id/auth_nav_graph"
             app:popUpTo="@id/home_nav_graph"
             app:popUpToInclusive="true" />
+            
+        <action
+            android:id="@+id/action_home_to_favoritos"
+            app:destination="@id/favoritosFragment" />
     </fragment>
 
     <!-- Punto 2: perfil publico de otra persona (o el propio, visto desde afuera) -->
@@ -155,6 +158,14 @@
             app:destination="@id/perfilPublicoFragment" />
     </fragment>
 
-    <!-- Los Puntos 3 a 6 cuelgan sus pantallas de aca -->
+    <fragment
+        android:id="@+id/favoritosFragment"
+        android:name="com.example.ronda.ui.favoritos.FavoritosFragment"
+        android:label="Favoritos y Búsquedas"
+        tools:layout="@layout/fragment_favoritos">
+        
+        <action android:id="@+id/action_favoritos_to_detalle"
+            app:destination="@id/detallePublicacionFragment" />
+    </fragment>
 
 </navigation>

@@ -102,6 +102,16 @@
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
                 android:text="@string/home_mi_perfil" />
+                
+            <Button
+                android:id="@+id/btnFavoritos"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="Favoritos" />
 
         </LinearLayout>
 
@@ -295,6 +305,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="@string/home_aplicar" />
+                
+            <Button
+                android:id="@+id/btnGuardarBusqueda"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Guardar Búsqueda"
+                style="?attr/materialButtonOutlinedStyle" />
 
         </LinearLayout>
 
@@ -306,6 +324,7 @@
     -->
     <TextView
         android:id="@+id/tvSinConexion"
+        android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/aviso_sin_conexion_fondo"
@@ -313,7 +332,7 @@
         android:textColor="@color/aviso_sin_conexion_texto"
         android:textSize="13sp"
         android:visibility="gone"
-        tools:text="Sin conexión · datos guardados a las 14:30"
+        tools:text="Sin conexión · la información puede no estar actualizada"
         tools:visibility="visible" />
 
     <TextView

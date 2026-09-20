@@ -10,7 +10,7 @@ import androidx.room.RoomDatabase;
  * el esquema se sube `version` y se descarta la caché, que son datos
  * descartables por definición — siempre se pueden volver a bajar del backend.
  */
-@Database(entities = {PublicacionCacheada.class}, version = 1, exportSchema = false)
+@Database(entities = {PublicacionCacheada.class}, version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract PublicacionCacheadaDao publicacionCacheadaDao();
 }
