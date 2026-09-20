@@ -136,6 +136,24 @@
     <string name="historial_foto_desc">Foto del artículo</string>
     <string name="historial_vendedor">Vendedor: %1$s</string>
     <string name="historial_comprador">Comprador: %1$s</string>
+    <string name="historial_calificar">Calificar</string>
+    <plurals name="historial_dias_para_calificar">
+        <item quantity="one">Te queda %1$d día para calificar</item>
+        <item quantity="other">Te quedan %1$d días para calificar</item>
+    </plurals>
+    <string name="historial_ultimo_dia">Hoy es el último día para calificar</string>
+    <string name="historial_tu_calificacion">Tu calificación: %1$s</string>
+    <string name="historial_te_calificaron">Te calificó: %1$s</string>
+    <string name="historial_plazo_vencido">Venció el plazo para calificar</string>
+    <string name="calificar_titulo">Calificar</string>
+    <string name="calificar_a">Calificá a %1$s por “%2$s”</string>
+    <string name="calificar_a_sin_articulo">Calificá a %1$s</string>
+    <string name="calificar_comentario_hint">Comentario (opcional)</string>
+    <string name="calificar_enviar">Enviar</string>
+    <string name="calificar_error_estrellas">Elegí de 1 a 5 estrellas</string>
+    <string name="calificar_error_comentario_largo">El comentario no puede superar los %1$d caracteres</string>
+    <string name="calificar_ok">¡Gracias por calificar!</string>
+    <string name="calificar_error">No pudimos enviar tu calificación</string>
     <string name="mis_ofertas_titulo">Mis ofertas</string>
     <string name="mis_ofertas_actualizar">Actualizar</string>
     <string name="mis_ofertas_tab_enviadas">Enviadas</string>

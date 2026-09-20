@@ -21,6 +21,16 @@ public final class FormatoPerfil {
     private FormatoPerfil() {
     }
 
+    /** Estrellas llenas y vacias hasta 5, por ejemplo 4 -> "★★★★☆". */
+    public static String estrellas(int cantidad) {
+        int llenas = Math.max(0, Math.min(5, cantidad));
+        StringBuilder texto = new StringBuilder();
+        for (int i = 0; i < 5; i++) {
+            texto.append(i < llenas ? '\u2605' : '\u2606');
+        }
+        return texto.toString();
+    }
+
     /**
      * "4,5 ★ · 12 calificaciones". Sin calificaciones el promedio viene null
      * y se dice eso, en vez de mostrar un "0,0" que parece una mala nota.

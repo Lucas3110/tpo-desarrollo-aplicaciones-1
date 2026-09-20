@@ -21,6 +21,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ronda.R;
+import com.example.ronda.data.model.CalificacionUnicaResponse;
+import com.example.ronda.data.model.CalificarRequest;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.model.HistorialResponse;
 import com.example.ronda.data.model.OperacionResponse;
@@ -53,6 +55,10 @@ import retrofit2.Response;
  * (COMPRA o VENTA) y un rango desde/hasta como AAAA-MM-DD, asi que cada cambio
  * de filtro vuelve a pedir la lista. Se pide tambien al entrar a la pantalla,
  * para que lo recien concretado aparezca.
+ *
+ * Desde cada operacion se puede calificar a la otra parte: el dialogo devuelve
+ * estrellas y comentario, se envian a POST /operaciones/{id}/calificacion y la
+ * lista se vuelve a pedir para que el estado de la fila quede al dia.
  *
  * El selector de fechas de Material trabaja en milisegundos UTC: para armar
  * el AAAA-MM-DD se formatea en UTC. Con la zona del celular, en Argentina
@@ -94,6 +100,7 @@ public class HistorialFragment extends Fragment {
     @Nullable
     private Long hastaMs;
     private Call<HistorialResponse> llamada;
+    private Call<CalificacionUnicaResponse> llamadaCalificar;
 
     private enum Estado { CARGANDO, LISTA, VACIO, ERROR }
 
@@ -151,11 +158,17 @@ public class HistorialFragment extends Fragment {
             public void onContraparte(OperacionResponse operacion) {
                 abrirPerfil(operacion);
             }
+
+            @Override
+            public void onCalificar(OperacionResponse operacion) {
+                abrirCalificar(operacion);
+            }
         });
         rvHistorial.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvHistorial.setAdapter(adapter);
 
         configurarFiltros();
+        escucharCalificacion();
         btnActualizar.setOnClickListener(v -> cargar());
         btnReintentar.setOnClickListener(v -> cargar());
 
@@ -320,6 +333,63 @@ public class HistorialFragment extends Fragment {
     }
 
     // -----------------------------------------------------------------
+    // Calificar
+    // -----------------------------------------------------------------
+
+    private void abrirCalificar(OperacionResponse operacion) {
+        String articulo = operacion.getArticulo() != null ? operacion.getArticulo().getTitulo() : null;
+        CalificarDialogFragment.newInstance(operacion.getId(), articulo,
+                HistorialAdapter.nombreContraparte(operacion))
+                .show(getChildFragmentManager(), CalificarDialogFragment.CLAVE_RESULTADO);
+    }
+
+    /** El dialogo devuelve lo cargado por la API de resultados de Fragments. */
+    private void escucharCalificacion() {
+        getChildFragmentManager().setFragmentResultListener(CalificarDialogFragment.CLAVE_RESULTADO,
+                getViewLifecycleOwner(), (clave, resultado) -> calificar(
+                        resultado.getInt(CalificarDialogFragment.RES_OPERACION_ID),
+                        resultado.getInt(CalificarDialogFragment.RES_ESTRELLAS),
+                        resultado.getString(CalificarDialogFragment.RES_COMENTARIO)));
+    }
+
+    private void calificar(int operacionId, int estrellas, @Nullable String comentario) {
+        llamadaCalificar = operacionApi.calificar(operacionId, new CalificarRequest(estrellas, comentario));
+        llamadaCalificar.enqueue(new Callback<CalificacionUnicaResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<CalificacionUnicaResponse> call,
+                                   @NonNull Response<CalificacionUnicaResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
+
+                if (response.code() == 401) {
+                    volverAlLogin();
+                    return;
+                }
+                if (response.isSuccessful()) {
+                    Toast.makeText(requireContext(), R.string.calificar_ok, Toast.LENGTH_SHORT).show();
+                    cargar();
+                    return;
+                }
+
+                ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                Toast.makeText(requireContext(),
+                        ApiErrorParser.mensaje(error, getString(R.string.calificar_error)),
+                        Toast.LENGTH_LONG).show();
+                // Si ya estaba calificada o venció el plazo, lo que se ve quedo viejo.
+                String codigo = ApiErrorParser.codigo(error);
+                if ("YA_CALIFICADA".equals(codigo) || "PLAZO_VENCIDO".equals(codigo)) {
+                    cargar();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<CalificacionUnicaResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
+                Toast.makeText(requireContext(), R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------
     // Navegacion y estados
     // -----------------------------------------------------------------
 
@@ -359,6 +429,7 @@ public class HistorialFragment extends Fragment {
     @Override
     public void onDestroyView() {
         if (llamada != null) llamada.cancel();
+        if (llamadaCalificar != null) llamadaCalificar.cancel();
         super.onDestroyView();
     }
 
