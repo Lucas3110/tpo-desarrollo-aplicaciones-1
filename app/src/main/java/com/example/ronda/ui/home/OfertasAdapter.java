@@ -1,6 +1,7 @@
 package com.example.ronda.ui.home;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.ronda.R;
 import com.example.ronda.data.model.OfertaResponse;
 import com.example.ronda.ui.ofertas.FormatoOferta;
+import com.google.android.material.color.MaterialColors;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,17 @@ public class OfertasAdapter extends RecyclerView.Adapter<OfertasAdapter.ViewHold
 
     public interface OnContraofertarClickListener {
         void onContraofertar(OfertaResponse oferta);
+    }
+
+    /** Tocar el nombre de quien oferto abre su perfil publico (solo para el vendedor). */
+    public interface OnAutorClickListener {
+        void onAutor(int usuarioId);
+    }
+
+    private OnAutorClickListener autorListener;
+
+    public void setOnAutorClickListener(OnAutorClickListener listener) {
+        this.autorListener = listener;
     }
 
     public void setOfertas(List<OfertaResponse> ofertas, boolean esVendedor,
@@ -69,6 +82,17 @@ public class OfertasAdapter extends RecyclerView.Adapter<OfertasAdapter.ViewHold
         holder.tvEstadoOferta.setTextColor(ContextCompat.getColor(ctx, colorDeEstado(o.getEstado())));
 
         holder.tvAutorOferta.setText(textoAutor(ctx, o, esVendedor));
+        // El vendedor puede mirar el perfil de quien le ofrecio antes de responder.
+        boolean autorAbrible = esVendedor && !o.laPropusoElVendedor() && o.getAutor() != null
+                && autorListener != null;
+        holder.tvAutorOferta.setTextColor(autorAbrible
+                ? ColorStateList.valueOf(MaterialColors.getColor(holder.tvAutorOferta,
+                        com.google.android.material.R.attr.colorPrimary))
+                : holder.colorAutor);
+        holder.tvAutorOferta.setOnClickListener(autorAbrible
+                ? v -> autorListener.onAutor(o.getAutor().getId())
+                : null);
+        holder.tvAutorOferta.setClickable(autorAbrible);
 
         if (o.tieneMensaje()) {
             holder.tvMensajeOferta.setText(ctx.getString(R.string.oferta_mensaje_formato, o.getMensaje().trim()));
@@ -151,12 +175,15 @@ public class OfertasAdapter extends RecyclerView.Adapter<OfertasAdapter.ViewHold
         final TextView tvMontoOferta, tvEstadoOferta, tvAutorOferta, tvMensajeOferta, tvFechaOferta, tvVenceOferta;
         final LinearLayout llAccionesOferta;
         final Button btnAceptarOferta, btnRechazarOferta, btnContraofertarOferta;
+        /** Color original del autor, para devolverselo a las filas que se reciclan. */
+        final ColorStateList colorAutor;
 
         ViewHolder(View v) {
             super(v);
             tvMontoOferta = v.findViewById(R.id.tvMontoOferta);
             tvEstadoOferta = v.findViewById(R.id.tvEstadoOferta);
             tvAutorOferta = v.findViewById(R.id.tvAutorOferta);
+            colorAutor = tvAutorOferta.getTextColors();
             tvMensajeOferta = v.findViewById(R.id.tvMensajeOferta);
             tvFechaOferta = v.findViewById(R.id.tvFechaOferta);
             tvVenceOferta = v.findViewById(R.id.tvVenceOferta);

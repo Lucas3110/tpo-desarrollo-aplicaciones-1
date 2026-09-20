@@ -1,6 +1,8 @@
 package com.example.ronda.ui.perfil;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,11 +12,14 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -23,6 +28,7 @@ import androidx.navigation.Navigation;
 import com.example.ronda.R;
 import com.example.ronda.data.model.EditarPerfilRequest;
 import com.example.ronda.data.model.ErrorResponse;
+import com.example.ronda.data.model.PerfilPublicoResponse;
 import com.example.ronda.data.model.PerfilResponse;
 import com.example.ronda.data.model.UsuarioResponse;
 import com.example.ronda.data.model.ZonaResponse;
@@ -44,16 +50,24 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Mi perfil (Punto 2): ver y editar los datos personales (nombre, telefono y
- * zona; el email es de solo lectura). La reputacion se muestra fija.
+ * Mi perfil (Punto 2): ver y editar los datos personales (foto, nombre,
+ * telefono y zona; el email es de solo lectura) y ver la reputacion propia.
  *
- * GET /usuarios/me trae los datos y PUT /usuarios/me los guarda. El catalogo
+ * GET /usuarios/me trae los datos y PUT /usuarios/me los guarda. La reputacion
+ * y la antiguedad salen de GET /usuarios/{id}/perfil (el mismo perfil publico
+ * que ve el resto), porque /usuarios/me no las incluye. El catalogo
  * de zonas del Spinner sale de GET /zonas (misma interfaz del Punto 3). Se
  * sigue el patron de las pantallas del Punto 1: enqueue, estaVivo() antes de
  * tocar la UI y ApiErrorParser.parse() una sola vez.
  *
  * Cada campo arranca bloqueado y se habilita tocando el lapiz que tiene al
  * lado. "Guardar cambios" hace el PUT y vuelve a bloquear todo.
+ *
+ * La foto se guarda como URL, no como archivo: se elige de la galeria, se
+ * conserva la Uri con permiso persistente y va en el mismo PUT. OJO: el
+ * backend reemplaza la foto en cada guardado, asi que el PUT siempre lleva la
+ * actual (si no, se borraria). Una Uri de la galeria (content://) solo la ve
+ * este celular: en el perfil de otra persona, en otro dispositivo, no carga.
  */
 @AndroidEntryPoint
 public class PerfilFragment extends Fragment {
@@ -81,14 +95,41 @@ public class PerfilFragment extends Fragment {
     private ImageButton btnEditarTelefono;
     private ImageButton btnEditarZona;
     private Button btnGuardar;
+    private ImageView ivFoto;
+    private Button btnCambiarFoto;
+    private Button btnQuitarFoto;
+    private TextView tvReputacionEstrellas;
+    private TextView tvReputacionOperaciones;
+    private TextView tvMiembroDesde;
 
     private UsuarioResponse datos;
+    /**
+     * Foto que se va a guardar: la del servidor o la recien elegida (aun sin
+     * guardar). Null o vacia = sin foto.
+     */
+    @Nullable
+    private String fotoUrl;
     /** Paralelo al adapter del Spinner. La posicion 0 es "Sin zona" (null). */
     private final List<ZonaResponse> zonasSpinner = new ArrayList<>();
     private Call<PerfilResponse> llamadaDatos;
     private Call<ZonasResponse> llamadaZonas;
     private Call<PerfilResponse> llamadaGuardar;
+    private Call<PerfilPublicoResponse> llamadaReputacion;
     private boolean guardando = false;
+
+    /** Galeria del sistema, filtrada a imagenes. Devuelve una Uri con permiso persistible. */
+    private final ActivityResultLauncher<String[]> selectorFoto = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri == null || !estaVivo()) return;
+                try {
+                    requireContext().getContentResolver().takePersistableUriPermission(
+                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (SecurityException e) {
+                    Toast.makeText(requireContext(), R.string.perfil_foto_permiso,
+                            Toast.LENGTH_LONG).show();
+                }
+                cambiarFoto(uri);
+            });
 
     @Nullable
     @Override
@@ -115,7 +156,16 @@ public class PerfilFragment extends Fragment {
         btnEditarTelefono = view.findViewById(R.id.btnEditarTelefono);
         btnEditarZona = view.findViewById(R.id.btnEditarZona);
         btnGuardar = view.findViewById(R.id.btnGuardar);
+        ivFoto = view.findViewById(R.id.ivFoto);
+        btnCambiarFoto = view.findViewById(R.id.btnCambiarFoto);
+        btnQuitarFoto = view.findViewById(R.id.btnQuitarFoto);
+        tvReputacionEstrellas = view.findViewById(R.id.tvReputacionEstrellas);
+        tvReputacionOperaciones = view.findViewById(R.id.tvReputacionOperaciones);
+        tvMiembroDesde = view.findViewById(R.id.tvMiembroDesde);
 
+        view.findViewById(R.id.btnVerPerfilPublico).setOnClickListener(v -> verMiPerfilPublico());
+        btnCambiarFoto.setOnClickListener(v -> selectorFoto.launch(new String[]{"image/*"}));
+        btnQuitarFoto.setOnClickListener(v -> cambiarFoto(null));
         btnReintentar.setOnClickListener(v -> cargar());
         btnGuardar.setOnClickListener(v -> guardar());
         btnEditarNombre.setOnClickListener(v -> habilitarEdicion(etNombre));
@@ -156,6 +206,7 @@ public class PerfilFragment extends Fragment {
                 datos = response.body().getUsuario();
                 pintarDatos();
                 cargarZonas();
+                cargarReputacion();
                 mostrarEstado(false, true);
             }
 
@@ -167,11 +218,79 @@ public class PerfilFragment extends Fragment {
         });
     }
 
+    /**
+     * Reputacion y antiguedad propias. Es un dato accesorio: si falla, los
+     * datos personales siguen editandose y solo se avisa en su lugar.
+     */
+    private void cargarReputacion() {
+        cancelar(llamadaReputacion);
+        llamadaReputacion = usuarioApi.perfilPublico(datos.getId());
+        llamadaReputacion.enqueue(new Callback<PerfilPublicoResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<PerfilPublicoResponse> call,
+                                   @NonNull Response<PerfilPublicoResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
+                if (response.isSuccessful() && response.body() != null
+                        && response.body().getPerfil() != null) {
+                    pintarReputacion(response.body().getPerfil());
+                } else {
+                    reputacionNoDisponible();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<PerfilPublicoResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
+                reputacionNoDisponible();
+            }
+        });
+    }
+
+    private void pintarReputacion(PerfilPublicoResponse.Perfil perfil) {
+        Context ctx = requireContext();
+        tvReputacionEstrellas.setText(FormatoPerfil.reputacionEstrellas(ctx, perfil.getReputacion()));
+        tvReputacionOperaciones.setText(FormatoPerfil.reputacionOperaciones(ctx, perfil.getReputacion()));
+        tvMiembroDesde.setText(FormatoPerfil.antiguedad(ctx, perfil.getAntiguedadDias()));
+    }
+
+    private void reputacionNoDisponible() {
+        tvReputacionEstrellas.setText(R.string.perfil_reputacion_error);
+        tvReputacionOperaciones.setText("");
+        tvMiembroDesde.setText("");
+    }
+
     private void pintarDatos() {
         etNombre.setText(datos.getNombre());
         tvEmail.setText(datos.getEmail());
         etTelefono.setText(datos.getTelefono() != null ? datos.getTelefono() : "");
+        fotoUrl = datos.getFotoUrl();
+        mostrarFoto();
         bloquearCampos();
+    }
+
+    /** Como me ve el resto: el mismo perfil publico que se abre desde una publicacion. */
+    private void verMiPerfilPublico() {
+        if (datos == null) return;
+        Bundle args = new Bundle();
+        args.putInt(PerfilPublicoFragment.ARG_USUARIO_ID, datos.getId());
+        Navigation.findNavController(requireView()).navigate(R.id.action_perfil_to_perfilPublico, args);
+    }
+
+    /** Dibuja la foto que se va a guardar y muestra "Quitar" solo si hay una. */
+    private void mostrarFoto() {
+        FormatoPerfil.cargarAvatar(ivFoto, fotoUrl);
+        boolean hayFoto = fotoUrl != null && !fotoUrl.isEmpty();
+        btnQuitarFoto.setVisibility(hayFoto ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Elegir o quitar la foto solo cambia lo que se ve: se aplica al tocar
+     * "Guardar cambios", como el resto de los datos.
+     */
+    private void cambiarFoto(@Nullable Uri uri) {
+        fotoUrl = uri != null ? uri.toString() : null;
+        mostrarFoto();
+        Toast.makeText(requireContext(), R.string.perfil_foto_pendiente, Toast.LENGTH_SHORT).show();
     }
 
     /** Deja los campos en modo lectura: se editan tocando el lapiz de al lado. */
@@ -304,7 +423,7 @@ public class PerfilFragment extends Fragment {
         btnGuardar.setEnabled(false);
 
         EditarPerfilRequest body = new EditarPerfilRequest(
-                nombre, telefono.isEmpty() ? null : telefono, zonaId);
+                nombre, telefono.isEmpty() ? null : telefono, zonaId, fotoUrl);
         llamadaGuardar = usuarioApi.actualizarMisDatos(sesion.getBearer(), body);
         llamadaGuardar.enqueue(new Callback<PerfilResponse>() {
             @Override
@@ -401,6 +520,7 @@ public class PerfilFragment extends Fragment {
         cancelar(llamadaDatos);
         cancelar(llamadaZonas);
         cancelar(llamadaGuardar);
+        cancelar(llamadaReputacion);
         super.onDestroyView();
     }
 
