@@ -1,14 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Una fila del listado del Home: lo que pide la consigna (titulo, precio,
-     estado del articulo y zona del vendedor) mas la foto principal, que la
-     consigna marca como opcional: se muestra con Glide si la publicacion
-     tiene fotos y se oculta si no. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
-    android:descendantFocusability="blocksDescendants"
     android:gravity="center_vertical"
     android:minHeight="72dp"
     android:orientation="horizontal"
@@ -50,6 +45,21 @@
             android:textStyle="bold"
             tools:text="$ 175.000" />
 
+        <!-- Novedad: bajó de precio -->
+        <TextView
+            android:id="@+id/tvNovedad"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="#E8F5E9"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:textColor="#2E7D32"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="Bajó de precio (era $ 180.000)"
+            tools:visibility="visible" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -87,8 +97,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:focusable="false"
         android:contentDescription="Favorito"
-        android:src="@drawable/ic_favorite_border" />
+        android:src="@drawable/ic_favorite" />
 
 </LinearLayout>

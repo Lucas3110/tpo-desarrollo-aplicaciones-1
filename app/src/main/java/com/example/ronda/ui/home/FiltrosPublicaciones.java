@@ -124,6 +124,20 @@ public class FiltrosPublicaciones implements Serializable {
         if (usado) estados.add("USADO");
         return String.join(",", estados);
     }
+    
+    public void setEstadoArticuloDesdeString(String parametro) {
+        nuevo = false;
+        comoNuevo = false;
+        usado = false;
+        if (parametro != null && !parametro.isEmpty()) {
+            String[] partes = parametro.split(",");
+            for (String p : partes) {
+                if (p.trim().equals("NUEVO")) nuevo = true;
+                if (p.trim().equals("COMO_NUEVO")) comoNuevo = true;
+                if (p.trim().equals("USADO")) usado = true;
+            }
+        }
+    }
 
     private boolean hayEstadoFiltrado() {
         boolean alguno = nuevo || comoNuevo || usado;
@@ -184,5 +198,17 @@ public class FiltrosPublicaciones implements Serializable {
     public void limpiarTodo() {
         q = null;
         limpiarFiltros();
+    }
+    
+    public java.util.Map<String, String> toMap() {
+        java.util.Map<String, String> m = new java.util.HashMap<>();
+        if (q != null) m.put("q", q);
+        if (categoriaId != null) m.put("categoriaId", String.valueOf(categoriaId));
+        if (precioMin != null) m.put("precioMin", String.valueOf(precioMin));
+        if (precioMax != null) m.put("precioMax", String.valueOf(precioMax));
+        if (hayEstadoFiltrado()) m.put("estadoArticulo", getEstadoArticuloParam());
+        if (soloMiZona) m.put("zonaId", "true"); // Solo indica que hay zona
+        if (orden != null && !orden.equals(ORDEN_POR_DEFECTO)) m.put("orden", orden);
+        return m;
     }
 }

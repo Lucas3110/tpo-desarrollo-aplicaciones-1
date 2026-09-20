@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -28,13 +29,26 @@ import java.util.Set;
  */
 public class PublicacionAdapter extends BaseAdapter {
 
+    public interface OnItemClickListener {
+        void onPublicacionClick(PublicacionItemResponse item);
+        void onFavoritoClick(PublicacionItemResponse item);
+    }
+
     private final List<PublicacionItemResponse> items;
+    private final OnItemClickListener listener;
+    private final Integer usuarioIdLogueado;
 
     /** Ids que ya estan en la lista, para no repetir una publicacion al paginar. */
     private final Set<Integer> idsVistos = new HashSet<>();
 
     public PublicacionAdapter(List<PublicacionItemResponse> items) {
+        this(items, null, null);
+    }
+
+    public PublicacionAdapter(List<PublicacionItemResponse> items, Integer usuarioIdLogueado, OnItemClickListener listener) {
         this.items = items;
+        this.usuarioIdLogueado = usuarioIdLogueado;
+        this.listener = listener;
         for (PublicacionItemResponse item : items) {
             idsVistos.add(item.getId());
         }
@@ -91,7 +105,13 @@ public class PublicacionAdapter extends BaseAdapter {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        holder.mostrar(getItem(posicion));
+        holder.mostrar(getItem(posicion), listener, usuarioIdLogueado);
+        
+        PublicacionItemResponse item = getItem(posicion);
+        convertView.setOnClickListener(v -> {
+            if (listener != null) listener.onPublicacionClick(item);
+        });
+        
         return convertView;
     }
 
@@ -102,6 +122,7 @@ public class PublicacionAdapter extends BaseAdapter {
         final TextView tvEstado;
         final TextView tvZona;
         final ImageView ivFoto;
+        final ImageButton btnFavorito;
 
         ViewHolder(View fila) {
             tvTitulo = fila.findViewById(R.id.tvTitulo);
@@ -109,15 +130,28 @@ public class PublicacionAdapter extends BaseAdapter {
             tvEstado = fila.findViewById(R.id.tvEstado);
             tvZona = fila.findViewById(R.id.tvZona);
             ivFoto = fila.findViewById(R.id.ivFoto);
+            btnFavorito = fila.findViewById(R.id.btnFavorito);
         }
 
-        void mostrar(PublicacionItemResponse item) {
+        void mostrar(PublicacionItemResponse item, OnItemClickListener listener, Integer usuarioIdLogueado) {
             tvTitulo.setText(item.getTitulo());
             tvPrecio.setText(formatearPrecio(item.getPrecio()));
             // Ya viene traducido del backend ("Como nuevo"), no hace falta mapear.
             tvEstado.setText(item.getEstadoArticuloTexto());
             tvZona.setText(item.getZona() != null ? item.getZona().getNombre() : "");
             mostrarFoto(item.getFotoPrincipal());
+
+            btnFavorito.setImageResource(item.isFavorito() ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
+            
+            if (java.util.Objects.equals(item.getVendedorId(), usuarioIdLogueado)) {
+                btnFavorito.setVisibility(View.GONE);
+            } else {
+                btnFavorito.setVisibility(View.VISIBLE);
+            }
+
+            btnFavorito.setOnClickListener(v -> {
+                if (listener != null) listener.onFavoritoClick(item);
+            });
         }
 
         /**

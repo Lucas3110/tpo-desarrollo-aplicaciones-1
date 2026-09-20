@@ -57,7 +57,7 @@ public class NetworkModule {
      * si estabamos en un emulador; se saco porque la IP hardcodeada terminaba
      * commiteada y rompiendole el entorno al resto.
      */
-    private static final String BASE_URL = BuildConfig.BASE_URL;
+    private static final String BASE_URL = "http://192.168.0.157:3000/";
 
     /** Cuanto se espera al servidor antes de dar la request por fallida. */
     private static final long TIMEOUT_SEGUNDOS = 15;
@@ -191,5 +191,11 @@ public class NetworkModule {
     @Singleton
     public OfertaApiService provideOfertaApiService(Retrofit retrofit) {
         return retrofit.create(OfertaApiService.class);
+    }
+
+    @Provides
+    @Singleton
+    public com.example.ronda.data.network.FavoritosApiService provideFavoritosApiService(Retrofit retrofit) {
+        return retrofit.create(com.example.ronda.data.network.FavoritosApiService.class);
     }
 }

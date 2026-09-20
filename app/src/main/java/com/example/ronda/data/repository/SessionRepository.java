@@ -71,6 +71,20 @@ public class SessionRepository {
         return prefs.getString(CLAVE_EMAIL, null);
     }
 
+    public Integer getUsuarioId() {
+        String token = getToken();
+        if (token == null) return null;
+        try {
+            String[] partes = token.split("\\.");
+            if (partes.length < 2) return null;
+            String payload = new String(android.util.Base64.decode(partes[1], android.util.Base64.URL_SAFE), "UTF-8");
+            org.json.JSONObject json = new org.json.JSONObject(payload);
+            return json.getInt("sub");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
      * Zona de la persona, para "Solo mi zona" y "Mas cercanas" del Home.
      * Se guarda al iniciar sesion y se refresca en cada auto-login. Si el
