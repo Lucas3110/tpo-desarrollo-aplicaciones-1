@@ -80,6 +80,10 @@
     <string name="preguntas_responder">Responder</string>
     <string name="home_boton_favoritos">Favoritos</string>
     <string name="home_guardar_busqueda">Guardar búsqueda</string>
+    <string name="favoritos_bajo_de_precio">Bajó de precio (era %1$s)</string>
+    <string name="favoritos_subio_de_precio">Subió de precio (era %1$s)</string>
+    <string name="favoritos_marcar">Favorito</string>
+    <string name="preguntas_enviar">Enviar</string>
     <string name="favoritos_tab_favoritos">Favoritos</string>
     <string name="favoritos_tab_busquedas">Búsquedas</string>
     <string name="favoritos_reintentar">Reintentar</string>

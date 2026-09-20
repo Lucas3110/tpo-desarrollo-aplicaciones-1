@@ -68,7 +68,7 @@
             android:layout_height="48dp"
             android:src="@android:drawable/ic_menu_send"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Enviar" />
+            android:contentDescription="@string/preguntas_enviar" />
     </LinearLayout>
 
 </LinearLayout>
