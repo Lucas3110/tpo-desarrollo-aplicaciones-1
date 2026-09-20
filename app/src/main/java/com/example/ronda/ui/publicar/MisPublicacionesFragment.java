@@ -40,6 +40,8 @@ public class MisPublicacionesFragment extends Fragment {
     @Inject PublicacionApiService api;
     @Inject SessionRepository sesion;
     private final List<PublicacionItemResponse> items = new ArrayList<>();
+    /** Ultimo contador traido; se repinta al volver aunque el refresco falle. */
+    private MisPublicacionesResponse.Resumen resumen;
     private MisPublicacionesAdapter adapter;
     private ProgressBar progreso; private TextView tvEstado, tvResumen; private Spinner filtro;
     private Call<?> llamada;
@@ -52,6 +54,7 @@ public class MisPublicacionesFragment extends Fragment {
         tvResumen = v.findViewById(R.id.tvResumenMias); filtro = v.findViewById(R.id.spFiltroEstado);
         ListView lista = v.findViewById(R.id.lvMias); adapter = new MisPublicacionesAdapter(items, this::confirmarCambio);
         lista.setAdapter(adapter);
+        pintarResumen();
         filtro.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
                 new String[]{"Todas", "Activas", "Pausadas", "Vendidas"}));
         filtro.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
@@ -63,7 +66,10 @@ public class MisPublicacionesFragment extends Fragment {
     }
 
     private void cargar() {
-        if (!estaVivo()) return; progreso.setVisibility(View.VISIBLE); tvEstado.setVisibility(View.GONE);
+        if (!estaVivo()) return;
+        // El spinner solo si todavia no hay nada en pantalla.
+        progreso.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
+        tvEstado.setVisibility(View.GONE);
         String[] codigos = {null, "ACTIVA", "PAUSADA", "VENDIDA"};
         llamada = api.mias(sesion.getBearer(), codigos[filtro.getSelectedItemPosition()]);
         ((Call<MisPublicacionesResponse>)llamada).enqueue(new Callback<MisPublicacionesResponse>() {
@@ -72,8 +78,8 @@ public class MisPublicacionesFragment extends Fragment {
                 if (r.code() == 401) { irLogin(); return; }
                 if (!r.isSuccessful() || r.body() == null) { error(); return; }
                 items.clear(); items.addAll(r.body().getItems()); adapter.notifyDataSetChanged();
-                MisPublicacionesResponse.Resumen resumen = r.body().getResumen();
-                if (resumen != null) tvResumen.setText(getString(R.string.mias_resumen, resumen.getActivas(), resumen.getPausadas(), resumen.getVendidas()));
+                resumen = r.body().getResumen();
+                pintarResumen();
                 tvEstado.setText(R.string.mias_vacio); tvEstado.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
             }
             @Override public void onFailure(@NonNull Call<MisPublicacionesResponse> c, @NonNull Throwable t) { if (estaVivo() && !c.isCanceled()) { progreso.setVisibility(View.GONE); error(); } }
@@ -97,7 +103,21 @@ public class MisPublicacionesFragment extends Fragment {
             @Override public void onFailure(@NonNull Call<PublicacionResponse> c, @NonNull Throwable t) { if (estaVivo() && !c.isCanceled()) Toast.makeText(requireContext(), R.string.publicar_error_conexion, Toast.LENGTH_SHORT).show(); }
         });
     }
-    private void error() { tvEstado.setText(R.string.mias_error); tvEstado.setVisibility(View.VISIBLE); }
+    private void pintarResumen() {
+        if (resumen == null || tvResumen == null) return;
+        tvResumen.setText(getString(R.string.mias_resumen,
+                resumen.getActivas(), resumen.getPausadas(), resumen.getVendidas()));
+    }
+
+    private void error() {
+        // Lo que ya estaba listado sigue sirviendo; el fallo se avisa aparte.
+        if (!items.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.mias_error, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        tvEstado.setText(R.string.mias_error);
+        tvEstado.setVisibility(View.VISIBLE);
+    }
     private boolean estaVivo() { return isAdded() && getView() != null; }
     private void irLogin() { sesion.cerrarSesion(); Navigation.findNavController(requireView()).navigate(R.id.action_mis_publicaciones_to_auth); }
     @Override public void onDestroyView() { if (llamada != null) llamada.cancel(); super.onDestroyView(); }

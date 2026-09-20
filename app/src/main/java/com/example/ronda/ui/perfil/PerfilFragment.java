@@ -183,7 +183,13 @@ public class PerfilFragment extends Fragment {
     // -----------------------------------------------------------------
 
     private void cargar() {
-        mostrarEstado(true, false);
+        if (datos == null) {
+            mostrarEstado(true, false);
+        } else {
+            // Ya teniamos el perfil: se muestra mientras se refresca.
+            pintarDatos();
+            mostrarEstado(false, true);
+        }
 
         llamadaDatos = usuarioApi.misDatos(sesion.getBearer());
         llamadaDatos.enqueue(new Callback<PerfilResponse>() {
@@ -499,6 +505,12 @@ public class PerfilFragment extends Fragment {
     }
 
     private void mostrarError(String mensaje) {
+        // Con el perfil ya en pantalla, un refresco fallido se avisa y nada
+        // mas: taparlo con la pantalla de error hacia perder lo que servia.
+        if (datos != null) {
+            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
+            return;
+        }
         tvError.setText(mensaje);
         progressBar.setVisibility(View.GONE);
         grupoContenido.setVisibility(View.GONE);
