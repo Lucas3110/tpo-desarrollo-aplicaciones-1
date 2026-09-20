@@ -5,6 +5,7 @@ import android.util.Log;
 import com.example.ronda.BuildConfig;
 import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.OfertaApiService;
+import com.example.ronda.data.network.OperacionApiService;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.network.UsuarioApiService;
 import com.example.ronda.data.repository.SessionRepository;
@@ -191,5 +192,12 @@ public class NetworkModule {
     @Singleton
     public OfertaApiService provideOfertaApiService(Retrofit retrofit) {
         return retrofit.create(OfertaApiService.class);
+    }
+
+    /** Historial de operaciones y calificaciones (Punto 9). */
+    @Provides
+    @Singleton
+    public OperacionApiService provideOperacionApiService(Retrofit retrofit) {
+        return retrofit.create(OperacionApiService.class);
     }
 }

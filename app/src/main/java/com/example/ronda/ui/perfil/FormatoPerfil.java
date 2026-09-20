@@ -10,8 +10,8 @@ import com.example.ronda.R;
 import com.example.ronda.data.model.ReputacionResponse;
 
 /**
- * Lo que comparten las pantallas de perfil (el propio y, mas adelante, el
- * publico): la foto y los textos de reputacion y antiguedad.
+ * Lo que comparten las pantallas de perfil (Mi perfil y el perfil publico):
+ * la foto y los textos de reputacion y antiguedad.
  */
 public final class FormatoPerfil {
 

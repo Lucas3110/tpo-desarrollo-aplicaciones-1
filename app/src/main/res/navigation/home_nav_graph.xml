@@ -44,7 +44,23 @@
         android:id="@+id/historialFragment"
         android:name="com.example.ronda.ui.historial.HistorialFragment"
         android:label="Historial"
-        tools:layout="@layout/fragment_historial" />
+        tools:layout="@layout/fragment_historial">
+
+        <!-- Tocar una operacion abre el articulo; tocar la contraparte, su perfil. -->
+        <action
+            android:id="@+id/action_historial_to_detalle"
+            app:destination="@id/detallePublicacionFragment" />
+        <action
+            android:id="@+id/action_historial_to_perfilPublico"
+            app:destination="@id/perfilPublicoFragment" />
+
+        <!-- Sesion vencida (401): se vuelve al login. -->
+        <action
+            android:id="@+id/action_historial_to_auth"
+            app:destination="@id/auth_nav_graph"
+            app:popUpTo="@id/home_nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
 
     <!-- Punto 2: perfil publico de otra persona (o el propio, visto desde afuera) -->
     <fragment
