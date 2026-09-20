@@ -28,6 +28,7 @@ import androidx.navigation.Navigation;
 import com.example.ronda.R;
 import com.example.ronda.data.model.EditarPerfilRequest;
 import com.example.ronda.data.model.ErrorResponse;
+import com.example.ronda.data.model.PerfilPublicoResponse;
 import com.example.ronda.data.model.PerfilResponse;
 import com.example.ronda.data.model.UsuarioResponse;
 import com.example.ronda.data.model.ZonaResponse;
@@ -50,9 +51,11 @@ import retrofit2.Response;
 
 /**
  * Mi perfil (Punto 2): ver y editar los datos personales (foto, nombre,
- * telefono y zona; el email es de solo lectura). La reputacion se muestra fija.
+ * telefono y zona; el email es de solo lectura) y ver la reputacion propia.
  *
- * GET /usuarios/me trae los datos y PUT /usuarios/me los guarda. El catalogo
+ * GET /usuarios/me trae los datos y PUT /usuarios/me los guarda. La reputacion
+ * y la antiguedad salen de GET /usuarios/{id}/perfil (el mismo perfil publico
+ * que ve el resto), porque /usuarios/me no las incluye. El catalogo
  * de zonas del Spinner sale de GET /zonas (misma interfaz del Punto 3). Se
  * sigue el patron de las pantallas del Punto 1: enqueue, estaVivo() antes de
  * tocar la UI y ApiErrorParser.parse() una sola vez.
@@ -95,6 +98,9 @@ public class PerfilFragment extends Fragment {
     private ImageView ivFoto;
     private Button btnCambiarFoto;
     private Button btnQuitarFoto;
+    private TextView tvReputacionEstrellas;
+    private TextView tvReputacionOperaciones;
+    private TextView tvMiembroDesde;
 
     private UsuarioResponse datos;
     /**
@@ -108,6 +114,7 @@ public class PerfilFragment extends Fragment {
     private Call<PerfilResponse> llamadaDatos;
     private Call<ZonasResponse> llamadaZonas;
     private Call<PerfilResponse> llamadaGuardar;
+    private Call<PerfilPublicoResponse> llamadaReputacion;
     private boolean guardando = false;
 
     /** Galeria del sistema, filtrada a imagenes. Devuelve una Uri con permiso persistible. */
@@ -152,6 +159,9 @@ public class PerfilFragment extends Fragment {
         ivFoto = view.findViewById(R.id.ivFoto);
         btnCambiarFoto = view.findViewById(R.id.btnCambiarFoto);
         btnQuitarFoto = view.findViewById(R.id.btnQuitarFoto);
+        tvReputacionEstrellas = view.findViewById(R.id.tvReputacionEstrellas);
+        tvReputacionOperaciones = view.findViewById(R.id.tvReputacionOperaciones);
+        tvMiembroDesde = view.findViewById(R.id.tvMiembroDesde);
 
         btnCambiarFoto.setOnClickListener(v -> selectorFoto.launch(new String[]{"image/*"}));
         btnQuitarFoto.setOnClickListener(v -> cambiarFoto(null));
@@ -195,6 +205,7 @@ public class PerfilFragment extends Fragment {
                 datos = response.body().getUsuario();
                 pintarDatos();
                 cargarZonas();
+                cargarReputacion();
                 mostrarEstado(false, true);
             }
 
@@ -204,6 +215,47 @@ public class PerfilFragment extends Fragment {
                 mostrarError(getString(R.string.error_sin_conexion));
             }
         });
+    }
+
+    /**
+     * Reputacion y antiguedad propias. Es un dato accesorio: si falla, los
+     * datos personales siguen editandose y solo se avisa en su lugar.
+     */
+    private void cargarReputacion() {
+        cancelar(llamadaReputacion);
+        llamadaReputacion = usuarioApi.perfilPublico(datos.getId());
+        llamadaReputacion.enqueue(new Callback<PerfilPublicoResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<PerfilPublicoResponse> call,
+                                   @NonNull Response<PerfilPublicoResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
+                if (response.isSuccessful() && response.body() != null
+                        && response.body().getPerfil() != null) {
+                    pintarReputacion(response.body().getPerfil());
+                } else {
+                    reputacionNoDisponible();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<PerfilPublicoResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
+                reputacionNoDisponible();
+            }
+        });
+    }
+
+    private void pintarReputacion(PerfilPublicoResponse.Perfil perfil) {
+        Context ctx = requireContext();
+        tvReputacionEstrellas.setText(FormatoPerfil.reputacionEstrellas(ctx, perfil.getReputacion()));
+        tvReputacionOperaciones.setText(FormatoPerfil.reputacionOperaciones(ctx, perfil.getReputacion()));
+        tvMiembroDesde.setText(FormatoPerfil.antiguedad(ctx, perfil.getAntiguedadDias()));
+    }
+
+    private void reputacionNoDisponible() {
+        tvReputacionEstrellas.setText(R.string.perfil_reputacion_error);
+        tvReputacionOperaciones.setText("");
+        tvMiembroDesde.setText("");
     }
 
     private void pintarDatos() {
@@ -459,6 +511,7 @@ public class PerfilFragment extends Fragment {
         cancelar(llamadaDatos);
         cancelar(llamadaZonas);
         cancelar(llamadaGuardar);
+        cancelar(llamadaReputacion);
         super.onDestroyView();
     }
 

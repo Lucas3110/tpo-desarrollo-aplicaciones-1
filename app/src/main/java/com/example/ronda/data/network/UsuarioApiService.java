@@ -1,6 +1,7 @@
 package com.example.ronda.data.network;
 
 import com.example.ronda.data.model.EditarPerfilRequest;
+import com.example.ronda.data.model.PerfilPublicoResponse;
 import com.example.ronda.data.model.PerfilResponse;
 
 import retrofit2.Call;
@@ -8,6 +9,7 @@ import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.PUT;
+import retrofit2.http.Path;
 
 /**
  * Datos personales del Punto 2. Cuelgan de /api/usuarios.
@@ -29,4 +31,13 @@ public interface UsuarioApiService {
     @PUT("api/usuarios/me")
     Call<PerfilResponse> actualizarMisDatos(@Header("Authorization") String bearer,
                                             @Body EditarPerfilRequest body);
+
+    /**
+     * Perfil publico de cualquier persona: reputacion, antiguedad y
+     * publicaciones activas. Es publico, asi que sirve tambien para el propio
+     * perfil (de ahi sale la reputacion de "Mi perfil"). Sin @Header: si hay
+     * sesion el interceptor la agrega, si no, va sin token.
+     */
+    @GET("api/usuarios/{id}/perfil")
+    Call<PerfilPublicoResponse> perfilPublico(@Path("id") int usuarioId);
 }

@@ -170,9 +170,25 @@
     <string name="perfil_foto_pendiente">Tocá “Guardar cambios” para aplicar la foto</string>
     <string name="perfil_foto_permiso">No pudimos conservar el acceso a la foto. Quizás debas volver a elegirla al reabrir la app.</string>
     <string name="perfil_reputacion_titulo">Reputación</string>
-    <string name="perfil_reputacion_estrellas">4,5 ★ · 12 calificaciones</string>
-    <string name="perfil_reputacion_operaciones">8 ventas · 3 compras concretadas</string>
-    <string name="perfil_miembro_desde">Miembro hace 42 días</string>
+    <plurals name="perfil_reputacion_estrellas">
+        <item quantity="one">%1$.1f ★ · %2$d calificación</item>
+        <item quantity="other">%1$.1f ★ · %2$d calificaciones</item>
+    </plurals>
+    <string name="perfil_reputacion_operaciones">Ventas concretadas: %1$d · Compras concretadas: %2$d</string>
+    <string name="perfil_reputacion_error">No pudimos cargar tu reputación</string>
+    <string name="perfil_miembro_hoy">Miembro desde hoy</string>
+    <plurals name="perfil_miembro_dias">
+        <item quantity="one">Miembro hace %1$d día</item>
+        <item quantity="other">Miembro hace %1$d días</item>
+    </plurals>
+    <plurals name="perfil_miembro_meses">
+        <item quantity="one">Miembro hace %1$d mes</item>
+        <item quantity="other">Miembro hace %1$d meses</item>
+    </plurals>
+    <plurals name="perfil_miembro_anios">
+        <item quantity="one">Miembro hace %1$d año</item>
+        <item quantity="other">Miembro hace %1$d años</item>
+    </plurals>
 
     <!-- Errores -->
     <string name="error_email_vacio">Ingresá tu email</string>
