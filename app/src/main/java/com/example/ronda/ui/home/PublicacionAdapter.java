@@ -139,7 +139,6 @@ public class PublicacionAdapter extends BaseAdapter {
 
             btnFavorito.setImageResource(item.isFavorito() ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
             
-            android.util.Log.d("FavoritoPropio", "item ID: " + item.getId() + " | vendedorId: " + item.getVendedorId() + " | usuarioId: " + usuarioIdLogueado);
             if (java.util.Objects.equals(item.getVendedorId(), usuarioIdLogueado)) {
                 btnFavorito.setVisibility(View.GONE);
             } else {

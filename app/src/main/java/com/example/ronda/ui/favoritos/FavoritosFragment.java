@@ -12,7 +12,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,14 +21,34 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.ronda.R;
 import com.example.ronda.data.model.BusquedaGuardadaDto;
 import com.example.ronda.data.model.PublicacionItemResponse;
+import com.example.ronda.data.model.ListaBusquedasGuardadasResponse;
+import com.example.ronda.data.model.PaginaPublicacionesResponse;
+import com.example.ronda.data.repository.FavoritosRepository;
 import com.google.android.material.tabs.TabLayout;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import dagger.hilt.android.AndroidEntryPoint;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 @AndroidEntryPoint
 public class FavoritosFragment extends Fragment {
 
-    private FavoritosViewModel viewModel;
+    private enum EstadoUI { CARGANDO, LISTA, VACIO, ERROR }
+
+    @Inject
+    FavoritosRepository favoritosRepository;
+    
+    private Call<PaginaPublicacionesResponse> llamadaFavoritos;
+    private Call<ListaBusquedasGuardadasResponse> llamadaBusquedas;
+    
+    private List<PublicacionItemResponse> favoritos = new ArrayList<>();
+    private List<BusquedaGuardadaDto> busquedas = new ArrayList<>();
     
     private TabLayout tabLayout;
     private RecyclerView recyclerView;
@@ -51,7 +71,7 @@ public class FavoritosFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        viewModel = new ViewModelProvider(this).get(FavoritosViewModel.class);
+        super.onViewCreated(view, savedInstanceState);
 
         tabLayout = view.findViewById(R.id.tabLayout);
         recyclerView = view.findViewById(R.id.recyclerView);
@@ -73,7 +93,46 @@ public class FavoritosFragment extends Fragment {
 
             @Override
             public void onFavoritoClick(PublicacionItemResponse item) {
-                viewModel.toggleFavorito(item);
+                // Optimistic toggle
+                boolean eraFavorito = item.isFavorito();
+                item.setEsFavorito(!eraFavorito);
+                favoritosAdapter.notifyDataSetChanged();
+
+                if (eraFavorito) {
+                    favoritosRepository.quitarFavorito(item.getId()).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            if (response.isSuccessful()) {
+                                cargarFavoritos();
+                            } else {
+                                item.setEsFavorito(true);
+                                favoritosAdapter.notifyDataSetChanged();
+                            }
+                        }
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+                            item.setEsFavorito(true);
+                            favoritosAdapter.notifyDataSetChanged();
+                        }
+                    });
+                } else {
+                    favoritosRepository.agregarFavorito(item.getId()).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            if (response.isSuccessful()) {
+                                cargarFavoritos();
+                            } else {
+                                item.setEsFavorito(false);
+                                favoritosAdapter.notifyDataSetChanged();
+                            }
+                        }
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+                            item.setEsFavorito(false);
+                            favoritosAdapter.notifyDataSetChanged();
+                        }
+                    });
+                }
             }
         });
 
@@ -101,51 +160,103 @@ public class FavoritosFragment extends Fragment {
 
         btnReintentar.setOnClickListener(v -> actualizarLista());
 
-        observarViewModel();
-        
-        viewModel.cargarFavoritos();
-        viewModel.cargarBusquedas();
+        cargarFavoritos();
+        cargarBusquedas();
     }
 
     private void actualizarLista() {
         if (tabActual == 0) {
             recyclerView.setAdapter(favoritosAdapter);
-            viewModel.cargarFavoritos();
+            if (favoritos.isEmpty()) {
+                cargarFavoritos();
+            } else {
+                favoritosAdapter.submitList(new ArrayList<>(favoritos));
+                mostrarEstado(EstadoUI.LISTA, "");
+            }
         } else {
             recyclerView.setAdapter(busquedasAdapter);
-            viewModel.cargarBusquedas();
+            if (busquedas.isEmpty()) {
+                cargarBusquedas();
+            } else {
+                busquedasAdapter.submitList(new ArrayList<>(busquedas));
+                mostrarEstado(EstadoUI.LISTA, "");
+            }
         }
     }
 
-    private void observarViewModel() {
-        viewModel.getFavoritos().observe(getViewLifecycleOwner(), items -> {
-            if (tabActual == 0) favoritosAdapter.submitList(items);
-        });
+    private void cargarFavoritos() {
+        if (llamadaFavoritos != null) llamadaFavoritos.cancel();
+        if (tabActual == 0) mostrarEstado(EstadoUI.CARGANDO, "");
+        
+        llamadaFavoritos = favoritosRepository.listarFavoritos(1, 50);
+        llamadaFavoritos.enqueue(new Callback<PaginaPublicacionesResponse>() {
+            @Override
+            public void onResponse(Call<PaginaPublicacionesResponse> call, Response<PaginaPublicacionesResponse> response) {
+                llamadaFavoritos = null;
+                if (!isAdded()) return;
+                
+                if (response.isSuccessful() && response.body() != null) {
+                    favoritos = response.body().getItems();
+                    if (tabActual == 0) {
+                        favoritosAdapter.submitList(new ArrayList<>(favoritos));
+                        mostrarEstado(favoritos.isEmpty() ? EstadoUI.VACIO : EstadoUI.LISTA, "No tenés favoritos guardados");
+                    }
+                } else {
+                    if (tabActual == 0) mostrarEstado(EstadoUI.ERROR, "");
+                }
+            }
 
-        viewModel.getEstadoFavoritos().observe(getViewLifecycleOwner(), estado -> {
-            if (tabActual == 0) mostrarEstado(estado, "No tenés favoritos guardados");
-        });
-
-        viewModel.getBusquedas().observe(getViewLifecycleOwner(), items -> {
-            if (tabActual == 1) busquedasAdapter.submitList(items);
-        });
-
-        viewModel.getEstadoBusquedas().observe(getViewLifecycleOwner(), estado -> {
-            if (tabActual == 1) mostrarEstado(estado, "No tenés búsquedas guardadas");
+            @Override
+            public void onFailure(Call<PaginaPublicacionesResponse> call, Throwable t) {
+                llamadaFavoritos = null;
+                if (!isAdded() || call.isCanceled()) return;
+                if (tabActual == 0) mostrarEstado(EstadoUI.ERROR, "");
+            }
         });
     }
 
-    private void mostrarEstado(FavoritosViewModel.EstadoUI estado, String msjVacio) {
-        recyclerView.setVisibility(estado == FavoritosViewModel.EstadoUI.LISTA ? View.VISIBLE : View.GONE);
-        progressBar.setVisibility(estado == FavoritosViewModel.EstadoUI.CARGANDO ? View.VISIBLE : View.GONE);
+    private void cargarBusquedas() {
+        if (llamadaBusquedas != null) llamadaBusquedas.cancel();
+        if (tabActual == 1) mostrarEstado(EstadoUI.CARGANDO, "");
         
-        if (estado == FavoritosViewModel.EstadoUI.VACIO) {
+        llamadaBusquedas = favoritosRepository.listarBusquedas();
+        llamadaBusquedas.enqueue(new Callback<ListaBusquedasGuardadasResponse>() {
+            @Override
+            public void onResponse(Call<ListaBusquedasGuardadasResponse> call, Response<ListaBusquedasGuardadasResponse> response) {
+                llamadaBusquedas = null;
+                if (!isAdded()) return;
+                
+                if (response.isSuccessful() && response.body() != null) {
+                    busquedas = response.body().getBusquedas();
+                    if (tabActual == 1) {
+                        busquedasAdapter.submitList(new ArrayList<>(busquedas));
+                        mostrarEstado(busquedas.isEmpty() ? EstadoUI.VACIO : EstadoUI.LISTA, "No tenés búsquedas guardadas");
+                    }
+                } else {
+                    if (tabActual == 1) mostrarEstado(EstadoUI.ERROR, "");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ListaBusquedasGuardadasResponse> call, Throwable t) {
+                llamadaBusquedas = null;
+                if (!isAdded() || call.isCanceled()) return;
+                if (tabActual == 1) mostrarEstado(EstadoUI.ERROR, "");
+            }
+        });
+    }
+
+    private void mostrarEstado(EstadoUI estado, String msjVacio) {
+        recyclerView.setVisibility(estado == EstadoUI.LISTA ? View.VISIBLE : View.GONE);
+        progressBar.setVisibility(estado == EstadoUI.CARGANDO ? View.VISIBLE : View.GONE);
+        
+        if (estado == EstadoUI.VACIO) {
             grupoVacio.setVisibility(View.VISIBLE);
             tvVacio.setText(msjVacio);
         } else {
             grupoVacio.setVisibility(View.GONE);
         }
 
-        grupoError.setVisibility(estado == FavoritosViewModel.EstadoUI.ERROR ? View.VISIBLE : View.GONE);
+        grupoError.setVisibility(estado == EstadoUI.ERROR ? View.VISIBLE : View.GONE);
     }
 }
