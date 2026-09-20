@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -186,7 +187,9 @@ public class FavoritosFragment extends Fragment {
 
     private void cargarFavoritos() {
         if (llamadaFavoritos != null) llamadaFavoritos.cancel();
-        if (tabActual == 0) mostrarEstado(EstadoUI.CARGANDO, "");
+        // El spinner solo si no hay nada para mostrar: con la lista ya en
+        // pantalla el refresco pasa por atras.
+        if (tabActual == 0 && favoritos.isEmpty()) mostrarEstado(EstadoUI.CARGANDO, "");
         
         llamadaFavoritos = favoritosRepository.listarFavoritos(1, 50);
         llamadaFavoritos.enqueue(new Callback<PaginaPublicacionesResponse>() {
@@ -199,10 +202,11 @@ public class FavoritosFragment extends Fragment {
                     favoritos = response.body().getItems();
                     if (tabActual == 0) {
                         favoritosAdapter.submitList(new ArrayList<>(favoritos));
-                        mostrarEstado(favoritos.isEmpty() ? EstadoUI.VACIO : EstadoUI.LISTA, "No tenés favoritos guardados");
+                        mostrarEstado(favoritos.isEmpty() ? EstadoUI.VACIO : EstadoUI.LISTA,
+                                getString(R.string.favoritos_vacio));
                     }
                 } else {
-                    if (tabActual == 0) mostrarEstado(EstadoUI.ERROR, "");
+                    falloFavoritos();
                 }
             }
 
@@ -210,14 +214,14 @@ public class FavoritosFragment extends Fragment {
             public void onFailure(Call<PaginaPublicacionesResponse> call, Throwable t) {
                 llamadaFavoritos = null;
                 if (!isAdded() || call.isCanceled()) return;
-                if (tabActual == 0) mostrarEstado(EstadoUI.ERROR, "");
+                falloFavoritos();
             }
         });
     }
 
     private void cargarBusquedas() {
         if (llamadaBusquedas != null) llamadaBusquedas.cancel();
-        if (tabActual == 1) mostrarEstado(EstadoUI.CARGANDO, "");
+        if (tabActual == 1 && busquedas.isEmpty()) mostrarEstado(EstadoUI.CARGANDO, "");
         
         llamadaBusquedas = favoritosRepository.listarBusquedas();
         llamadaBusquedas.enqueue(new Callback<ListaBusquedasGuardadasResponse>() {
@@ -230,10 +234,11 @@ public class FavoritosFragment extends Fragment {
                     busquedas = response.body().getBusquedas();
                     if (tabActual == 1) {
                         busquedasAdapter.submitList(new ArrayList<>(busquedas));
-                        mostrarEstado(busquedas.isEmpty() ? EstadoUI.VACIO : EstadoUI.LISTA, "No tenés búsquedas guardadas");
+                        mostrarEstado(busquedas.isEmpty() ? EstadoUI.VACIO : EstadoUI.LISTA,
+                                getString(R.string.favoritos_busquedas_vacio));
                     }
                 } else {
-                    if (tabActual == 1) mostrarEstado(EstadoUI.ERROR, "");
+                    falloBusquedas();
                 }
             }
 
@@ -241,9 +246,34 @@ public class FavoritosFragment extends Fragment {
             public void onFailure(Call<ListaBusquedasGuardadasResponse> call, Throwable t) {
                 llamadaBusquedas = null;
                 if (!isAdded() || call.isCanceled()) return;
-                if (tabActual == 1) mostrarEstado(EstadoUI.ERROR, "");
+                falloBusquedas();
             }
         });
+    }
+
+    /**
+     * Un refresco que falla no borra una lista que sigue valiendo: se avisa y
+     * se deja lo que estaba. Solo cuando no hay nada que mostrar se ocupa la
+     * pantalla con el error.
+     */
+    private void falloFavoritos() {
+        if (tabActual != 0) return;
+        if (!favoritos.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.publicar_error_conexion,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        mostrarEstado(EstadoUI.ERROR, "");
+    }
+
+    private void falloBusquedas() {
+        if (tabActual != 1) return;
+        if (!busquedas.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.publicar_error_conexion,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        mostrarEstado(EstadoUI.ERROR, "");
     }
 
     private void mostrarEstado(EstadoUI estado, String msjVacio) {

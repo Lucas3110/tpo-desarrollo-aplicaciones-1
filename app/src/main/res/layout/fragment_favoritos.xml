@@ -17,12 +17,12 @@
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Favoritos" />
+            android:text="@string/favoritos_tab_favoritos" />
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Búsquedas" />
+            android:text="@string/favoritos_tab_busquedas" />
             
     </com.google.android.material.tabs.TabLayout>
 
@@ -86,7 +86,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Reintentar" />
+                android:text="@string/favoritos_reintentar" />
         </LinearLayout>
     </FrameLayout>
 </LinearLayout>

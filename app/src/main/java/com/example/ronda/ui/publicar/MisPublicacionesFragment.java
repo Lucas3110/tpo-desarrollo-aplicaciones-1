@@ -90,7 +90,7 @@ public class MisPublicacionesFragment extends Fragment {
         String nuevo = "ACTIVA".equals(item.getEstado()) ? "PAUSADA" : "ACTIVA";
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle("ACTIVA".equals(nuevo) ? R.string.mis_reactivar_titulo : R.string.mis_pausar_titulo)
-                .setMessage(item.getTitulo()).setNegativeButton(android.R.string.cancel, null)
+                .setMessage(item.getTitulo()).setNegativeButton(R.string.accion_cancelar, null)
                 .setPositiveButton(R.string.mis_confirmar, (d, w) -> cambiarEstado(item, nuevo)).show();
     }
     private void cambiarEstado(PublicacionItemResponse item, String nuevo) {

@@ -341,7 +341,12 @@ public class DetallePublicacionFragment extends Fragment {
         tvEstadoArticulo.setText(cat + " | " + pub.getEstadoArticuloTexto() + " | " + fechaSimple);
 
         if (pub.getVendedor() != null) {
-            tvVendedorNombre.setText(pub.getVendedor().getNombre() + " - " + pub.getVendedor().getZona().getNombre());
+            // La zona del vendedor es opcional: quien se registro sin elegirla la
+            // recibe en null y encadenar getNombre() reventaba el detalle.
+            String zonaVendedor = pub.getVendedor().getZona() != null
+                    ? " - " + pub.getVendedor().getZona().getNombre()
+                    : "";
+            tvVendedorNombre.setText(pub.getVendedor().getNombre() + zonaVendedor);
             
             PublicacionDetalleResponse.Reputacion rep = pub.getVendedor().getReputacion();
             if (rep != null && rep.getPromedioEstrellas() != null) {
@@ -395,7 +400,12 @@ public class DetallePublicacionFragment extends Fragment {
                     }
                 }
                 @Override
-                public void onFailure(Call<Void> call, Throwable t) {}
+                public void onFailure(Call<Void> call, Throwable t) {
+                    if (estaVivo() && !call.isCanceled()) {
+                        Toast.makeText(requireContext(),
+                                R.string.publicar_error_conexion, Toast.LENGTH_SHORT).show();
+                    }
+                }
             });
         } else {
             favoritosRepository.agregarFavorito(publicacionId).enqueue(new Callback<Void>() {
@@ -411,7 +421,12 @@ public class DetallePublicacionFragment extends Fragment {
                     }
                 }
                 @Override
-                public void onFailure(Call<Void> call, Throwable t) {}
+                public void onFailure(Call<Void> call, Throwable t) {
+                    if (estaVivo() && !call.isCanceled()) {
+                        Toast.makeText(requireContext(),
+                                R.string.publicar_error_conexion, Toast.LENGTH_SHORT).show();
+                    }
+                }
             });
         }
     }
