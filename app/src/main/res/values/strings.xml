@@ -271,7 +271,10 @@
     <string name="accion_quitar_guardar">Quitado de favoritos</string>
     <string name="accion_gestionar">Abrir gestión de publicación...</string>
     <string name="accion_perfil">Ver perfil público...</string>
-    <string name="reputacion_formato">Reputación: %1$.1f estrellas (%2$d calificaciones)</string>
+    <plurals name="reputacion_formato">
+        <item quantity="one">Reputación: %1$.1f estrellas (%2$d calificación)</item>
+        <item quantity="other">Reputación: %1$.1f estrellas (%2$d calificaciones)</item>
+    </plurals>
     <string name="reputacion_vacia">Aún no tiene calificaciones</string>
     <string name="error_publicacion_id">Falta el ID de la publicación</string>
     <string name="error_telefono_invalido">El teléfono solo puede tener números, espacios, guiones y paréntesis</string>
