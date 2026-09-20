@@ -36,6 +36,10 @@
         <action
             android:id="@+id/action_home_to_historial"
             app:destination="@id/historialFragment" />
+
+        <action
+            android:id="@+id/action_home_to_favoritos"
+            app:destination="@id/favoritosFragment" />
     </fragment>
 
     <!-- Punto 9: historial de compras y ventas -->
@@ -59,10 +63,6 @@
             app:destination="@id/auth_nav_graph"
             app:popUpTo="@id/home_nav_graph"
             app:popUpToInclusive="true" />
-            
-        <action
-            android:id="@+id/action_home_to_favoritos"
-            app:destination="@id/favoritosFragment" />
     </fragment>
 
     <!-- Punto 2: perfil publico de otra persona (o el propio, visto desde afuera) -->
