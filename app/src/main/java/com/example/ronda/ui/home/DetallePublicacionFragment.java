@@ -16,6 +16,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -136,7 +137,12 @@ public class DetallePublicacionFragment extends Fragment {
                 })
                 .show();
         });
-        btnVerPerfil.setOnClickListener(v -> Toast.makeText(requireContext(), getString(R.string.accion_perfil), Toast.LENGTH_SHORT).show());
+        btnVerPerfil.setOnClickListener(v -> {
+            if (mPub == null || mPub.getVendedor() == null) return;
+            Bundle args = new Bundle();
+            args.putInt("usuarioId", mPub.getVendedor().getId());
+            Navigation.findNavController(requireView()).navigate(R.id.action_detalle_to_perfilPublico, args);
+        });
 
         if (publicacionId == -1) {
             Toast.makeText(requireContext(), getString(R.string.error_publicacion_id), Toast.LENGTH_SHORT).show();

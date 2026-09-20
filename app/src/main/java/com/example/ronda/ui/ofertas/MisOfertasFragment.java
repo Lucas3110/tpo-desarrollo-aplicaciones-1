@@ -96,7 +96,7 @@ public class MisOfertasFragment extends Fragment {
         Button btnActualizar = view.findViewById(R.id.btnActualizar);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
-        adapter = new MisOfertasAdapter(this::abrirDetalle, this::onAccion);
+        adapter = new MisOfertasAdapter(this::abrirDetalle, this::onAccion, this::abrirPerfil);
         rvOfertas.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvOfertas.setAdapter(adapter);
 
@@ -308,6 +308,14 @@ public class MisOfertasFragment extends Fragment {
         Bundle args = new Bundle();
         args.putInt("publicacionId", oferta.getPublicacion().getId());
         Navigation.findNavController(requireView()).navigate(R.id.action_misOfertas_to_detalle, args);
+    }
+
+    /** El nombre de la otra parte lleva a su perfil publico: reputacion y publicaciones. */
+    private void abrirPerfil(OfertaResponse oferta) {
+        if (oferta.getContraparte() == null) return;
+        Bundle args = new Bundle();
+        args.putInt("usuarioId", oferta.getContraparte().getId());
+        Navigation.findNavController(requireView()).navigate(R.id.action_misOfertas_to_perfilPublico, args);
     }
 
     private void volverAlLogin() {

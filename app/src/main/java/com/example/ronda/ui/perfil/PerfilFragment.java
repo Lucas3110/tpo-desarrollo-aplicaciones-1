@@ -163,6 +163,7 @@ public class PerfilFragment extends Fragment {
         tvReputacionOperaciones = view.findViewById(R.id.tvReputacionOperaciones);
         tvMiembroDesde = view.findViewById(R.id.tvMiembroDesde);
 
+        view.findViewById(R.id.btnVerPerfilPublico).setOnClickListener(v -> verMiPerfilPublico());
         btnCambiarFoto.setOnClickListener(v -> selectorFoto.launch(new String[]{"image/*"}));
         btnQuitarFoto.setOnClickListener(v -> cambiarFoto(null));
         btnReintentar.setOnClickListener(v -> cargar());
@@ -265,6 +266,14 @@ public class PerfilFragment extends Fragment {
         fotoUrl = datos.getFotoUrl();
         mostrarFoto();
         bloquearCampos();
+    }
+
+    /** Como me ve el resto: el mismo perfil publico que se abre desde una publicacion. */
+    private void verMiPerfilPublico() {
+        if (datos == null) return;
+        Bundle args = new Bundle();
+        args.putInt(PerfilPublicoFragment.ARG_USUARIO_ID, datos.getId());
+        Navigation.findNavController(requireView()).navigate(R.id.action_perfil_to_perfilPublico, args);
     }
 
     /** Dibuja la foto que se va a guardar y muestra "Quitar" solo si hay una. */

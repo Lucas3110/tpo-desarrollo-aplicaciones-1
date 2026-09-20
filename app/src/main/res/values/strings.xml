@@ -164,6 +164,10 @@
     <string name="perfil_guardado">Datos actualizados</string>
     <string name="perfil_error_guardar">No pudimos guardar los cambios</string>
     <string name="perfil_reintentar">Reintentar</string>
+    <string name="perfil_ver_publico">Ver mi perfil público</string>
+    <string name="perfil_publico_error_carga">No pudimos cargar el perfil</string>
+    <string name="perfil_publico_publicaciones">Publicaciones activas</string>
+    <string name="perfil_publico_sin_publicaciones">No tiene publicaciones activas</string>
     <string name="perfil_foto_desc">Foto de perfil</string>
     <string name="perfil_foto_cambiar">Cambiar foto</string>
     <string name="perfil_foto_quitar">Quitar foto</string>

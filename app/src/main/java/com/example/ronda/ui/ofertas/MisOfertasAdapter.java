@@ -30,6 +30,11 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
         void onOferta(OfertaResponse oferta);
     }
 
+    /** Tocar el nombre de la otra parte abre su perfil publico. */
+    public interface OnContraparteClickListener {
+        void onContraparte(OfertaResponse oferta);
+    }
+
     /** Que quiere hacer la persona con una oferta que espera su respuesta. */
     public enum Accion { ACEPTAR, RECHAZAR, CONTRAOFERTAR }
 
@@ -39,13 +44,16 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
 
     private final OnOfertaClickListener listener;
     private final OnAccionListener accionListener;
+    private final OnContraparteClickListener contraparteListener;
     private List<OfertaResponse> ofertas = new ArrayList<>();
     /** Que pestaña se esta mostrando: cambia "Para ..." por "De ...". */
     private boolean enviadas = true;
 
-    public MisOfertasAdapter(OnOfertaClickListener listener, OnAccionListener accionListener) {
+    public MisOfertasAdapter(OnOfertaClickListener listener, OnAccionListener accionListener,
+                             OnContraparteClickListener contraparteListener) {
         this.listener = listener;
         this.accionListener = accionListener;
+        this.contraparteListener = contraparteListener;
     }
 
     public void mostrar(List<OfertaResponse> nuevas, boolean enviadas) {
@@ -73,6 +81,9 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
         holder.tvEstado.setText(TextosOferta.estado(ctx, o));
         holder.tvEstado.setTextColor(ContextCompat.getColor(ctx, TextosOferta.colorDeEstado(o.getEstado())));
         holder.tvContraparte.setText(TextosOferta.contraparte(ctx, o, enviadas));
+        holder.tvContraparte.setOnClickListener(v -> {
+            if (contraparteListener != null) contraparteListener.onContraparte(o);
+        });
 
         mostrarOpcional(holder.tvMensaje,
                 o.tieneMensaje() ? ctx.getString(R.string.oferta_mensaje_formato, o.getMensaje().trim()) : null);

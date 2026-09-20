@@ -16,6 +16,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -133,6 +136,7 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
 
         rvOfertas.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new OfertasAdapter();
+        adapter.setOnAutorClickListener(this::abrirPerfil);
         rvOfertas.setAdapter(adapter);
 
         if (puedeOfertar) {
@@ -416,6 +420,20 @@ public class OfertasBottomSheet extends BottomSheetDialogFragment {
 
     private boolean estaVivo() {
         return isAdded() && getView() != null;
+    }
+
+    /**
+     * Cierra la hoja y abre el perfil publico de quien oferto. La hoja vive
+     * dentro del detalle, que es quien tiene el NavController.
+     */
+    private void abrirPerfil(int usuarioId) {
+        Fragment detalle = getParentFragment();
+        if (detalle == null || detalle.getView() == null) return;
+        Bundle args = new Bundle();
+        args.putInt("usuarioId", usuarioId);
+        NavController nav = Navigation.findNavController(detalle.requireView());
+        dismiss();
+        nav.navigate(R.id.action_detalle_to_perfilPublico, args);
     }
 
     @Override public void onDismiss(@NonNull DialogInterface dialog) {
