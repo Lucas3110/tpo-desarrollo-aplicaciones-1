@@ -30,6 +30,10 @@ public class UsuarioResponse {
     @SerializedName("zona")
     private ZonaResponse zona;
 
+    /** URL de la foto de perfil (https, content:// o file://), o null si no tiene. */
+    @SerializedName("fotoUrl")
+    private String fotoUrl;
+
     @SerializedName("emailVerificado")
     private boolean emailVerificado;
 
@@ -54,6 +58,10 @@ public class UsuarioResponse {
 
     public ZonaResponse getZona() {
         return zona;
+    }
+
+    public String getFotoUrl() {
+        return fotoUrl;
     }
 
     public boolean isEmailVerificado() {

@@ -37,6 +37,22 @@
             app:destination="@id/favoritosFragment" />
     </fragment>
 
+    <!-- Punto 2: perfil publico de otra persona (o el propio, visto desde afuera) -->
+    <fragment
+        android:id="@+id/perfilPublicoFragment"
+        android:name="com.example.ronda.ui.perfil.PerfilPublicoFragment"
+        android:label="Perfil"
+        tools:layout="@layout/fragment_perfil_publico">
+        <argument
+            android:name="usuarioId"
+            app:argType="integer" />
+
+        <!-- Sus publicaciones activas abren el detalle. -->
+        <action
+            android:id="@+id/action_perfilPublico_to_detalle"
+            app:destination="@id/detallePublicacionFragment" />
+    </fragment>
+
     <!-- Punto 7: ofertas y negociacion -->
     <fragment
         android:id="@+id/misOfertasFragment"
@@ -48,6 +64,11 @@
         <action
             android:id="@+id/action_misOfertas_to_detalle"
             app:destination="@id/detallePublicacionFragment" />
+
+        <!-- Tocar la contraparte abre su perfil publico. -->
+        <action
+            android:id="@+id/action_misOfertas_to_perfilPublico"
+            app:destination="@id/perfilPublicoFragment" />
 
         <!-- Sesion vencida (401): se vuelve al login. -->
         <action
@@ -82,6 +103,11 @@
         <argument
             android:name="publicacionId"
             app:argType="integer" />
+
+        <!-- "Ver perfil publico" del vendedor (y de quien oferto, si soy el vendedor). -->
+        <action
+            android:id="@+id/action_detalle_to_perfilPublico"
+            app:destination="@id/perfilPublicoFragment" />
     </fragment>
 
     <!-- Punto 2 -->
@@ -97,6 +123,11 @@
             app:destination="@id/auth_nav_graph"
             app:popUpTo="@id/home_nav_graph"
             app:popUpToInclusive="true" />
+
+        <!-- "Ver mi perfil publico": como me ve el resto. -->
+        <action
+            android:id="@+id/action_perfil_to_perfilPublico"
+            app:destination="@id/perfilPublicoFragment" />
     </fragment>
 
     <fragment
