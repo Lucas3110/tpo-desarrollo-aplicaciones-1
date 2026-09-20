@@ -160,15 +160,21 @@ public class PublicacionAdapter extends BaseAdapter {
          * recicla, cancela solo la carga anterior de este ImageView.
          */
         private void mostrarFoto(String url) {
+            ivFoto.setVisibility(View.VISIBLE);
+
             if (url == null || url.isEmpty()) {
+                // El hueco se conserva con un marcador: escondiendolo, la fila
+                // sin foto quedaba descolgada respecto de las que si tienen.
                 Glide.with(ivFoto).clear(ivFoto);
-                ivFoto.setVisibility(View.GONE);
+                ivFoto.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                ivFoto.setImageResource(R.drawable.bg_sin_foto);
                 return;
             }
-            ivFoto.setVisibility(View.VISIBLE);
+
+            ivFoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
             Glide.with(ivFoto)
                     .load(url)
-                    .placeholder(R.drawable.bg_estado_articulo)
+                    .placeholder(R.drawable.bg_sin_foto)
                     .centerCrop()
                     .into(ivFoto);
         }

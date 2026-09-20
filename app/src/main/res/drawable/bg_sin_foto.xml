@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Marcador para las publicaciones sin foto.
+
+     Ocupa el mismo lugar que una foto de verdad a proposito: si el hueco se
+     escondiera, esa fila del listado quedaria descolgada respecto de las que
+     si tienen imagen. Tambien se usa como placeholder mientras Glide baja la
+     foto, asi la lista no salta. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="8dp" />
+            <solid android:color="?attr/colorSurfaceVariant" />
+        </shape>
+    </item>
+    <item
+        android:width="26dp"
+        android:height="26dp"
+        android:drawable="@drawable/ic_sin_foto"
+        android:gravity="center" />
+</layer-list>
