@@ -3,6 +3,8 @@ package com.example.ronda.ui.home;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.format.DateFormat;
+import android.text.format.DateUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -39,13 +41,16 @@ import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.AuthApiService;
 import com.example.ronda.data.network.OfertaApiService;
 import com.example.ronda.data.network.PublicacionApiService;
+import com.example.ronda.data.repository.CachePublicaciones;
 import com.example.ronda.data.repository.SessionRepository;
+import com.example.ronda.util.Conectividad;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -90,6 +95,13 @@ public class HomeFragment extends Fragment {
     /** Solo para el contador de ofertas recibidas que esperan respuesta. */
     @Inject
     OfertaApiService ofertaApi;
+
+    /** Punto 6: lo ultimo que se cargo bien, para poder mostrarlo sin red. */
+    @Inject
+    CachePublicaciones cache;
+
+    @Inject
+    Conectividad conectividad;
 
     /** Que se ve en el area central: una sola de estas vistas a la vez. */
     private enum Estado { CARGANDO, LISTA, VACIO, ERROR }
@@ -143,6 +155,7 @@ public class HomeFragment extends Fragment {
     private View grupoVacio;
     private View grupoError;
     private TextView tvContador;
+    private TextView tvSinConexion;
     private TextView tvError;
     private TextView tvUrlBase;
     private View pbCargandoMas;
@@ -192,6 +205,8 @@ public class HomeFragment extends Fragment {
         grupoVacio = view.findViewById(R.id.grupoVacio);
         grupoError = view.findViewById(R.id.grupoError);
         tvContador = view.findViewById(R.id.tvContador);
+        tvSinConexion = view.findViewById(R.id.tvSinConexion);
+        observarConexion();
         tvError = view.findViewById(R.id.tvError);
         tvUrlBase = view.findViewById(R.id.tvUrlBase);
         Button btnCerrarSesion = view.findViewById(R.id.btnCerrarSesion);
@@ -575,6 +590,10 @@ public class HomeFragment extends Fragment {
                 cargando = false;
 
                 if (response.isSuccessful() && response.body() != null) {
+                    // Punto 6: lo que llego bien queda guardado para poder
+                    // mostrarlo la proxima vez que no haya conexion.
+                    cache.guardarListado(response.body().getItems());
+                    ocultarAvisoSinConexion();
                     mostrarPagina(response.body(), pagina);
                 } else {
                     // Se lee el cuerpo UNA sola vez.
@@ -598,10 +617,16 @@ public class HomeFragment extends Fragment {
                 int mensaje = t instanceof IOException
                         ? R.string.error_sin_conexion
                         : R.string.home_error_respuesta_invalida;
-                if (pagina == 1) {
-                    mostrarError(getString(mensaje), call);
-                } else {
+                if (pagina > 1) {
                     mostrarErrorPaginado();
+                    return;
+                }
+                // Punto 6: si no hubo respuesta (IOException = sin red, backend
+                // caido), antes de dar error probamos con lo ultimo guardado.
+                if (t instanceof IOException) {
+                    mostrarDesdeCache(getString(mensaje), call);
+                } else {
+                    mostrarError(getString(mensaje), call);
                 }
             }
         });
@@ -779,6 +804,10 @@ public class HomeFragment extends Fragment {
         // Borrar el token es lo que corta la sesion: sin el, el auto-login
         // del LoginFragment no se dispara.
         sesion.cerrarSesion();
+        // Punto 6: lo guardado para ver sin conexion es de esa persona, no
+        // del dispositivo. Si no se borra, quien entre despues ve sin red las
+        // publicaciones que miro el anterior.
+        cache.limpiar();
         Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
     }
 
@@ -804,6 +833,83 @@ public class HomeFragment extends Fragment {
                 + call.request().url().host() + ":" + call.request().url().port() + "/";
         tvUrlBase.setText(getString(R.string.home_url_base, servidor));
         mostrarEstado(Estado.ERROR);
+    }
+
+    // -----------------------------------------------------------------
+    // Punto 6: modo sin conexion
+    // -----------------------------------------------------------------
+
+    /**
+     * No se pudo llegar al servidor: se muestra lo ultimo que se habia
+     * cargado bien, avisando que puede estar desactualizado.
+     *
+     * Si la cache esta vacia (primera vez que se abre la app, y sin red) no
+     * hay nada que mostrar y se cae al error de siempre. Es mas honesto que
+     * dejar la pantalla en blanco sin explicar nada.
+     */
+    private void mostrarDesdeCache(String mensajeSiFalla, Call<?> call) {
+        cache.ultimasVistas(instantanea -> {
+            if (!estaVivo()) return;
+
+            if (instantanea == null || instantanea.estaVacia()) {
+                mostrarError(getString(R.string.sin_conexion_sin_cache), call);
+                return;
+            }
+
+            adapter.reemplazar(instantanea.items);
+            total = instantanea.items.size();
+            paginaActual = 1;
+            // Sin red no se puede paginar: que el scroll no lo intente.
+            hayMas = false;
+
+            mostrarAvisoSinConexion(instantanea.guardadoEn);
+            actualizarContador();
+            mostrarEstado(Estado.LISTA);
+        });
+    }
+
+    /**
+     * La banda de aviso de arriba. Muestra la hora si el dato es de hoy y
+     * algo tipo "ayer" si es de antes: "guardado a las 14:30" dice mucho mas
+     * que una fecha completa cuando pasaron diez minutos.
+     */
+    private void mostrarAvisoSinConexion(long guardadoEn) {
+        if (tvSinConexion == null) return;
+
+        CharSequence cuando;
+        int plantilla;
+        if (DateUtils.isToday(guardadoEn)) {
+            cuando = DateFormat.getTimeFormat(requireContext()).format(new Date(guardadoEn));
+            plantilla = R.string.sin_conexion_datos_de;
+        } else {
+            cuando = DateUtils.getRelativeTimeSpanString(guardadoEn);
+            plantilla = R.string.sin_conexion_datos_de_fecha;
+        }
+        tvSinConexion.setText(getString(plantilla, cuando));
+        tvSinConexion.setVisibility(View.VISIBLE);
+    }
+
+    private void ocultarAvisoSinConexion() {
+        if (tvSinConexion != null) tvSinConexion.setVisibility(View.GONE);
+    }
+
+    /**
+     * "Al recuperar la conexion, la app actualiza automaticamente la
+     * informacion guardada con los datos mas recientes del servidor."
+     *
+     * Se observa el LiveData en vez de preguntar cada dos segundos: el
+     * sistema avisa cuando cambia. Solo recarga si el aviso esta a la vista,
+     * o sea si lo que se ve salio de la cache; si ya habia datos frescos no
+     * hay nada que rehacer.
+     */
+    private void observarConexion() {
+        conectividad.getEstado().observe(getViewLifecycleOwner(), hayInternet -> {
+            if (!Boolean.TRUE.equals(hayInternet) || !estaVivo()) return;
+            if (tvSinConexion == null || tvSinConexion.getVisibility() != View.VISIBLE) return;
+
+            Toast.makeText(requireContext(), R.string.sin_conexion_volvio, Toast.LENGTH_SHORT).show();
+            recargar();
+        });
     }
 
     /**

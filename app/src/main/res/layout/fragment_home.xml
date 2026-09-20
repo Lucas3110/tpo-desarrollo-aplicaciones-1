@@ -300,6 +300,22 @@
 
     </LinearLayout>
 
+    <!--
+      Punto 6: aviso de que lo que se ve salió de la caché y puede estar
+      desactualizado. Oculto mientras haya conexión.
+    -->
+    <TextView
+        android:id="@+id/tvSinConexion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/aviso_sin_conexion_fondo"
+        android:padding="10dp"
+        android:textColor="@color/aviso_sin_conexion_texto"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:text="Sin conexión · datos guardados a las 14:30"
+        tools:visibility="visible" />
+
     <TextView
         android:id="@+id/tvContador"
         android:layout_width="match_parent"

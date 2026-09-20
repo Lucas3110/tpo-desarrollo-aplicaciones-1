@@ -1,9 +1,11 @@
 package com.example.ronda.ui.home;
 
 import android.os.Bundle;
-import android.content.Intent;
 import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.net.Uri;
+import android.text.format.DateFormat;
+import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,8 +29,12 @@ import com.example.ronda.ui.entrega.EnlaceEntrega;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.PublicacionApiService;
+import com.example.ronda.data.repository.CachePublicaciones;
 import com.example.ronda.data.repository.SessionRepository;
+import com.example.ronda.util.Conectividad;
 import com.example.ronda.ui.ofertas.FormatoOferta;
+
+import java.util.Date;
 
 import javax.inject.Inject;
 import dagger.hilt.android.AndroidEntryPoint;
@@ -45,6 +51,13 @@ public class DetallePublicacionFragment extends Fragment {
     @Inject
     SessionRepository sesion;
 
+    /** Punto 6: lo que se abrio queda guardado para poder verlo sin red. */
+    @Inject
+    CachePublicaciones cache;
+
+    @Inject
+    Conectividad conectividad;
+
     private int publicacionId = -1;
     private PublicacionDetalleResponse.Publicacion mPub;
     private boolean esFavorito = false;
@@ -53,6 +66,7 @@ public class DetallePublicacionFragment extends Fragment {
     private TextView tvDireccionEntrega;
     private Button btnComoLlegar;
 
+    private TextView tvSinConexionDetalle;
     private ProgressBar progressBar;
     private ScrollView scrollView;
     private RecyclerView rvFotos;
@@ -79,6 +93,8 @@ public class DetallePublicacionFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         progressBar = view.findViewById(R.id.progressBar);
+        tvSinConexionDetalle = view.findViewById(R.id.tvSinConexionDetalle);
+        observarConexion();
         scrollView = view.findViewById(R.id.scrollView);
         
         rvFotos = view.findViewById(R.id.rvFotos);
@@ -106,22 +122,22 @@ public class DetallePublicacionFragment extends Fragment {
                 (key, result) -> cargarDetallePublicacion());
         
         btnPreguntar.setOnClickListener(v -> {
-            if (mPub == null) return;
+            if (mPub == null || !hayConexionParaActuar()) return;
             boolean esVendedor = mPub.isEsMia();
             boolean puedePreguntar = mPub.getAcciones().isPuedePreguntar();
             PreguntasBottomSheet bottomSheet = PreguntasBottomSheet.newInstance(mPub.getId(), esVendedor, puedePreguntar);
             bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
         });
         btnOfertar.setOnClickListener(v -> {
-            if (mPub == null) return;
+            if (mPub == null || !hayConexionParaActuar()) return;
             boolean esVendedor = mPub.isEsMia();
             boolean puedeOfertar = mPub.getAcciones().isPuedeOfertar();
             OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), esVendedor, puedeOfertar, mPub.getPrecio());
             bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
         });
-        btnGuardar.setOnClickListener(v -> toggleFavorito());
+        btnGuardar.setOnClickListener(v -> { if (hayConexionParaActuar()) toggleFavorito(); });
         btnGestionar.setOnClickListener(v -> {
-            if (mPub == null) return;
+            if (mPub == null || !hayConexionParaActuar()) return;
             new android.app.AlertDialog.Builder(requireContext())
                 .setTitle(R.string.detalle_gestionar)
                 .setItems(new CharSequence[]{
@@ -149,6 +165,84 @@ public class DetallePublicacionFragment extends Fragment {
         }
     }
 
+
+    // -----------------------------------------------------------------
+    // Punto 6: modo sin conexion
+    // -----------------------------------------------------------------
+
+    /**
+     * No se pudo llegar al servidor: si esta publicacion se abrio alguna vez
+     * con conexion, se muestra la copia guardada.
+     *
+     * Si nunca se abrio, no hay nada: el listado guarda un resumen, pero la
+     * descripcion, la galeria y los datos del vendedor solo llegan al pedir
+     * el detalle. Se avisa con ese texto para que la persona entienda por que
+     * unas publicaciones se ven sin red y otras no.
+     */
+    private void mostrarDesdeCache() {
+        cache.detalleGuardado(publicacionId, guardado -> {
+            if (!estaVivo()) return;
+
+            if (guardado == null) {
+                // Sin copia guardada no hay nada que dibujar. Se vuelve al
+                // listado en vez de dejar una pantalla en blanco: el aviso
+                // explica por que, y la persona queda donde puede seguir.
+                Toast.makeText(requireContext(),
+                        R.string.sin_conexion_detalle_no_guardado, Toast.LENGTH_LONG).show();
+                Navigation.findNavController(requireView()).popBackStack();
+                return;
+            }
+
+            poblarUi(guardado.publicacion);
+            mostrarAvisoSinConexion(guardado.guardadoEn);
+        });
+    }
+
+    private void mostrarAvisoSinConexion(long guardadoEn) {
+        if (tvSinConexionDetalle == null) return;
+
+        CharSequence cuando;
+        int plantilla;
+        if (DateUtils.isToday(guardadoEn)) {
+            cuando = DateFormat.getTimeFormat(requireContext()).format(new Date(guardadoEn));
+            plantilla = R.string.sin_conexion_datos_de;
+        } else {
+            cuando = DateUtils.getRelativeTimeSpanString(guardadoEn);
+            plantilla = R.string.sin_conexion_datos_de_fecha;
+        }
+        tvSinConexionDetalle.setText(getString(plantilla, cuando));
+        tvSinConexionDetalle.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * "Las acciones que requieren conexion quedan deshabilitadas mientras no
+     * haya conectividad, mostrando un mensaje claro."
+     *
+     * Se chequea al tocar y no al dibujar la pantalla a proposito: la
+     * conexion puede irse en cualquier momento, y un boton que se ve
+     * habilitado pero avisa al tocarlo es mas claro que uno que aparece y
+     * desaparece solo mientras la persona lo esta mirando.
+     */
+    private boolean hayConexionParaActuar() {
+        if (conectividad.hayInternet()) return true;
+        Toast.makeText(requireContext(), R.string.sin_conexion_accion, Toast.LENGTH_SHORT).show();
+        return false;
+    }
+
+    /**
+     * Cuando vuelve la conexion se recarga el detalle solo, para que deje de
+     * verse la copia guardada y pase a verse la de verdad.
+     */
+    private void observarConexion() {
+        conectividad.getEstado().observe(getViewLifecycleOwner(), hayInternet -> {
+            if (!Boolean.TRUE.equals(hayInternet) || !estaVivo()) return;
+            if (tvSinConexionDetalle == null
+                    || tvSinConexionDetalle.getVisibility() != View.VISIBLE) return;
+            if (publicacionId == -1) return;
+
+            cargarDetallePublicacion();
+        });
+    }
     private void cargarDetallePublicacion() {
         cargarDetallePublicacion(false);
     }
@@ -172,7 +266,11 @@ public class DetallePublicacionFragment extends Fragment {
                 if (!estaVivo() || call.isCanceled() || call != llamadaDetalle) return;
                 mostrarCargando(false);
 
-                if (response.isSuccessful() && response.body() != null && response.body().getPublicacion() != null) {
+                if (response.isSuccessful() && response.body() != null
+                        && response.body().getPublicacion() != null) {
+                    // Punto 6: queda guardado para poder abrirlo sin conexion.
+                    cache.guardarDetalle(response.body().getPublicacion());
+                    if (tvSinConexionDetalle != null) tvSinConexionDetalle.setVisibility(View.GONE);
                     poblarUi(response.body().getPublicacion());
                     if (abrirMapa) abrirMapa(mPub.getEntrega());
                 } else {
@@ -185,7 +283,8 @@ public class DetallePublicacionFragment extends Fragment {
             public void onFailure(@NonNull Call<PublicacionDetalleResponse> call, @NonNull Throwable t) {
                 if (!estaVivo() || call.isCanceled() || call != llamadaDetalle) return;
                 mostrarCargando(false);
-                Toast.makeText(requireContext(), R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
+                // Punto 6: antes de dar error, probamos con lo guardado.
+                mostrarDesdeCache();
             }
         });
     }

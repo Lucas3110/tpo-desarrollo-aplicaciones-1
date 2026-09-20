@@ -12,6 +12,24 @@
         android:layout_gravity="center"
         android:visibility="gone" />
 
+    <!--
+      Punto 6: aviso de que este detalle salió de la caché. Va por encima del
+      ScrollView para que no se pierda al hacer scroll.
+    -->
+    <TextView
+        android:id="@+id/tvSinConexionDetalle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@color/aviso_sin_conexion_fondo"
+        android:elevation="4dp"
+        android:padding="10dp"
+        android:textColor="@color/aviso_sin_conexion_texto"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:text="Sin conexión · datos guardados a las 14:30"
+        tools:visibility="visible" />
+
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
