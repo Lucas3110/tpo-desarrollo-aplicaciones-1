@@ -1,3 +1,4 @@
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -23,8 +24,17 @@ plugins {
  * probar en su celular se la llevaba puesta en un commit y rompia el emulador
  * de todos los demas.
  */
+// findProperty() solo ve gradle.properties y -P, NO local.properties: hay que
+// leer ese archivo a mano para que lo documentado arriba funcione.
+val propiedadesLocales = Properties().apply {
+    val archivo = rootProject.file("local.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+
 val urlDelBackend: String =
-    (project.findProperty("ronda.baseUrl") as String?) ?: "http://10.0.2.2:3000/"
+    propiedadesLocales.getProperty("ronda.baseUrl")
+        ?: (project.findProperty("ronda.baseUrl") as String?)
+        ?: "http://10.0.2.2:3000/"
 
 android {
     namespace = "com.example.ronda"

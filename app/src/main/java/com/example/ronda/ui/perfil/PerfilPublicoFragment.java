@@ -17,12 +17,15 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.ronda.R;
+import com.example.ronda.data.model.CalificacionResponse;
 import com.example.ronda.data.model.ErrorResponse;
+import com.example.ronda.data.model.ListaCalificacionesResponse;
 import com.example.ronda.data.model.PerfilPublicoResponse;
 import com.example.ronda.data.model.PublicacionItemResponse;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.network.UsuarioApiService;
 import com.example.ronda.ui.home.PublicacionAdapter;
+import com.example.ronda.ui.ofertas.FormatoOferta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,11 +40,16 @@ import retrofit2.Response;
 /**
  * Perfil publico de una persona (Punto 2): lo que se consulta antes de
  * operar con ella. Foto, nombre, zona, antiguedad en la plataforma,
- * reputacion y publicaciones activas (tocar una abre su detalle).
+ * reputacion, publicaciones activas (tocar una abre su detalle) y las
+ * calificaciones que recibio.
  *
  * Llega con el argumento usuarioId desde el detalle de una publicacion, "Mis
  * ofertas", las ofertas de una publicacion y el propio "Mi perfil". Se pide a
  * GET /usuarios/{id}/perfil, que es publico: no expone email ni telefono.
+ *
+ * Las calificaciones vienen de GET /usuarios/{id}/calificaciones, tambien
+ * publico. Se piden despues del perfil y si fallan solo se avisa en su
+ * seccion: el resto del perfil se sigue viendo.
  *
  * Las publicaciones se dibujan con las mismas filas del Home
  * (PublicacionAdapter) agregadas a un contenedor: son pocas (el backend
@@ -69,9 +77,12 @@ public class PerfilPublicoFragment extends Fragment {
     private TextView tvReputacionOperaciones;
     private TextView tvSinPublicaciones;
     private LinearLayout llPublicaciones;
+    private TextView tvEstadoCalificaciones;
+    private LinearLayout llCalificaciones;
 
     private int usuarioId = -1;
     private Call<PerfilPublicoResponse> llamada;
+    private Call<ListaCalificacionesResponse> llamadaCalificaciones;
 
     @Nullable
     @Override
@@ -97,6 +108,8 @@ public class PerfilPublicoFragment extends Fragment {
         tvReputacionOperaciones = view.findViewById(R.id.tvReputacionOperaciones);
         tvSinPublicaciones = view.findViewById(R.id.tvSinPublicaciones);
         llPublicaciones = view.findViewById(R.id.llPublicaciones);
+        tvEstadoCalificaciones = view.findViewById(R.id.tvEstadoCalificaciones);
+        llCalificaciones = view.findViewById(R.id.llCalificaciones);
         Button btnReintentar = view.findViewById(R.id.btnReintentar);
 
         btnReintentar.setOnClickListener(v -> cargar());
@@ -133,6 +146,7 @@ public class PerfilPublicoFragment extends Fragment {
                 }
                 poblar(response.body().getPerfil());
                 mostrarEstado(false, true);
+                cargarCalificaciones();
             }
 
             @Override
@@ -173,6 +187,77 @@ public class PerfilPublicoFragment extends Fragment {
     }
 
     // -----------------------------------------------------------------
+    // Calificaciones recibidas
+    // -----------------------------------------------------------------
+
+    private void cargarCalificaciones() {
+        if (llamadaCalificaciones != null) llamadaCalificaciones.cancel();
+        llCalificaciones.removeAllViews();
+        tvEstadoCalificaciones.setVisibility(View.GONE);
+
+        llamadaCalificaciones = usuarioApi.calificaciones(usuarioId);
+        llamadaCalificaciones.enqueue(new Callback<ListaCalificacionesResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<ListaCalificacionesResponse> call,
+                                   @NonNull Response<ListaCalificacionesResponse> response) {
+                if (call.isCanceled() || !estaVivo()) return;
+                if (!response.isSuccessful() || response.body() == null) {
+                    avisarEnCalificaciones(R.string.perfil_publico_error_calificaciones);
+                    return;
+                }
+                poblarCalificaciones(response.body().getCalificaciones());
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ListaCalificacionesResponse> call, @NonNull Throwable t) {
+                if (call.isCanceled() || !estaVivo()) return;
+                avisarEnCalificaciones(R.string.perfil_publico_error_calificaciones);
+            }
+        });
+    }
+
+    private void poblarCalificaciones(List<CalificacionResponse> calificaciones) {
+        llCalificaciones.removeAllViews();
+        if (calificaciones.isEmpty()) {
+            avisarEnCalificaciones(R.string.perfil_publico_sin_calificaciones);
+            return;
+        }
+        tvEstadoCalificaciones.setVisibility(View.GONE);
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        for (CalificacionResponse c : calificaciones) {
+            View fila = inflater.inflate(R.layout.item_calificacion, llCalificaciones, false);
+            ((TextView) fila.findViewById(R.id.tvEstrellas)).setText(FormatoPerfil.estrellas(c.getEstrellas()));
+            ((TextView) fila.findViewById(R.id.tvRol)).setText(c.esComoVendedor()
+                    ? R.string.calificacion_como_vendedor : R.string.calificacion_como_comprador);
+
+            TextView tvComentario = fila.findViewById(R.id.tvComentario);
+            tvComentario.setText(c.tieneComentario() ? c.getComentario().trim() : "");
+            tvComentario.setVisibility(c.tieneComentario() ? View.VISIBLE : View.GONE);
+
+            ((TextView) fila.findViewById(R.id.tvMeta)).setText(detalleDe(c));
+            llCalificaciones.addView(fila);
+        }
+    }
+
+    /** "Martin Sosa · 16/09/2026 · Notebook Lenovo": quien, cuando y por que articulo. */
+    private String detalleDe(CalificacionResponse c) {
+        String autor = c.getAutor() != null && c.getAutor().getNombre() != null
+                ? c.getAutor().getNombre() : "";
+        String fecha = FormatoOferta.fecha(c.getFecha());
+        String articulo = c.getArticulo();
+        if (articulo == null || articulo.isEmpty()) {
+            return getString(R.string.calificacion_meta, autor, fecha);
+        }
+        return getString(R.string.calificacion_meta_articulo, autor, fecha, articulo);
+    }
+
+    private void avisarEnCalificaciones(int mensaje) {
+        tvEstadoCalificaciones.setText(mensaje);
+        tvEstadoCalificaciones.setVisibility(View.VISIBLE);
+    }
+
+    // -----------------------------------------------------------------
     // Navegacion y estados
     // -----------------------------------------------------------------
 
@@ -199,6 +284,7 @@ public class PerfilPublicoFragment extends Fragment {
     @Override
     public void onDestroyView() {
         if (llamada != null) llamada.cancel();
+        if (llamadaCalificaciones != null) llamadaCalificaciones.cancel();
         super.onDestroyView();
     }
 

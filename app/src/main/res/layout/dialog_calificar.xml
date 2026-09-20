@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Contenido del dialogo para calificar a la otra parte de una operacion:
+     estrellas de 1 a 5 y un comentario breve opcional. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/tvACalificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="14sp"
+        tools:text="Calificá a Sofía Ramírez por “Notebook Lenovo IdeaPad”" />
+
+    <RatingBar
+        android:id="@+id/rbEstrellas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:numStars="5"
+        android:rating="0"
+        android:stepSize="1" />
+
+    <EditText
+        android:id="@+id/etComentario"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:autofillHints=""
+        android:gravity="top"
+        android:hint="@string/calificar_comentario_hint"
+        android:inputType="textCapSentences|textMultiLine"
+        android:maxLines="4"
+        android:minLines="2" />
+
+    <TextView
+        android:id="@+id/tvContador"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="12sp"
+        tools:text="0/500" />
+
+</LinearLayout>

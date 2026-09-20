@@ -9,6 +9,9 @@
     <color name="estado_rechazada">#F44336</color>
     <color name="estado_vencida">#9E9E9E</color>
     <color name="fondo_formulario_oferta">#FAFAFA</color>
+
+    <!-- Estrellas de las calificaciones. -->
+    <color name="estrella">#FFA000</color>
     <!-- Punto 6: banda de aviso cuando se muestran datos guardados -->
     <color name="aviso_sin_conexion_fondo">#FFF4E5</color>
     <color name="aviso_sin_conexion_texto">#8A5300</color>

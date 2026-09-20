@@ -10,8 +10,8 @@ import com.example.ronda.R;
 import com.example.ronda.data.model.ReputacionResponse;
 
 /**
- * Lo que comparten las pantallas de perfil (el propio y, mas adelante, el
- * publico): la foto y los textos de reputacion y antiguedad.
+ * Lo que comparten las pantallas de perfil (Mi perfil y el perfil publico):
+ * la foto y los textos de reputacion y antiguedad.
  */
 public final class FormatoPerfil {
 
@@ -19,6 +19,16 @@ public final class FormatoPerfil {
     private static final int DIAS_POR_ANIO = 365;
 
     private FormatoPerfil() {
+    }
+
+    /** Estrellas llenas y vacias hasta 5, por ejemplo 4 -> "★★★★☆". */
+    public static String estrellas(int cantidad) {
+        int llenas = Math.max(0, Math.min(5, cantidad));
+        StringBuilder texto = new StringBuilder();
+        for (int i = 0; i < 5; i++) {
+            texto.append(i < llenas ? '\u2605' : '\u2606');
+        }
+        return texto.toString();
     }
 
     /**

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Encabezado de seccion del historial: "Compras (2)" / "Ventas (1)". -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tvSeccion"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="16dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="4dp"
+    android:textColor="?android:attr/textColorSecondary"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    tools:text="Compras (2)" />
