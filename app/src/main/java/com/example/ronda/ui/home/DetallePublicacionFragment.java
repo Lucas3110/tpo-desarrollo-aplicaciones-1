@@ -352,8 +352,10 @@ public class DetallePublicacionFragment extends Fragment {
             if (rep != null && rep.getPromedioEstrellas() != null) {
                 // getString con argumentos: el recurso tiene %1$.1f y %2$d, asi que
                 // String.format sobre el texto ya resuelto rompia en tiempo de ejecucion.
-                tvReputacion.setText(getString(R.string.reputacion_formato,
-                        rep.getPromedioEstrellas(), rep.getCantidadCalificaciones()));
+                int cuantas = rep.getCantidadCalificaciones();
+                tvReputacion.setText(getResources().getQuantityString(
+                        R.plurals.reputacion_formato, cuantas,
+                        rep.getPromedioEstrellas(), cuantas));
             } else {
                 tvReputacion.setText(getString(R.string.reputacion_vacia));
             }
