@@ -84,16 +84,20 @@ public class FavoritosAdapter extends ListAdapter<PublicacionItemResponse, Favor
                 tvNovedad.setVisibility(View.GONE);
             }
 
+            // Mismo criterio que el listado del Home: el hueco se conserva
+            // aunque no haya foto, asi las filas quedan alineadas.
+            ivFoto.setVisibility(View.VISIBLE);
             if (item.getFotoPrincipal() != null && !item.getFotoPrincipal().isEmpty()) {
-                ivFoto.setVisibility(View.VISIBLE);
+                ivFoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 Glide.with(ivFoto.getContext())
                         .load(item.getFotoPrincipal())
-                        .placeholder(R.drawable.bg_estado_articulo)
+                        .placeholder(R.drawable.bg_sin_foto)
                         .centerCrop()
                         .into(ivFoto);
             } else {
-                ivFoto.setVisibility(View.GONE);
                 Glide.with(ivFoto.getContext()).clear(ivFoto);
+                ivFoto.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                ivFoto.setImageResource(R.drawable.bg_sin_foto);
             }
 
             btnFavorito.setImageResource(item.isFavorito() ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
