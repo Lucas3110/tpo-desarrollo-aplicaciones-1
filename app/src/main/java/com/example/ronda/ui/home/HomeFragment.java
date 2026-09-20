@@ -3,8 +3,6 @@ package com.example.ronda.ui.home;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.format.DateFormat;
-import android.text.format.DateUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -50,7 +48,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -133,6 +130,12 @@ public class HomeFragment extends Fragment {
     private int total = 0;
     private int paginaActual = 0;
     private boolean hayMas = false;
+    /**
+     * Identifica la carga en curso para la cache: lo abre la pagina 1 y lo
+     * reusan las siguientes, asi sin conexion la lista se rearma en el mismo
+     * orden en que la mando el servidor.
+     */
+    private long loteCache = 0L;
     private boolean cargando = false;
     /**
      * Fallo la carga de una pagina siguiente: el scroll no insiste mientras el
@@ -256,7 +259,16 @@ public class HomeFragment extends Fragment {
         btnCerrarSesion.setOnClickListener(v -> cerrarSesion());
         btnMiPerfil.setOnClickListener(v ->
                 Navigation.findNavController(requireView()).navigate(R.id.action_home_to_perfil));
-        btnPublicar.setOnClickListener(v -> mostrarTutorialPublicacion());
+        btnPublicar.setOnClickListener(v -> {
+            // Publicar es otra de las acciones que necesitan servidor: mejor
+            // avisarlo antes de que la persona complete los tres pasos.
+            if (!conectividad.hayInternet()) {
+                Toast.makeText(requireContext(), R.string.sin_conexion_accion,
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            mostrarTutorialPublicacion();
+        });
         btnMisPublicaciones.setOnClickListener(v -> Navigation.findNavController(requireView())
                 .navigate(R.id.action_home_to_mis_publicaciones));
         btnMisOfertas.setOnClickListener(v ->
@@ -589,7 +601,9 @@ public class HomeFragment extends Fragment {
                 if (response.isSuccessful() && response.body() != null) {
                     // Punto 6: lo que llego bien queda guardado para poder
                     // mostrarlo la proxima vez que no haya conexion.
-                    cache.guardarListado(response.body().getItems());
+                    if (pagina == 1) loteCache = System.currentTimeMillis();
+                    cache.guardarListado(response.body().getItems(), loteCache,
+                            pagina == 1 ? 0 : items.size());
                     ocultarAvisoSinConexion();
                     mostrarPagina(response.body(), pagina);
                 } else {
@@ -859,30 +873,20 @@ public class HomeFragment extends Fragment {
             // Sin red no se puede paginar: que el scroll no lo intente.
             hayMas = false;
 
-            mostrarAvisoSinConexion(instantanea.guardadoEn);
+            mostrarAvisoSinConexion();
             actualizarContador();
             mostrarEstado(Estado.LISTA);
         });
     }
 
     /**
-     * La banda de aviso de arriba. Muestra la hora si el dato es de hoy y
-     * algo tipo "ayer" si es de antes: "guardado a las 14:30" dice mucho mas
-     * que una fecha completa cuando pasaron diez minutos.
+     * La banda de aviso de arriba. Antes decia a que hora se habia guardado
+     * cada cosa; se saco porque es un detalle de implementacion que al que
+     * usa la app no le dice nada. Alcanza con avisar que no hay conexion.
      */
-    private void mostrarAvisoSinConexion(long guardadoEn) {
+    private void mostrarAvisoSinConexion() {
         if (tvSinConexion == null) return;
-
-        CharSequence cuando;
-        int plantilla;
-        if (DateUtils.isToday(guardadoEn)) {
-            cuando = DateFormat.getTimeFormat(requireContext()).format(new Date(guardadoEn));
-            plantilla = R.string.sin_conexion_datos_de;
-        } else {
-            cuando = DateUtils.getRelativeTimeSpanString(guardadoEn);
-            plantilla = R.string.sin_conexion_datos_de_fecha;
-        }
-        tvSinConexion.setText(getString(plantilla, cuando));
+        tvSinConexion.setText(R.string.sin_conexion_aviso);
         tvSinConexion.setVisibility(View.VISIBLE);
     }
 
@@ -891,22 +895,60 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * "Al recuperar la conexion, la app actualiza automaticamente la
-     * informacion guardada con los datos mas recientes del servidor."
+     * Las dos mitades del enunciado sobre conectividad:
+     *
+     *   - mientras no hay red, el Home avisa que lo que se ve puede estar
+     *     desactualizado;
+     *   - "al recuperar la conexion, la app actualiza automaticamente la
+     *     informacion guardada con los datos mas recientes del servidor".
      *
      * Se observa el LiveData en vez de preguntar cada dos segundos: el
-     * sistema avisa cuando cambia. Solo recarga si el aviso esta a la vista,
-     * o sea si lo que se ve salio de la cache; si ya habia datos frescos no
-     * hay nada que rehacer.
+     * sistema avisa cuando cambia. Al volver la red solo recarga si el aviso
+     * estaba a la vista; si ya habia datos frescos no hay nada que rehacer.
      */
     private void observarConexion() {
         conectividad.getEstado().observe(getViewLifecycleOwner(), hayInternet -> {
-            if (!Boolean.TRUE.equals(hayInternet) || !estaVivo()) return;
+            if (!estaVivo()) return;
+            atenuarBusquedaSinConexion(Boolean.TRUE.equals(hayInternet));
+
+            if (!Boolean.TRUE.equals(hayInternet)) {
+                // El enunciado pide avisar cuando se explora el Home sin
+                // conexion, no solamente cuando falla un pedido. Si la red se
+                // cae con la lista ya cargada no hay ningun request que falle,
+                // asi que sin esto no se enteraba nadie.
+                if (!items.isEmpty()) mostrarAvisoSinConexion();
+                // Sin red no tiene sentido que el scroll siga pidiendo paginas.
+                hayMas = false;
+                return;
+            }
+
             if (tvSinConexion == null || tvSinConexion.getVisibility() != View.VISIBLE) return;
 
             Toast.makeText(requireContext(), R.string.sin_conexion_volvio, Toast.LENGTH_SHORT).show();
             recargar();
         });
+    }
+
+    /**
+     * Buscar, filtrar y ordenar quedan apagados mientras no hay red.
+     *
+     * No es un capricho: lo guardado es la ultima lista completa, no el
+     * resultado de una busqueda. Si se dejaran activos, escribir "taladro"
+     * sin conexion devolveria las ocho publicaciones guardadas y se leeria
+     * como si la busqueda hubiera encontrado todo eso.
+     */
+    private void atenuarBusquedaSinConexion(boolean hayInternet) {
+        View raiz = getView();
+        if (raiz == null) return;
+
+        int[] ids = {R.id.etBuscar, R.id.btnBuscar, R.id.btnLimpiarBusqueda,
+                R.id.btnFiltros, R.id.spOrden};
+        for (int id : ids) {
+            View control = raiz.findViewById(id);
+            if (control == null) continue;
+            control.setEnabled(hayInternet);
+            control.setAlpha(hayInternet ? 1f : 0.4f);
+        }
     }
 
     /**

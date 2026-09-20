@@ -4,8 +4,6 @@ import android.os.Bundle;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
-import android.text.format.DateFormat;
-import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,7 +32,6 @@ import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.util.Conectividad;
 import com.example.ronda.ui.ofertas.FormatoOferta;
 
-import java.util.Date;
 
 import javax.inject.Inject;
 import dagger.hilt.android.AndroidEntryPoint;
@@ -115,8 +112,12 @@ public class DetallePublicacionFragment extends Fragment {
         panelEntrega = view.findViewById(R.id.panelEntrega);
         tvDireccionEntrega = view.findViewById(R.id.tvDireccionEntrega);
         btnComoLlegar = view.findViewById(R.id.btnComoLlegar);
-        // Antes de salir a Maps, revalidar que el backend siga autorizando la entrega.
-        btnComoLlegar.setOnClickListener(v -> cargarDetallePublicacion(true));
+        // Antes de salir a Maps, revalidar que el backend siga autorizando la
+        // entrega: sin red no se puede, y conviene decirlo en vez de abrir
+        // Maps con una direccion que quiza ya no corresponda.
+        btnComoLlegar.setOnClickListener(v -> {
+            if (hayConexionParaActuar()) cargarDetallePublicacion(true);
+        });
         getChildFragmentManager().setFragmentResultListener(
                 OfertasBottomSheet.RESULTADO_CERRADO, getViewLifecycleOwner(),
                 (key, result) -> cargarDetallePublicacion());
@@ -194,23 +195,13 @@ public class DetallePublicacionFragment extends Fragment {
             }
 
             poblarUi(guardado.publicacion);
-            mostrarAvisoSinConexion(guardado.guardadoEn);
+            mostrarAvisoSinConexion();
         });
     }
 
-    private void mostrarAvisoSinConexion(long guardadoEn) {
+    private void mostrarAvisoSinConexion() {
         if (tvSinConexionDetalle == null) return;
-
-        CharSequence cuando;
-        int plantilla;
-        if (DateUtils.isToday(guardadoEn)) {
-            cuando = DateFormat.getTimeFormat(requireContext()).format(new Date(guardadoEn));
-            plantilla = R.string.sin_conexion_datos_de;
-        } else {
-            cuando = DateUtils.getRelativeTimeSpanString(guardadoEn);
-            plantilla = R.string.sin_conexion_datos_de_fecha;
-        }
-        tvSinConexionDetalle.setText(getString(plantilla, cuando));
+        tvSinConexionDetalle.setText(R.string.sin_conexion_aviso);
         tvSinConexionDetalle.setVisibility(View.VISIBLE);
     }
 
@@ -235,13 +226,40 @@ public class DetallePublicacionFragment extends Fragment {
      */
     private void observarConexion() {
         conectividad.getEstado().observe(getViewLifecycleOwner(), hayInternet -> {
-            if (!Boolean.TRUE.equals(hayInternet) || !estaVivo()) return;
+            if (!estaVivo()) return;
+            boolean hay = Boolean.TRUE.equals(hayInternet);
+            atenuarAccionesSinConexion(hay);
+
+            if (!hay) {
+                // Lo que se esta viendo puede ser la copia guardada: se avisa
+                // aunque el detalle haya entrado con red y se haya caido despues.
+                if (mPub != null) mostrarAvisoSinConexion();
+                return;
+            }
+
             if (tvSinConexionDetalle == null
                     || tvSinConexionDetalle.getVisibility() != View.VISIBLE) return;
             if (publicacionId == -1) return;
 
+            Toast.makeText(requireContext(), R.string.sin_conexion_volvio, Toast.LENGTH_SHORT).show();
             cargarDetallePublicacion();
         });
+    }
+
+    /**
+     * Los botones que necesitan red se ven apagados mientras no la hay.
+     *
+     * Siguen respondiendo al toque a proposito: asi se puede explicar por que
+     * no se puede, que es la otra mitad de lo que pide el enunciado. Un boton
+     * que directamente no reacciona deja a la persona sin saber si la app se
+     * colgo o si le falta conexion.
+     */
+    private void atenuarAccionesSinConexion(boolean hayInternet) {
+        float opacidad = hayInternet ? 1f : 0.4f;
+        for (Button boton : new Button[]{btnPreguntar, btnOfertar, btnGuardar, btnGestionar,
+                btnComoLlegar}) {
+            if (boton != null) boton.setAlpha(opacidad);
+        }
     }
     private void cargarDetallePublicacion() {
         cargarDetallePublicacion(false);

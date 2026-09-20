@@ -55,4 +55,23 @@ public class PublicacionCacheada {
      */
     @ColumnInfo(name = "guardado_en")
     public long guardadoEn;
+
+    /**
+     * Que carga del Home trajo esta fila, y en que posicion venia.
+     *
+     * Estan para una sola cosa: que sin conexion el listado se vea en el
+     * mismo orden en que lo mando el servidor. Antes se ordenaba por
+     * guardado_en, y como abrir el detalle de una publicacion actualiza esa
+     * fecha, esa publicacion se saltaba sola al primer lugar de la lista.
+     *
+     * lote_carga es el momento en que empezo la carga (el mismo valor para
+     * todas las paginas de un mismo scroll) y posicion es el indice absoluto
+     * dentro de esa carga. Ordenando por lote descendente y posicion
+     * ascendente, lo ultimo que se cargo bien queda primero y en su orden.
+     */
+    @ColumnInfo(name = "lote_carga")
+    public long loteCarga;
+
+    @ColumnInfo(name = "posicion")
+    public int posicion;
 }
