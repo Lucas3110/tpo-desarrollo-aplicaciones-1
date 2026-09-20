@@ -32,7 +32,19 @@
         <action
             android:id="@+id/action_home_to_misOfertas"
             app:destination="@id/misOfertasFragment" />
+
+        <!-- Punto 9: historial de operaciones y calificaciones. -->
+        <action
+            android:id="@+id/action_home_to_historial"
+            app:destination="@id/historialFragment" />
     </fragment>
+
+    <!-- Punto 9: historial de compras y ventas -->
+    <fragment
+        android:id="@+id/historialFragment"
+        android:name="com.example.ronda.ui.historial.HistorialFragment"
+        android:label="Historial"
+        tools:layout="@layout/fragment_historial" />
 
     <!-- Punto 2: perfil publico de otra persona (o el propio, visto desde afuera) -->
     <fragment
