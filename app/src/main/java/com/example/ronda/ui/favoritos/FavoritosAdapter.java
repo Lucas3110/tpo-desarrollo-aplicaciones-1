@@ -75,8 +75,11 @@ public class FavoritosAdapter extends ListAdapter<PublicacionItemResponse, Favor
 
             if (item.getNovedad() != null && item.getNovedad().isCambioDePrecio()) {
                 tvNovedad.setVisibility(View.VISIBLE);
-                String texto = item.getNovedad().isBajoDePrecio() ? "Bajó de precio" : "Subió de precio";
-                tvNovedad.setText(texto + " (era " + formatearPrecio(item.getNovedad().getPrecioAnterior()) + ")");
+                int plantilla = item.getNovedad().isBajoDePrecio()
+                        ? R.string.favoritos_bajo_de_precio
+                        : R.string.favoritos_subio_de_precio;
+                tvNovedad.setText(itemView.getContext().getString(plantilla,
+                        formatearPrecio(item.getNovedad().getPrecioAnterior())));
             } else {
                 tvNovedad.setVisibility(View.GONE);
             }

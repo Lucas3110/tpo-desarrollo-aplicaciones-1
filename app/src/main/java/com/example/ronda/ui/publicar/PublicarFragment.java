@@ -235,18 +235,39 @@ public class PublicarFragment extends Fragment {
         if (paso == 3) tvResumen.setText(resumen());
     }
 
+    /** El precio como se ve en el resto de la app: $ 45.000, no $ 45000. */
+    private String precioDelResumen() {
+        String crudo = texto(etPrecio);
+        try {
+            java.text.NumberFormat formato =
+                    java.text.NumberFormat.getCurrencyInstance(java.util.Locale.forLanguageTag("es-AR"));
+            formato.setMinimumFractionDigits(0);
+            formato.setMaximumFractionDigits(2);
+            return formato.format(Double.parseDouble(crudo));
+        } catch (NumberFormatException e) {
+            // Todavia no escribio un numero: se muestra tal cual lo tipeo.
+            return getString(R.string.publicar_resumen_precio, crudo);
+        }
+    }
+
+    private String textoDeFotos() {
+        int cuantas = fotos.size();
+        if (cuantas == 0) return getString(R.string.publicar_fotos_ninguna);
+        return getResources().getQuantityString(R.plurals.publicar_fotos_cantidad, cuantas, cuantas);
+    }
+
     private String resumen() {
         String cat = categorias.isEmpty() ? "-" : categorias.get(spCategoria.getSelectedItemPosition()).getNombre();
         String zona = zonas.isEmpty() ? "-" : zonas.get(spZona.getSelectedItemPosition()).getNombre();
-        return texto(etTitulo) + "\n\n" + texto(etDescripcion) + "\n\n$ " + texto(etPrecio)
+        return texto(etTitulo) + "\n\n" + texto(etDescripcion) + "\n\n" + precioDelResumen()
                 + "\n" + cat + " · " + spEstado.getSelectedItem() + "\nEntrega en " + zona
-                + "\n" + getString(R.string.publicar_fotos_cantidad, fotos.size())
+                + "\n" + textoDeFotos()
                 + (texto(etDireccion).isEmpty() ? "" : "\n" + getString(R.string.publicar_direccion_resumen, texto(etDireccion)));
     }
 
     private void mostrarFotos() {
         if (contenedorFotos == null) return; contenedorFotos.removeAllViews();
-        tvFotosElegidas.setText(getString(R.string.publicar_fotos_cantidad, fotos.size()));
+        tvFotosElegidas.setText(textoDeFotos());
         int px = (int) (110 * getResources().getDisplayMetrics().density);
         for (Uri uri : fotos) {
             ImageView imagen = new ImageView(requireContext());
@@ -313,7 +334,7 @@ public class PublicarFragment extends Fragment {
 
     private void confirmarDescartar() {
         new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.publicar_descartar_titulo)
-                .setMessage(R.string.publicar_descartar_confirmacion).setNegativeButton(android.R.string.cancel, null)
+                .setMessage(R.string.publicar_descartar_confirmacion).setNegativeButton(R.string.accion_cancelar, null)
                 .setPositiveButton(R.string.publicar_descartar_si, (d, w) -> descartar()).show();
     }
     private void descartar() {
