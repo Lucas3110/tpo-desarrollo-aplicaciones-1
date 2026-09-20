@@ -41,6 +41,10 @@ public class PublicacionAdapter extends BaseAdapter {
     /** Ids que ya estan en la lista, para no repetir una publicacion al paginar. */
     private final Set<Integer> idsVistos = new HashSet<>();
 
+    public PublicacionAdapter(List<PublicacionItemResponse> items) {
+        this(items, null, null);
+    }
+
     public PublicacionAdapter(List<PublicacionItemResponse> items, Integer usuarioIdLogueado, OnItemClickListener listener) {
         this.items = items;
         this.usuarioIdLogueado = usuarioIdLogueado;
