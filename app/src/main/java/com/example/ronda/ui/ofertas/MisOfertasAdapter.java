@@ -87,7 +87,7 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
 
         mostrarOpcional(holder.tvMensaje,
                 o.tieneMensaje() ? ctx.getString(R.string.oferta_mensaje_formato, o.getMensaje().trim()) : null);
-        mostrarOpcional(holder.tvContraoferta, TextosOferta.contraoferta(ctx, o));
+        mostrarOpcional(holder.tvContraoferta, TextosOferta.contraoferta(ctx, o, enviadas));
         holder.tvFecha.setText(FormatoOferta.fechaCorta(o.getCreadoEn()));
         mostrarOpcional(holder.tvVence, TextosOferta.vencimiento(ctx, o, System.currentTimeMillis()));
 

@@ -66,13 +66,33 @@
     <string name="home_actualizar">Actualizar</string>
     <string name="home_limpiar_todo">Limpiar búsqueda y filtros</string>
     <string name="home_reintentar">Reintentar</string>
+    <!-- Punto 4: preguntas y respuestas -->
+    <string name="busqueda_guardar_titulo">Guardar búsqueda</string>
+    <string name="busqueda_guardar_nombre_hint">Nombre de la búsqueda</string>
+    <string name="busqueda_guardar_accion">Guardar</string>
+    <string name="busqueda_guardada_ok">Búsqueda guardada</string>
+    <string name="busqueda_guardar_error">No pudimos guardar la búsqueda</string>
+    <string name="busqueda_sin_filtros">Aplicá algún filtro antes de guardar la búsqueda</string>
+    <string name="preguntas_titulo">Preguntas</string>
+    <string name="preguntas_vacio">Nadie preguntó nada todavía. ¡Sé el primero!</string>
+    <string name="preguntas_hint">Escribí tu pregunta…</string>
+    <string name="preguntas_responder_hint">Escribí tu respuesta…</string>
+    <string name="preguntas_responder">Responder</string>
+    <string name="home_boton_favoritos">Favoritos</string>
+    <string name="home_guardar_busqueda">Guardar búsqueda</string>
+    <string name="favoritos_tab_favoritos">Favoritos</string>
+    <string name="favoritos_tab_busquedas">Búsquedas</string>
+    <string name="favoritos_reintentar">Reintentar</string>
+    <plurals name="favoritos_novedades">
+        <item quantity="one">%d nuevo</item>
+        <item quantity="other">%d nuevos</item>
+    </plurals>
     <string name="home_error_carga">No pudimos cargar las publicaciones</string>
     <string name="home_error_mas_publicaciones">No pudimos cargar más publicaciones</string>
     <string name="home_error_respuesta_invalida">El servidor respondió algo que la app no entiende</string>
     <string name="home_url_base">Servidor: %1$s</string>
     <string name="home_sesion_vencida">Tu sesión venció, volvé a ingresar</string>
     <string name="home_foto_desc">Foto del artículo</string>
-    <string name="home_detalle_pendiente">Muy pronto vas a poder ver el detalle de \"%1$s\"</string>
     <string name="home_mi_perfil">Mi perfil</string>
 
     <!-- Ofertas y negociación (Puntos 4 y 7) -->
@@ -291,7 +311,11 @@
     <string name="publicar_borrador_guardado">Borrador guardado</string>
     <string name="publicar_exito">¡Tu publicación ya está activa!</string>
     <string name="publicar_error_conexion">No pudimos comunicarnos con el servidor</string>
-    <string name="publicar_fotos_cantidad">%1$d foto(s) seleccionada(s)</string>
+    <plurals name="publicar_fotos_cantidad">
+        <item quantity="one">%1$d foto seleccionada</item>
+        <item quantity="other">%1$d fotos seleccionadas</item>
+    </plurals>
+    <string name="publicar_fotos_ninguna">Todavía no elegiste fotos</string>
     <string name="publicar_paso">Paso %1$d de 3</string>
     <string name="publicar_paso_fotos">Fotos del artículo</string>
     <string name="publicar_paso_datos">Contanos qué vendés</string>
@@ -301,7 +325,8 @@
     <string name="publicar_descartar_confirmacion">Se eliminará el borrador y no podrás recuperarlo.</string>
     <string name="publicar_descartar_titulo">¿Descartar publicación?</string>
     <string name="publicar_descartar_si">Sí, descartar</string>
-    <string name="mias_resumen">%1$d activas · %2$d pausadas · %3$d vendidas</string>
+    <string name="mias_resumen">Activas: %1$d · Pausadas: %2$d · Vendidas: %3$d</string>
+    <string name="publicar_resumen_precio">$ %1$s</string>
     <string name="mias_vacio">No tenés publicaciones con este estado.</string>
     <string name="mias_error">No pudimos cargar tus publicaciones. Tocá para reintentar.</string>
     <string name="mias_pausar">Pausar</string>

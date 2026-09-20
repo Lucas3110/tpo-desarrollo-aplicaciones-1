@@ -54,11 +54,13 @@ public final class TextosOferta {
      * otro precio. Null cuando no es una contraoferta.
      */
     @Nullable
-    public static String contraoferta(Context ctx, OfertaResponse o) {
+    public static String contraoferta(Context ctx, OfertaResponse o, boolean esEnviada) {
         if (!o.isEsContraoferta()) return null;
-        return ctx.getString(o.laPropusoElVendedor() && o.isEsperaMiRespuesta()
-                ? R.string.mis_ofertas_contraoferta_recibida
-                : R.string.mis_ofertas_contraoferta_enviada);
+        // Enviada o recibida lo define la pestana, no esperaMiRespuesta: ese
+        // flag se apaga al responderla y la etiqueta se daba vuelta sola.
+        return ctx.getString(esEnviada
+                ? R.string.mis_ofertas_contraoferta_enviada
+                : R.string.mis_ofertas_contraoferta_recibida);
     }
 
     /**
