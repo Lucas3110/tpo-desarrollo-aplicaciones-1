@@ -219,6 +219,7 @@ public class HomeFragment extends Fragment {
         Button btnCerrarSesion = view.findViewById(R.id.btnCerrarSesion);
         Button btnMiPerfil = view.findViewById(R.id.btnMiPerfil);
         Button btnPublicar = view.findViewById(R.id.btnPublicar);
+        Button btnHistorial = view.findViewById(R.id.btnHistorial);
         Button btnMisPublicaciones = view.findViewById(R.id.btnMisPublicaciones);
         btnMisOfertas = view.findViewById(R.id.btnMisOfertas);
         btnActualizar = view.findViewById(R.id.btnActualizar);
@@ -317,7 +318,9 @@ public class HomeFragment extends Fragment {
                 .navigate(R.id.action_home_to_mis_publicaciones));
         btnMisOfertas.setOnClickListener(v ->
                 Navigation.findNavController(requireView()).navigate(R.id.action_home_to_misOfertas));
-                
+        btnHistorial.setOnClickListener(v ->
+                Navigation.findNavController(requireView()).navigate(R.id.action_home_to_historial));
+
         Button btnFavoritos = view.findViewById(R.id.btnFavoritos);
         if (btnFavoritos != null) {
             btnFavoritos.setOnClickListener(v -> {
@@ -329,7 +332,7 @@ public class HomeFragment extends Fragment {
                 }
             });
         }
-        
+
         Button btnGuardarBusqueda = view.findViewById(R.id.btnGuardarBusqueda);
         if (btnGuardarBusqueda != null) {
             btnGuardarBusqueda.setOnClickListener(v -> guardarBusquedaDialog());
