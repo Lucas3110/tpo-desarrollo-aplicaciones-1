@@ -1,6 +1,7 @@
 package com.example.ronda.data.network;
 
 import com.example.ronda.data.model.EditarPerfilRequest;
+import com.example.ronda.data.model.ListaCalificacionesResponse;
 import com.example.ronda.data.model.PerfilPublicoResponse;
 import com.example.ronda.data.model.PerfilResponse;
 
@@ -40,4 +41,11 @@ public interface UsuarioApiService {
      */
     @GET("api/usuarios/{id}/perfil")
     Call<PerfilPublicoResponse> perfilPublico(@Path("id") int usuarioId);
+
+    /**
+     * Calificaciones recibidas por una persona (Punto 9), las mas nuevas
+     * primero. Publico: se consulta antes de operar con alguien.
+     */
+    @GET("api/usuarios/{id}/calificaciones")
+    Call<ListaCalificacionesResponse> calificaciones(@Path("id") int usuarioId);
 }

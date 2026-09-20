@@ -21,6 +21,7 @@ public final class FormatoOferta {
 
     private static final String PATRON_ISO = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
     private static final String PATRON_CORTO = "dd/MM/yyyy HH:mm";
+    private static final String PATRON_FECHA = "dd/MM/yyyy";
     private static final long MILIS_POR_MINUTO = 60L * 1000;
     private static final long MINUTOS_POR_HORA = 60;
     private static final long MINUTOS_POR_DIA = 24 * MINUTOS_POR_HORA;
@@ -60,6 +61,15 @@ public final class FormatoOferta {
         if (milis == null) return "";
         SimpleDateFormat formato = new SimpleDateFormat(PATRON_CORTO, Locale.US);
         formato.setTimeZone(zona);
+        return formato.format(new Date(milis));
+    }
+
+    /** "15/09/2026" en la hora del celular. Cadena vacia si la fecha no se pudo leer. */
+    public static String fecha(@Nullable String iso) {
+        Long milis = milisDe(iso);
+        if (milis == null) return "";
+        SimpleDateFormat formato = new SimpleDateFormat(PATRON_FECHA, Locale.US);
+        formato.setTimeZone(TimeZone.getDefault());
         return formato.format(new Date(milis));
     }
 

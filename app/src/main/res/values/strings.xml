@@ -206,6 +206,13 @@
     <string name="perfil_publico_error_carga">No pudimos cargar el perfil</string>
     <string name="perfil_publico_publicaciones">Publicaciones activas</string>
     <string name="perfil_publico_sin_publicaciones">No tiene publicaciones activas</string>
+    <string name="perfil_publico_calificaciones">Calificaciones recibidas</string>
+    <string name="perfil_publico_sin_calificaciones">Todavía no recibió calificaciones</string>
+    <string name="perfil_publico_error_calificaciones">No pudimos cargar las calificaciones</string>
+    <string name="calificacion_como_vendedor">Como vendedor</string>
+    <string name="calificacion_como_comprador">Como comprador</string>
+    <string name="calificacion_meta">%1$s · %2$s</string>
+    <string name="calificacion_meta_articulo">%1$s · %2$s · %3$s</string>
     <string name="perfil_foto_desc">Foto de perfil</string>
     <string name="perfil_foto_cambiar">Cambiar foto</string>
     <string name="perfil_foto_quitar">Quitar foto</string>
