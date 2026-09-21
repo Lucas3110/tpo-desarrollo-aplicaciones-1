@@ -189,7 +189,16 @@
     <string name="perfil_error_carga">No pudimos cargar tu perfil</string>
     <string name="perfil_nombre_label">Nombre</string>
     <string name="perfil_email_label">Email</string>
-    <string name="perfil_email_nota">El email no se cambia desde acá</string>
+    <string name="perfil_email_nota">Para cambiarlo te enviamos un código al email nuevo</string>
+    <string name="perfil_editar_email">Cambiar email</string>
+    <string name="perfil_email_actualizado">Email actualizado</string>
+    <string name="cambiar_email_titulo">Cambiar email</string>
+    <string name="cambiar_email_instruccion">Ingresá el email nuevo. Te enviamos un código para confirmarlo.</string>
+    <string name="cambiar_email_hint">Email nuevo</string>
+    <string name="cambiar_email_enviar">Enviar código</string>
+    <string name="cambiar_email_codigo_instruccion">Te enviamos un código a %1$s. Ingresalo para confirmar el cambio.</string>
+    <string name="cambiar_email_confirmar">Confirmar</string>
+    <string name="cambiar_email_error_generico">No pudimos cambiar el email</string>
     <string name="perfil_telefono_label">Teléfono de contacto</string>
     <string name="perfil_telefono_hint">Opcional</string>
     <string name="perfil_zona_label">Zona</string>

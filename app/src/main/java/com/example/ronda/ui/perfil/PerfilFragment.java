@@ -51,7 +51,7 @@ import retrofit2.Response;
 
 /**
  * Mi perfil (Punto 2): ver y editar los datos personales (foto, nombre,
- * telefono y zona; el email es de solo lectura) y ver la reputacion propia.
+ * telefono y zona), cambiar el email y ver la reputacion propia.
  *
  * GET /usuarios/me trae los datos y PUT /usuarios/me los guarda. La reputacion
  * y la antiguedad salen de GET /usuarios/{id}/perfil (el mismo perfil publico
@@ -62,6 +62,10 @@ import retrofit2.Response;
  *
  * Cada campo arranca bloqueado y se habilita tocando el lapiz que tiene al
  * lado. "Guardar cambios" hace el PUT y vuelve a bloquear todo.
+ *
+ * El email es distinto: el PUT no lo cambia. Su lapiz abre un dialogo que lo
+ * cambia en dos pasos (codigo enviado al email nuevo) y avisa el resultado por
+ * la API de resultados de Fragments.
  *
  * La foto se guarda como URL, no como archivo: se elige de la galeria, se
  * conserva la Uri con permiso persistente y va en el mismo PUT. OJO: el
@@ -92,6 +96,7 @@ public class PerfilFragment extends Fragment {
     private EditText etTelefono;
     private Spinner spZona;
     private ImageButton btnEditarNombre;
+    private ImageButton btnEditarEmail;
     private ImageButton btnEditarTelefono;
     private ImageButton btnEditarZona;
     private Button btnGuardar;
@@ -153,6 +158,7 @@ public class PerfilFragment extends Fragment {
         etTelefono = view.findViewById(R.id.etTelefono);
         spZona = view.findViewById(R.id.spZona);
         btnEditarNombre = view.findViewById(R.id.btnEditarNombre);
+        btnEditarEmail = view.findViewById(R.id.btnEditarEmail);
         btnEditarTelefono = view.findViewById(R.id.btnEditarTelefono);
         btnEditarZona = view.findViewById(R.id.btnEditarZona);
         btnGuardar = view.findViewById(R.id.btnGuardar);
@@ -169,6 +175,11 @@ public class PerfilFragment extends Fragment {
         btnReintentar.setOnClickListener(v -> cargar());
         btnGuardar.setOnClickListener(v -> guardar());
         btnEditarNombre.setOnClickListener(v -> habilitarEdicion(etNombre));
+        btnEditarEmail.setOnClickListener(v -> CambiarEmailDialogFragment.newInstance()
+                .show(getChildFragmentManager(), "CambiarEmail"));
+        getChildFragmentManager().setFragmentResultListener(
+                CambiarEmailDialogFragment.CLAVE_RESULTADO, getViewLifecycleOwner(),
+                (clave, resultado) -> emailCambiado(resultado.getString(CambiarEmailDialogFragment.RES_EMAIL)));
         btnEditarTelefono.setOnClickListener(v -> habilitarEdicion(etTelefono));
         btnEditarZona.setOnClickListener(v -> {
             spZona.setEnabled(true);
@@ -492,6 +503,22 @@ public class PerfilFragment extends Fragment {
             }
         }
         Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
+    }
+
+    // -----------------------------------------------------------------
+    // Cambio de email
+    // -----------------------------------------------------------------
+
+    /**
+     * El dialogo confirmo el cambio. El token sigue valiendo, pero el email
+     * guardado en el celular (el que precarga el login) hay que ponerlo al dia.
+     */
+    private void emailCambiado(@Nullable String emailNuevo) {
+        if (emailNuevo == null || !estaVivo()) return;
+        sesion.guardarSesion(sesion.getToken(), emailNuevo);
+        tvEmail.setText(emailNuevo);
+        Toast.makeText(requireContext(), R.string.perfil_email_actualizado,
+                Toast.LENGTH_SHORT).show();
     }
 
     // -----------------------------------------------------------------
