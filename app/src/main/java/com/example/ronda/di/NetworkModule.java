@@ -98,8 +98,10 @@ public class NetworkModule {
      * Authorization. Asi las interfaces nuevas no tienen que recibir el bearer
      * a mano en cada metodo.
      *
-     * Si una request ya trae la cabecera (las interfaces de los Puntos 1 a 4
-     * la pasan con @Header), se respeta tal cual: nunca se manda dos veces.
+     * Si una request ya trae la cabecera (algunas interfaces de los Puntos 2
+     * en adelante la pasan con @Header), se respeta tal cual: nunca se manda
+     * dos veces. Las del Punto 1 ya no la pasan: la pone siempre este
+     * interceptor.
      */
     private static Interceptor interceptorDeJwt(SessionRepository sesion) {
         return cadena -> {
