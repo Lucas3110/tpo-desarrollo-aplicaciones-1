@@ -37,8 +37,21 @@ public class PublicacionDetalleResponse {
         private boolean esFavorito;
         @SerializedName("entrega")
         private EntregaResponse entrega;
+        /** ACTIVA, PAUSADA, RESERVADA (Punto 12: venta en curso) o VENDIDA. */
+        @SerializedName("estado")
+        private String estado;
+        /**
+         * Punto 12: el estado de la entrega si hay una venta en curso o cerrada
+         * y quien mira es parte (vendedor o comprador). Null para el resto.
+         */
+        @SerializedName("cierre")
+        private CierreResponse cierre;
 
         public EntregaResponse getEntrega() { return entrega; }
+        public String getEstado() { return estado; }
+        public CierreResponse getCierre() { return cierre; }
+        public boolean estaReservada() { return "RESERVADA".equals(estado); }
+        public boolean estaVendida() { return "VENDIDA".equals(estado); }
 
         public int getId() { return id; }
         public String getTitulo() { return titulo; }

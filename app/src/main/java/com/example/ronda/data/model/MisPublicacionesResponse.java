@@ -12,10 +12,13 @@ public class MisPublicacionesResponse {
     public static class Resumen {
         @SerializedName("activas") private int activas;
         @SerializedName("pausadas") private int pausadas;
+        /** Punto 12: con oferta aceptada, esperando el QR de entrega. */
+        @SerializedName("reservadas") private int reservadas;
         @SerializedName("vendidas") private int vendidas;
         @SerializedName("total") private int total;
         public int getActivas() { return activas; }
         public int getPausadas() { return pausadas; }
+        public int getReservadas() { return reservadas; }
         public int getVendidas() { return vendidas; }
         public int getTotal() { return total; }
     }

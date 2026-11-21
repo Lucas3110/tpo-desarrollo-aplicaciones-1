@@ -315,7 +315,8 @@
     <string name="publicar_descartar_confirmacion">Se eliminará el borrador y no podrás recuperarlo.</string>
     <string name="publicar_descartar_titulo">¿Descartar publicación?</string>
     <string name="publicar_descartar_si">Sí, descartar</string>
-    <string name="mias_resumen">Activas: %1$d · Pausadas: %2$d · Vendidas: %3$d</string>
+    <string name="mias_resumen">Activas: %1$d · Pausadas: %2$d · Reservadas: %3$d · Vendidas: %4$d</string>
+    <string name="mias_reservada_detalle">Venta en curso: se cierra cuando el comprador escanea el QR de entrega</string>
     <string name="mias_vacio">No tenés publicaciones con este estado.</string>
     <string name="mias_error">No pudimos cargar tus publicaciones. Tocá para reintentar.</string>
     <string name="mias_pausar">Pausar</string>

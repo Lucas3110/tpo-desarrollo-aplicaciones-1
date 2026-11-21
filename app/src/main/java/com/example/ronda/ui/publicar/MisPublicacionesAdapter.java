@@ -29,9 +29,15 @@ class MisPublicacionesAdapter extends BaseAdapter {
         formato.setMinimumFractionDigits(0);
         formato.setMaximumFractionDigits(2);
         String precio = formato.format(item.getPrecio());
-        ((TextView)v.findViewById(R.id.tvDatosMia)).setText(precio + " · " + item.getEstado());
+        String estado = item.getEstado();
+        // Punto 12: una reservada tiene la venta en curso. Se aclara por que no
+        // hay boton: el estado lo cambia el QR del comprador, no el vendedor.
+        boolean reservada = "RESERVADA".equals(estado);
+        String datos = precio + " · " + estado
+                + (reservada ? "\n" + parent.getContext().getString(R.string.mias_reservada_detalle) : "");
+        ((TextView)v.findViewById(R.id.tvDatosMia)).setText(datos);
         Button boton = v.findViewById(R.id.btnCambiarEstado);
-        boolean vendida = "VENDIDA".equals(item.getEstado()); boton.setVisibility(vendida ? View.GONE : View.VISIBLE);
+        boolean cerrada = "VENDIDA".equals(estado) || reservada; boton.setVisibility(cerrada ? View.GONE : View.VISIBLE);
         boton.setText("ACTIVA".equals(item.getEstado()) ? R.string.mias_pausar : R.string.mias_reactivar);
         boton.setOnClickListener(x -> listener.cambiar(item)); return v;
     }
