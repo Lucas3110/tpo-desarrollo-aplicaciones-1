@@ -18,6 +18,7 @@ import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.ronda.R;
+import com.example.ronda.data.repository.CachePublicaciones;
 import com.example.ronda.di.AuthEventBus;
 
 import javax.inject.Inject;
@@ -42,6 +43,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Inject
     AuthEventBus eventosDeAuth;
+
+    /** Punto 6: lo guardado para ver sin conexion se borra al vencer la sesion. */
+    @Inject
+    CachePublicaciones cache;
 
     private NavController navController;
 
@@ -102,6 +107,10 @@ public class MainActivity extends AppCompatActivity {
      * sesion y avisa por el AuthEventBus. Aca se escucha ese aviso y se vuelve
      * al login.
      *
+     * Punto 6: tambien se borra lo guardado para ver sin conexion, igual que
+     * con el boton "Cerrar sesion" del Home. Todo 401 con sesion pasa por aca,
+     * asi que alcanza con hacerlo en un solo lugar.
+     *
      * Tiene que estar en la Activity y no en un Fragment: el 401 puede llegar
      * estando en cualquier pantalla, y la Activity es la unica que vive
      * siempre y puede navegar.
@@ -114,6 +123,11 @@ public class MainActivity extends AppCompatActivity {
             // se lo volveria a entregar al proximo observador, pateando al
             // login apenas la persona vuelve a entrar.
             eventosDeAuth.limpiar();
+
+            // Lo que quedo guardado es de la cuenta que se acaba de cerrar
+            // (por ejemplo, cuales tenia en favoritos): no tiene que verlo
+            // quien entre despues.
+            cache.limpiar();
 
             Toast.makeText(this, R.string.sesion_expirada, Toast.LENGTH_LONG).show();
 
