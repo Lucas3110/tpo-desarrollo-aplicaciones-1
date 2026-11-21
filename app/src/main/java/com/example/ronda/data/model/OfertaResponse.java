@@ -14,6 +14,10 @@ import com.google.gson.annotations.SerializedName;
  *
  * publicacion, contraparte y esperaMiRespuesta solo vienen en
  * GET /ofertas/mias; en el listado de una publicacion son null/false.
+ *
+ * cierre (Punto 12) viene solo en las ACEPTADAS: el estado de la entrega,
+ * con el codigo para imprimir el QR si soy el vendedor o la señal de que me
+ * toca escanearlo si soy el comprador.
  */
 public class OfertaResponse {
 
@@ -48,6 +52,8 @@ public class OfertaResponse {
     @SerializedName("contraparte") private AutorResponse contraparte;
     /** true = me toca responder a mi. Solo en "mis ofertas". */
     @SerializedName("esperaMiRespuesta") private boolean esperaMiRespuesta;
+    /** Punto 12: la entrega de la venta que cerro esta oferta. Null si no esta aceptada. */
+    @SerializedName("cierre") private CierreResponse cierre;
 
     public int getId() { return id; }
     public double getMonto() { return monto; }
@@ -64,6 +70,7 @@ public class OfertaResponse {
     public Publicacion getPublicacion() { return publicacion; }
     public AutorResponse getContraparte() { return contraparte; }
     public boolean isEsperaMiRespuesta() { return esperaMiRespuesta; }
+    public CierreResponse getCierre() { return cierre; }
 
     public boolean isPendiente() { return PENDIENTE.equals(estado); }
     public boolean isAceptada() { return ACEPTADA.equals(estado); }
@@ -107,5 +114,7 @@ public class OfertaResponse {
         public String getEstado() { return estado; }
         public String getFotoPrincipal() { return fotoPrincipal; }
         public boolean estaActiva() { return "ACTIVA".equals(estado); }
+        /** Punto 12: con una oferta aceptada, a la espera del QR de entrega. */
+        public boolean estaReservada() { return "RESERVADA".equals(estado); }
     }
 }

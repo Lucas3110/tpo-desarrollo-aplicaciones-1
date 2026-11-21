@@ -34,7 +34,11 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-/** Lista las publicaciones propias y permite pausar/reactivar según el estado. */
+/**
+ * Lista las publicaciones propias y permite pausar/reactivar según el estado.
+ * Una RESERVADA (Punto 12: oferta aceptada, esperando el QR de entrega) solo
+ * se mira: la cierra el comprador al escanear, no el vendedor desde acá.
+ */
 @AndroidEntryPoint
 public class MisPublicacionesFragment extends Fragment {
     @Inject PublicacionApiService api;
@@ -56,7 +60,7 @@ public class MisPublicacionesFragment extends Fragment {
         lista.setAdapter(adapter);
         pintarResumen();
         filtro.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"Todas", "Activas", "Pausadas", "Vendidas"}));
+                new String[]{"Todas", "Activas", "Pausadas", "Reservadas", "Vendidas"}));
         filtro.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(android.widget.AdapterView<?> p, View x, int pos, long id) { cargar(); }
             @Override public void onNothingSelected(android.widget.AdapterView<?> p) { }
@@ -70,7 +74,7 @@ public class MisPublicacionesFragment extends Fragment {
         // El spinner solo si todavia no hay nada en pantalla.
         progreso.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
         tvEstado.setVisibility(View.GONE);
-        String[] codigos = {null, "ACTIVA", "PAUSADA", "VENDIDA"};
+        String[] codigos = {null, "ACTIVA", "PAUSADA", "RESERVADA", "VENDIDA"};
         llamada = api.mias(sesion.getBearer(), codigos[filtro.getSelectedItemPosition()]);
         ((Call<MisPublicacionesResponse>)llamada).enqueue(new Callback<MisPublicacionesResponse>() {
             @Override public void onResponse(@NonNull Call<MisPublicacionesResponse> c, @NonNull Response<MisPublicacionesResponse> r) {
@@ -106,7 +110,7 @@ public class MisPublicacionesFragment extends Fragment {
     private void pintarResumen() {
         if (resumen == null || tvResumen == null) return;
         tvResumen.setText(getString(R.string.mias_resumen,
-                resumen.getActivas(), resumen.getPausadas(), resumen.getVendidas()));
+                resumen.getActivas(), resumen.getPausadas(), resumen.getReservadas(), resumen.getVendidas()));
     }
 
     private void error() {
