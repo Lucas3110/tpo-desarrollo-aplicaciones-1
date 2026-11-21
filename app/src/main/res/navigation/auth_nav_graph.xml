@@ -62,9 +62,9 @@
             app:popUpTo="@id/auth_nav_graph"
             app:popUpToInclusive="true" />
 
-        <!-- Cuenta nueva confirmada: bienvenida y vuelta al login. popUpTo
-             saca del historial a registro y otp, asi la bienvenida queda
-             justo encima del login y "atras" (o el tiempo) vuelve ahi. -->
+        <!-- Cuenta nueva confirmada (y con sesion): bienvenida y despues el
+             Home. popUpTo saca del historial a registro y otp, asi la
+             bienvenida queda justo encima del login. -->
         <action
             android:id="@+id/action_otp_to_bienvenida"
             app:destination="@id/bienvenidaFragment"
@@ -81,6 +81,14 @@
             android:name="email"
             app:argType="string"
             android:defaultValue="" />
+
+        <!-- La cuenta nueva ya tiene sesion: entra al Home y limpia todo el
+             graph de auth, igual que action_auth_to_home. -->
+        <action
+            android:id="@+id/action_bienvenida_to_home"
+            app:destination="@id/home_nav_graph"
+            app:popUpTo="@id/auth_nav_graph"
+            app:popUpToInclusive="true" />
     </fragment>
 
 </navigation>
