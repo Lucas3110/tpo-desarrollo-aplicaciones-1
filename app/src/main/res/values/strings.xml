@@ -8,6 +8,10 @@
     <string name="login_ingresar">Ingresar</string>
     <string name="login_con_codigo">Ingresar con un código</string>
     <string name="login_crear_cuenta">No tenés cuenta? Crear una</string>
+    <string name="login_sin_cuenta_titulo">No encontramos tu cuenta</string>
+    <string name="login_sin_cuenta_mensaje">No hay ninguna cuenta con %1$s. ¿Querés crear una?</string>
+    <string name="login_sin_cuenta_crear">Crear cuenta</string>
+    <string name="login_sin_cuenta_cancelar">Ahora no</string>
 
     <!-- Registro -->
     <string name="registro_titulo">Crear cuenta</string>
