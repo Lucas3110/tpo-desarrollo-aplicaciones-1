@@ -27,6 +27,20 @@
     -->
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
+    <!--
+      Punto 12: el comprador confirma la entrega escaneando con la camara el QR
+      fisico que le dio el vendedor. CAMERA es un permiso "peligroso": ademas
+      de declararlo aca hay que pedirlo en tiempo de ejecucion, y eso lo hace
+      EscanerQr con ActivityResultContracts.RequestPermission antes de abrir
+      el lector. required=false para que la app se pueda instalar en un
+      dispositivo sin camara: el resto de Ronda funciona igual y el codigo
+      impreso debajo del QR se puede ingresar a mano.
+    -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application
         android:name=".MyApp"
         android:allowBackup="true"
