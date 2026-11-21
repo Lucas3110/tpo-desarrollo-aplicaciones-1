@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Punto 12: una sola pantalla para todo el cierre con QR. El icono, el
+     titulo, el mensaje y los botones cambian segun el momento: esperando el
+     escaneo, confirmando con el servidor, operacion confirmada, codigo
+     invalido o sin conexion. El Fragment decide que se ve en cada uno. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    tools:context=".ui.entrega.ConfirmarEntregaFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <ImageView
+            android:id="@+id/ivResultado"
+            android:layout_width="112dp"
+            android:layout_height="112dp"
+            android:layout_marginTop="24dp"
+            android:contentDescription="@string/confirmar_entrega_icono_desc"
+            android:src="@drawable/ic_qr_entrega" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="48dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvTitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            tools:text="Operación confirmada" />
+
+        <TextView
+            android:id="@+id/tvMensaje"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="16sp"
+            tools:text="Recibiste «Monitor Samsung». La publicación pasó a vendida y la operación quedó registrada para vos y para Sofía." />
+
+        <!-- Solo en "operacion confirmada": articulo, vendedor, monto y fecha. -->
+        <TextView
+            android:id="@+id/tvDetalle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@color/fondo_formulario_oferta"
+            android:lineSpacingExtra="4dp"
+            android:padding="16dp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Monitor Samsung 24 curvo\nVendedor: Sofía Ramírez\nMonto: $ 158.000\nFecha: 21/11/2026 17:28"
+            tools:visibility="visible" />
+
+        <Button
+            android:id="@+id/btnPrincipal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            tools:text="Ver mi historial" />
+
+        <Button
+            android:id="@+id/btnSecundario"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            tools:text="Listo" />
+
+        <!-- Para un celular sin camara o un QR que no se deja leer. -->
+        <Button
+            android:id="@+id/btnManual"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/confirmar_entrega_manual"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+</ScrollView>

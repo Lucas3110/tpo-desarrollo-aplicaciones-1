@@ -100,6 +100,10 @@ dependencies {
     // es Java va con annotationProcessor, no con kapt.
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
+    // ZXing Android Embedded: lee con la camara el QR fisico del cierre de la
+    // operacion (Punto 12). Se abre con registerForActivityResult, la misma
+    // API de resultados que el selector de fotos de Publicar y Perfil.
+    implementation(libs.zxing.android.embedded)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

@@ -366,6 +366,33 @@
     <string name="entrega_sin_direccion">El vendedor aún no indicó el punto de entrega.</string>
     <string name="entrega_no_disponible">El punto de entrega no está disponible para tu cuenta.</string>
     <string name="entrega_sin_maps">No encontramos una aplicación de mapas o navegador para abrir la ruta.</string>
+
+    <!-- Punto 12: cierre de la operación con QR -->
+    <string name="confirmar_entrega_titulo">Confirmar la entrega</string>
+    <string name="confirmar_entrega_indicacion">Apuntá la cámara al código QR que el vendedor te entregó junto con el artículo. Al leerlo, la operación queda cerrada para los dos.</string>
+    <string name="confirmar_entrega_escanear">Escanear QR</string>
+    <string name="confirmar_entrega_prompt_camara">Enfocá el QR de entrega que te dio el vendedor</string>
+    <string name="confirmar_entrega_manual">Ingresar el código a mano</string>
+    <string name="confirmar_entrega_manual_titulo">Código de entrega</string>
+    <string name="confirmar_entrega_manual_explicacion">Es el texto impreso debajo del QR, con la forma RONDA-XXXXXXXX.</string>
+    <string name="confirmar_entrega_manual_ok">Confirmar</string>
+    <string name="confirmar_entrega_confirmando">Confirmando la entrega…</string>
+    <string name="confirmar_entrega_ok_titulo">Operación confirmada</string>
+    <string name="confirmar_entrega_ok_detalle">%1$s\nVendedor: %2$s\nMonto: %3$s\nFecha: %4$s</string>
+    <string name="confirmar_entrega_ver_historial">Ver mi historial</string>
+    <string name="confirmar_entrega_listo">Listo</string>
+    <string name="confirmar_entrega_invalido_titulo">Código inválido</string>
+    <string name="confirmar_entrega_invalido_local">Eso no es un QR de entrega de Ronda. Buscá el que te dio el vendedor: dice RONDA- seguido de ocho caracteres.</string>
+    <string name="confirmar_entrega_rechazada_titulo">No se pudo confirmar</string>
+    <string name="confirmar_entrega_error_generico">No pudimos confirmar la entrega</string>
+    <string name="confirmar_entrega_reintentar_escaneo">Escanear de nuevo</string>
+    <string name="confirmar_entrega_reintentar">Reintentar</string>
+    <string name="confirmar_entrega_volver">Volver</string>
+    <string name="confirmar_entrega_sin_conexion_titulo">Sin conexión</string>
+    <string name="confirmar_entrega_sin_permiso_titulo">Sin acceso a la cámara</string>
+    <string name="confirmar_entrega_sin_permiso">Sin el permiso de cámara no podemos leer el QR. Podés darlo desde Ajustes o ingresar el código a mano.</string>
+    <string name="confirmar_entrega_sin_camara">Este dispositivo no tiene cámara: ingresá el código impreso debajo del QR.</string>
+    <string name="confirmar_entrega_icono_desc">Resultado de la confirmación</string>
     <!-- Punto 10: favoritos y busquedas guardadas -->
     <string name="favoritos_tab_favoritos">Favoritos</string>
     <string name="favoritos_tab_busquedas">Búsquedas</string>

@@ -104,6 +104,11 @@
             app:destination="@id/auth_nav_graph"
             app:popUpTo="@id/home_nav_graph"
             app:popUpToInclusive="true" />
+
+        <!-- Punto 12: el comprador escanea el QR de la entrega de una oferta aceptada. -->
+        <action
+            android:id="@+id/action_misOfertas_to_confirmarEntrega"
+            app:destination="@id/confirmarEntregaFragment" />
     </fragment>
 
     <fragment android:id="@+id/publicarFragment"
@@ -136,6 +141,34 @@
         <action
             android:id="@+id/action_detalle_to_perfilPublico"
             app:destination="@id/perfilPublicoFragment" />
+
+        <!-- Punto 12: desde el panel de entrega, el comprador escanea el QR al recibir. -->
+        <action
+            android:id="@+id/action_detalle_to_confirmarEntrega"
+            app:destination="@id/confirmarEntregaFragment" />
+    </fragment>
+
+    <!-- Punto 12: cierre de la operacion con QR -->
+    <fragment
+        android:id="@+id/confirmarEntregaFragment"
+        android:name="com.example.ronda.ui.entrega.ConfirmarEntregaFragment"
+        android:label="Confirmar entrega"
+        tools:layout="@layout/fragment_confirmar_entrega">
+
+        <!-- Confirmada, la compra ya figura en el historial. Esta pantalla sale
+             de la pila para que "atras" no vuelva a un resultado ya usado. -->
+        <action
+            android:id="@+id/action_confirmarEntrega_to_historial"
+            app:destination="@id/historialFragment"
+            app:popUpTo="@id/confirmarEntregaFragment"
+            app:popUpToInclusive="true" />
+
+        <!-- Sesion vencida (401): se vuelve al login. -->
+        <action
+            android:id="@+id/action_confirmarEntrega_to_auth"
+            app:destination="@id/auth_nav_graph"
+            app:popUpTo="@id/home_nav_graph"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <!-- Punto 2 -->
