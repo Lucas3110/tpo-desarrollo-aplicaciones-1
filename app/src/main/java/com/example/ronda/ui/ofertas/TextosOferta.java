@@ -6,6 +6,7 @@ import androidx.annotation.ColorRes;
 import androidx.annotation.Nullable;
 
 import com.example.ronda.R;
+import com.example.ronda.data.model.CierreResponse;
 import com.example.ronda.data.model.OfertaResponse;
 
 /**
@@ -59,6 +60,26 @@ public final class TextosOferta {
         return ctx.getString(o.laPropusoElVendedor() && o.isEsperaMiRespuesta()
                 ? R.string.mis_ofertas_contraoferta_recibida
                 : R.string.mis_ofertas_contraoferta_enviada);
+    }
+
+    /**
+     * Punto 12: el estado de la entrega de una venta, en una linea. Lo
+     * comparten "Mis ofertas" (sobre la oferta aceptada) y el detalle de la
+     * publicacion. El backend ya resolvio que ve cada lado: el vendedor recibe
+     * el codigo que tiene que imprimir como QR; el comprador solo sabe que le
+     * toca escanearlo cuando reciba el articulo. Null si no hay cierre.
+     */
+    @Nullable
+    public static String cierre(Context ctx, @Nullable CierreResponse c) {
+        if (c == null) return null;
+        if (c.estaConcretada()) {
+            return ctx.getString(R.string.mis_ofertas_cierre_confirmada, FormatoOferta.fecha(c.getConcretadaEn()));
+        }
+        if (c.tengoCodigoParaImprimir()) {
+            return ctx.getString(R.string.mis_ofertas_cierre_codigo, c.getCodigoEntrega());
+        }
+        if (c.isPuedoConfirmar()) return ctx.getString(R.string.mis_ofertas_cierre_escanear);
+        return c.getEstadoTexto();
     }
 
     /**

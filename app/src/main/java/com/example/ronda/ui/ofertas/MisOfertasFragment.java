@@ -45,6 +45,10 @@ import retrofit2.Response;
  * la pantalla y con el boton "Actualizar", asi los estados (aceptada,
  * rechazada, vencida) estan siempre al dia. El backend vence las pendientes
  * caducadas antes de responder, no hace falta calcular nada aca.
+ *
+ * Punto 12: sobre una oferta aceptada, el comprador tiene el boton para
+ * escanear el QR de entrega, que lleva a ConfirmarEntregaFragment. Al volver
+ * la lista se recarga y la fila pasa a "Operacion confirmada".
  */
 @AndroidEntryPoint
 public class MisOfertasFragment extends Fragment {
@@ -135,6 +139,9 @@ public class MisOfertasFragment extends Fragment {
             case CONTRAOFERTAR:
                 ContraofertaDialogFragment.newInstance(oferta)
                         .show(getChildFragmentManager(), ContraofertaDialogFragment.CLAVE_RESULTADO);
+                break;
+            case CONFIRMAR_ENTREGA:
+                Navigation.findNavController(requireView()).navigate(R.id.action_misOfertas_to_confirmarEntrega);
                 break;
         }
     }

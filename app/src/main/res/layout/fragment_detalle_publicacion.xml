@@ -168,6 +168,41 @@
                     android:text="@string/entrega_como_llegar" />
             </LinearLayout>
 
+            <!-- Punto 12: cierre de la operacion. Solo para las partes de una
+                 venta en curso o cerrada: el vendedor ve el codigo para
+                 imprimir el QR, el comprador el boton para escanearlo. -->
+            <LinearLayout
+                android:id="@+id/panelCierre"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/detalle_cierre_titulo"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tvCierre"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textSize="16sp"
+                    tools:text="Entrega pendiente · Cuando recibas el artículo, escaneá el QR que te da el vendedor" />
+                <Button
+                    android:id="@+id/btnEscanearEntrega"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:backgroundTint="@color/estado_aceptada"
+                    android:text="@string/mis_ofertas_escanear_qr"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"

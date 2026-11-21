@@ -35,8 +35,12 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
         void onContraparte(OfertaResponse oferta);
     }
 
-    /** Que quiere hacer la persona con una oferta que espera su respuesta. */
-    public enum Accion { ACEPTAR, RECHAZAR, CONTRAOFERTAR }
+    /**
+     * Que quiere hacer la persona con una oferta: responderla si espera su
+     * respuesta, o confirmar la entrega con el QR si ya esta aceptada y es el
+     * comprador (Punto 12).
+     */
+    public enum Accion { ACEPTAR, RECHAZAR, CONTRAOFERTAR, CONFIRMAR_ENTREGA }
 
     public interface OnAccionListener {
         void onAccion(OfertaResponse oferta, Accion accion);
@@ -91,6 +95,14 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
         holder.tvFecha.setText(FormatoOferta.fechaCorta(o.getCreadoEn()));
         mostrarOpcional(holder.tvVence, TextosOferta.vencimiento(ctx, o, System.currentTimeMillis()));
 
+        // Punto 12: en una aceptada, el estado de la entrega. El boton de
+        // escanear lo ve solo el comprador mientras siga pendiente; el
+        // vendedor ve el codigo que tiene que imprimir como QR.
+        mostrarOpcional(holder.tvCierre, TextosOferta.cierre(ctx, o.getCierre()));
+        boolean puedoConfirmar = o.getCierre() != null && o.getCierre().isPuedoConfirmar();
+        holder.btnConfirmarEntrega.setVisibility(puedoConfirmar ? View.VISIBLE : View.GONE);
+        holder.btnConfirmarEntrega.setOnClickListener(v -> avisar(o, Accion.CONFIRMAR_ENTREGA));
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onOferta(o);
         });
@@ -127,9 +139,9 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
     static class ViewHolder extends RecyclerView.ViewHolder {
         final ImageView ivFoto;
         final TextView tvTituloPublicacion, tvMonto, tvEstado, tvContraparte, tvMensaje,
-                tvContraoferta, tvFecha, tvVence;
+                tvContraoferta, tvFecha, tvVence, tvCierre;
         final View llAcciones;
-        final Button btnAceptar, btnRechazar, btnContraofertar;
+        final Button btnAceptar, btnRechazar, btnContraofertar, btnConfirmarEntrega;
 
         ViewHolder(View v) {
             super(v);
@@ -142,6 +154,8 @@ public class MisOfertasAdapter extends RecyclerView.Adapter<MisOfertasAdapter.Vi
             tvContraoferta = v.findViewById(R.id.tvContraoferta);
             tvFecha = v.findViewById(R.id.tvFecha);
             tvVence = v.findViewById(R.id.tvVence);
+            tvCierre = v.findViewById(R.id.tvCierre);
+            btnConfirmarEntrega = v.findViewById(R.id.btnConfirmarEntrega);
             llAcciones = v.findViewById(R.id.llAcciones);
             btnAceptar = v.findViewById(R.id.btnAceptar);
             btnRechazar = v.findViewById(R.id.btnRechazar);
