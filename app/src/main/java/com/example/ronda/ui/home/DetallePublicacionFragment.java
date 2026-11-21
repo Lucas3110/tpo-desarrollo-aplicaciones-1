@@ -21,9 +21,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ronda.R;
+import com.example.ronda.data.model.CierreResponse;
 import com.example.ronda.data.model.PublicacionDetalleResponse;
 import com.example.ronda.data.model.EntregaResponse;
 import com.example.ronda.ui.entrega.EnlaceEntrega;
+import com.example.ronda.ui.ofertas.TextosOferta;
 import com.example.ronda.data.network.ApiErrorParser;
 import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.PublicacionApiService;
@@ -65,6 +67,10 @@ public class DetallePublicacionFragment extends Fragment {
     private View panelEntrega;
     private TextView tvDireccionEntrega;
     private Button btnComoLlegar;
+    /** Punto 12: el estado de la entrega, para las partes de la venta. */
+    private View panelCierre;
+    private TextView tvCierre;
+    private Button btnEscanearEntrega;
 
     private TextView tvSinConexionDetalle;
     private ProgressBar progressBar;
@@ -120,6 +126,15 @@ public class DetallePublicacionFragment extends Fragment {
         // Maps con una direccion que quiza ya no corresponda.
         btnComoLlegar.setOnClickListener(v -> {
             if (hayConexionParaActuar()) cargarDetallePublicacion(true);
+        });
+        panelCierre = view.findViewById(R.id.panelCierre);
+        tvCierre = view.findViewById(R.id.tvCierre);
+        btnEscanearEntrega = view.findViewById(R.id.btnEscanearEntrega);
+        // Punto 12: el comprador, al recibir el articulo, escanea el QR que le
+        // dio el vendedor. La pantalla de confirmacion abre la camara sola.
+        btnEscanearEntrega.setOnClickListener(v -> {
+            if (!hayConexionParaActuar()) return;
+            Navigation.findNavController(requireView()).navigate(R.id.action_detalle_to_confirmarEntrega);
         });
         getChildFragmentManager().setFragmentResultListener(
                 OfertasBottomSheet.RESULTADO_CERRADO, getViewLifecycleOwner(),
@@ -260,7 +275,7 @@ public class DetallePublicacionFragment extends Fragment {
     private void atenuarAccionesSinConexion(boolean hayInternet) {
         float opacidad = hayInternet ? 1f : 0.4f;
         for (Button boton : new Button[]{btnPreguntar, btnOfertar, btnGuardar, btnGestionar,
-                btnComoLlegar}) {
+                btnComoLlegar, btnEscanearEntrega}) {
             if (boton != null) boton.setAlpha(opacidad);
         }
     }
@@ -279,6 +294,7 @@ public class DetallePublicacionFragment extends Fragment {
         mPub = null;
         panelEntrega.setVisibility(View.GONE);
         tvDireccionEntrega.setText("");
+        panelCierre.setVisibility(View.GONE);
         mostrarCargando(true);
         llamadaDetalle = publicacionApi.getDetallePublicacion(sesion.getBearer(), publicacionId);
         llamadaDetalle.enqueue(new Callback<PublicacionDetalleResponse>() {
@@ -322,6 +338,16 @@ public class DetallePublicacionFragment extends Fragment {
                     : getString(R.string.entrega_sin_direccion));
         }
 
+        // Punto 12: si hay una venta en curso o cerrada y soy parte, el estado
+        // de la entrega. El backend ya decidio que ve cada lado (el codigo
+        // solo lo recibe el vendedor; el boton de escanear, solo el comprador).
+        CierreResponse cierre = pub.getCierre();
+        panelCierre.setVisibility(cierre == null ? View.GONE : View.VISIBLE);
+        if (cierre != null) {
+            tvCierre.setText(TextosOferta.cierre(requireContext(), cierre));
+            btnEscanearEntrega.setVisibility(cierre.isPuedoConfirmar() ? View.VISIBLE : View.GONE);
+        }
+
         tvTitulo.setText(pub.getTitulo());
         // Mismo formato de precio que el listado del Home y las ofertas:
         // "$ 95.000" en vez de "$ 95000.00".
@@ -338,7 +364,11 @@ public class DetallePublicacionFragment extends Fragment {
 
         String fechaSimple = pub.getPublicadoEn() != null ? pub.getPublicadoEn().split("T")[0] : "";
         String cat = pub.getCategoria() != null ? pub.getCategoria().getNombre() : "";
-        tvEstadoArticulo.setText(cat + " | " + pub.getEstadoArticuloTexto() + " | " + fechaSimple);
+        // Punto 12: una reservada o vendida lo dice en la cabecera, que es lo
+        // primero que se lee y explica por que no hay botones de ofertar.
+        String situacion = pub.estaReservada() ? " | " + getString(R.string.detalle_estado_reservada)
+                : pub.estaVendida() ? " | " + getString(R.string.detalle_estado_vendida) : "";
+        tvEstadoArticulo.setText(cat + " | " + pub.getEstadoArticuloTexto() + " | " + fechaSimple + situacion);
 
         if (pub.getVendedor() != null) {
             // La zona del vendedor es opcional: quien se registro sin elegirla la

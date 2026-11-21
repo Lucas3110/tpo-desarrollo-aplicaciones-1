@@ -167,6 +167,11 @@
     <string name="mis_ofertas_contraoferta_recibida">Contraoferta del vendedor sobre tu oferta</string>
     <string name="mis_ofertas_contraoferta_enviada">Tu contraoferta sobre su oferta</string>
     <string name="mis_ofertas_foto_desc">Foto de la publicación</string>
+    <!-- Punto 12: el cierre de una oferta aceptada, segun quien mira -->
+    <string name="mis_ofertas_cierre_codigo">Entrega pendiente · Código para imprimir el QR: %1$s</string>
+    <string name="mis_ofertas_cierre_escanear">Entrega pendiente · Cuando recibas el artículo, escaneá el QR que te da el vendedor</string>
+    <string name="mis_ofertas_cierre_confirmada">Operación confirmada el %1$s</string>
+    <string name="mis_ofertas_escanear_qr">Escanear QR de entrega</string>
 
     <!-- Responder una oferta: aceptar, rechazar o contraofertar (Punto 7) -->
     <string name="oferta_contraofertar">Contraofertar</string>
@@ -343,6 +348,10 @@
     <string name="detalle_gestionar_ver_ofertas">Ver ofertas</string>
     <string name="detalle_quitar_favorito">Quitar de favoritos</string>
     <string name="detalle_error_carga">No pudimos cargar la publicación</string>
+    <!-- Punto 12 -->
+    <string name="detalle_cierre_titulo">Cierre de la operación</string>
+    <string name="detalle_estado_reservada">Reservada</string>
+    <string name="detalle_estado_vendida">Vendida</string>
 
     <string name="publicar_direccion_hint">Dirección de entrega (opcional, incluí ciudad)</string>
     <string name="publicar_direccion_privacidad">El barrio es público. La dirección exacta sólo la ven vos y la persona cuya oferta aceptes.</string>

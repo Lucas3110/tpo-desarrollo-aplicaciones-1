@@ -120,6 +120,30 @@
             tools:text="Vence en 47 h"
             tools:visibility="visible" />
 
+        <!-- Punto 12: solo en las aceptadas. Al vendedor le muestra el codigo
+             para imprimir el QR; al comprador, que le toca escanearlo. -->
+        <TextView
+            android:id="@+id/tvCierre"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="13sp"
+            android:visibility="gone"
+            tools:text="Entrega pendiente · Código para imprimir el QR: RONDA-QNFG3E54"
+            tools:visibility="visible" />
+
+        <Button
+            android:id="@+id/btnConfirmarEntrega"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:backgroundTint="@color/estado_aceptada"
+            android:text="@string/mis_ofertas_escanear_qr"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
         <!-- Solo cuando la oferta espera mi respuesta. -->
         <LinearLayout
             android:id="@+id/llAcciones"
