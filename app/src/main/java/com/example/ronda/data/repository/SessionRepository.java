@@ -28,6 +28,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext;
  * @ApplicationContext lo provee el framework, así que nadie tiene que
  * acordarse de pasar el contexto correcto (usar el del Fragment filtraría una
  * referencia a una pantalla ya destruida).
+ *
+ * Hace de TokenManager: ninguna pantalla sabe dónde se guarda el token, se
+ * lo piden a esta clase. La copia que usa la huella va encriptada, en un
+ * archivo aparte.
  */
 @Singleton
 public class SessionRepository {

@@ -47,6 +47,7 @@ import retrofit2.Response;
 public class LoginFragment extends Fragment {
 
     // Hilt lo crea y lo inyecta: ya no hay que pedirlo con getInstance().
+    // La pantalla no construye lo que usa, lo recibe (inversion de control).
     @Inject
     AuthApiService authApi;
 
@@ -258,9 +259,13 @@ public class LoginFragment extends Fragment {
 
         mostrarCargando(true);
 
+        // enqueue manda el pedido en otro hilo: la pantalla no se congela
+        // mientras espera la respuesta.
         authApi.login(new LoginRequest(email, password))
                 .enqueue(new Callback<SesionResponse>() {
 
+                    // onResponse: el servidor contesto, aunque sea con un error
+                    // (401, 500). Por eso se mira isSuccessful().
                     @Override
                     public void onResponse(@NonNull Call<SesionResponse> call,
                                            @NonNull Response<SesionResponse> response) {
@@ -280,6 +285,8 @@ public class LoginFragment extends Fragment {
                         }
                     }
 
+                    // onFailure: no hubo respuesta (sin red, timeout o el
+                    // servidor apagado).
                     @Override
                     public void onFailure(@NonNull Call<SesionResponse> call,
                                           @NonNull Throwable t) {

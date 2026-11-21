@@ -26,6 +26,10 @@ import androidx.room.PrimaryKey;
  * Las fotos se guardan como URLs dentro de ese JSON, no como archivos: Glide
  * ya cachea las imágenes en disco por su cuenta, así que una foto que se vio
  * una vez se sigue viendo sin conexión sin que nosotros hagamos nada.
+ *
+ * Se usa Room y no SharedPreferences porque son muchos registros que hay que
+ * ordenar, limitar a 60 y borrar por partes, y eso se resuelve con SQL.
+ * SharedPreferences queda para datos sueltos, como el token.
  */
 @Entity(tableName = "publicaciones_cache")
 public class PublicacionCacheada {
