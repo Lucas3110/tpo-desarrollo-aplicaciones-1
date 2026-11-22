@@ -39,9 +39,10 @@ import retrofit2.Response;
  *   REGISTRO -> confirmar la cuenta recien creada
  *   LOGIN    -> ingresar sin contrasena
  *
- * Verificar el codigo devuelve un token en los dos casos, pero solo se crea
- * la sesion al ingresar: al confirmar una cuenta nueva se muestra la
- * bienvenida y la persona ingresa despues desde el login.
+ * Verificar el codigo devuelve un token en los dos casos, y en los dos se
+ * crea la sesion, como pide la consigna ("confirmar y crear sesion"). Lo
+ * unico que cambia es a donde va despues: la cuenta nueva pasa por la
+ * bienvenida antes del Home.
  */
 @AndroidEntryPoint
 public class OtpFragment extends Fragment {
@@ -128,24 +129,22 @@ public class OtpFragment extends Fragment {
                         if (response.isSuccessful() && response.body() != null) {
                             SesionResponse cuerpo = response.body();
 
-                            if ("REGISTRO".equals(proposito)) {
-                                // Cuenta nueva confirmada: mostramos la
-                                // bienvenida y devolvemos a la persona al
-                                // login. No guardamos la sesion, la va a
-                                // crear cuando ingrese con sus credenciales.
-                                Bundle args = new Bundle();
-                                args.putString("email", email);
-                                Navigation.findNavController(view)
-                                        .navigate(R.id.action_otp_to_bienvenida, args);
-                            } else {
-                                // Ingreso con codigo: es un inicio de sesion
-                                // como cualquier otro, va derecho al Home.
-                                sesion.guardarSesion(cuerpo.getToken(),
-                                        cuerpo.getUsuario().getEmail());
-                                sesion.guardarZona(cuerpo.getUsuario().getZona());
-                                Navigation.findNavController(view)
-                                        .navigate(R.id.action_otp_to_home);
-                            }
+                            // Los dos caminos crean la sesion: el token que
+                            // devuelve el backend al verificar ya sirve para
+                            // entrar, tambien con una cuenta recien creada.
+                            String emailSesion = cuerpo.getUsuario() != null
+                                    ? cuerpo.getUsuario().getEmail() : email;
+                            sesion.guardarSesion(cuerpo.getToken(), emailSesion);
+                            sesion.guardarZona(cuerpo.getUsuario() != null
+                                    ? cuerpo.getUsuario().getZona() : null);
+
+                            // Recien ahora hay un token, asi que es el momento
+                            // de ofrecer la huella, igual que en el login.
+                            Runnable seguir = "REGISTRO".equals(proposito)
+                                    ? () -> irABienvenida(view)
+                                    : () -> irAlHome(view);
+                            DesbloqueoBiometrico.ofrecerActivacion(OtpFragment.this, sesion,
+                                    cuerpo.getToken(), seguir);
                         } else {
                             mostrarErrorDeVerificacion(response);
                         }
@@ -160,6 +159,20 @@ public class OtpFragment extends Fragment {
                                 R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    /** Cuenta nueva confirmada: la bienvenida, y desde ahi el Home. */
+    private void irABienvenida(View view) {
+        if (!estaVivo()) return;
+        Bundle args = new Bundle();
+        args.putString("email", email);
+        Navigation.findNavController(view).navigate(R.id.action_otp_to_bienvenida, args);
+    }
+
+    /** Ingreso con codigo: un inicio de sesion como cualquier otro. */
+    private void irAlHome(View view) {
+        if (!estaVivo()) return;
+        Navigation.findNavController(view).navigate(R.id.action_otp_to_home);
     }
 
     private void mostrarErrorDeVerificacion(Response<SesionResponse> response) {

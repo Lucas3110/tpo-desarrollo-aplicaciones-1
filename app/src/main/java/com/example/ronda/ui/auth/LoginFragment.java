@@ -142,41 +142,6 @@ public class LoginFragment extends Fragment {
         });
     }
 
-    /**
-     * Despues de un login exitoso, ofrecer el desbloqueo con huella.
-     *
-     * Si ya lo habia activado antes no se vuelve a preguntar: solo se repone
-     * la copia cifrada del token nuevo. Cerrar sesion borra el token cifrado
-     * a proposito — si no, la huella resucitaria una sesion que la persona
-     * cerro — pero deja la preferencia, asi que hay que reponerlo aca.
-     *
-     * Y solo se ofrece si el dispositivo realmente puede hacerlo, para no
-     * prometer algo que despues falla.
-     */
-    private void ofrecerBiometria(View view, String token) {
-        if (sesion.esBiometriaActivada()) {
-            sesion.guardarTokenCifrado(token);
-            irAlHome(view);
-            return;
-        }
-        if (!DesbloqueoBiometrico.estaDisponible(requireContext())) {
-            irAlHome(view);
-            return;
-        }
-
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.biometria_activar_titulo)
-                .setMessage(R.string.biometria_activar_mensaje)
-                .setPositiveButton(R.string.biometria_activar_si, (d, cual) -> {
-                    sesion.setBiometriaActivada(true);
-                    sesion.guardarTokenCifrado(token);
-                    irAlHome(view);
-                })
-                .setNegativeButton(R.string.biometria_activar_no, (d, cual) -> irAlHome(view))
-                .setCancelable(false)
-                .show();
-    }
-
     private void irAlHome(View view) {
         if (!estaVivo()) return;
         Navigation.findNavController(view).navigate(R.id.action_auth_to_home);
@@ -274,7 +239,8 @@ public class LoginFragment extends Fragment {
                             sesion.guardarZona(cuerpo.getUsuario().getZona());
                             // Punto 1: recien ahora hay un token que guardar
                             // cifrado, asi que es el momento de ofrecer la huella.
-                            ofrecerBiometria(view, cuerpo.getToken());
+                            DesbloqueoBiometrico.ofrecerActivacion(LoginFragment.this, sesion,
+                                    cuerpo.getToken(), () -> irAlHome(view));
                         } else {
                             mostrarErrorDeLogin(view, response, email);
                         }

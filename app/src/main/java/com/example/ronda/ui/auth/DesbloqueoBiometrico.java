@@ -3,6 +3,7 @@ package com.example.ronda.ui.auth;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
@@ -11,6 +12,7 @@ import androidx.fragment.app.Fragment;
 import java.util.concurrent.Executor;
 
 import com.example.ronda.R;
+import com.example.ronda.data.repository.SessionRepository;
 
 /**
  * Desbloqueo de la sesion con la biometria del dispositivo (Punto 1).
@@ -20,8 +22,10 @@ import com.example.ronda.R;
  *   2) PromptInfo        -> como se ve el dialogo
  *   3) BiometricPrompt   -> lo dispara y avisa por los callbacks
  *
- * No agrega ninguna pantalla: se usa desde el LoginFragment, delante del
- * auto-login. Usa AndroidX Biometric, que unifica la API desde API 21+.
+ * No agrega ninguna pantalla: pedir() se usa desde el LoginFragment, delante
+ * del auto-login, y ofrecerActivacion() desde el login y la pantalla del
+ * codigo, apenas se crea una sesion. Usa AndroidX Biometric, que unifica la
+ * API desde API 21+.
  */
 public final class DesbloqueoBiometrico {
 
@@ -56,6 +60,46 @@ public final class DesbloqueoBiometrico {
         return BiometricManager.from(contexto)
                 .canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
                 == BiometricManager.BIOMETRIC_SUCCESS;
+    }
+
+    /**
+     * Despues de crear una sesion (con contrasena, con el codigo del mail o
+     * al confirmar una cuenta nueva) ofrece entrar con la huella la proxima
+     * vez, y despues sigue con {@code despues}.
+     *
+     * Si ya lo habia activado antes no se vuelve a preguntar: solo se repone
+     * la copia cifrada del token nuevo. Cerrar sesion borra el token cifrado
+     * a proposito (si no, la huella resucitaria una sesion que la persona
+     * cerro), pero deja la preferencia, asi que hay que reponerlo aca.
+     *
+     * Y solo se ofrece si el dispositivo realmente puede hacerlo, para no
+     * prometer algo que despues falla.
+     */
+    public static void ofrecerActivacion(@NonNull Fragment fragment,
+                                         @NonNull SessionRepository sesion,
+                                         @NonNull String token,
+                                         @NonNull Runnable despues) {
+        if (sesion.esBiometriaActivada()) {
+            sesion.guardarTokenCifrado(token);
+            despues.run();
+            return;
+        }
+        if (!estaDisponible(fragment.requireContext())) {
+            despues.run();
+            return;
+        }
+
+        new AlertDialog.Builder(fragment.requireContext())
+                .setTitle(R.string.biometria_activar_titulo)
+                .setMessage(R.string.biometria_activar_mensaje)
+                .setPositiveButton(R.string.biometria_activar_si, (d, cual) -> {
+                    sesion.setBiometriaActivada(true);
+                    sesion.guardarTokenCifrado(token);
+                    despues.run();
+                })
+                .setNegativeButton(R.string.biometria_activar_no, (d, cual) -> despues.run())
+                .setCancelable(false)
+                .show();
     }
 
     public static void pedir(@NonNull Fragment fragment, @NonNull Callback callback) {

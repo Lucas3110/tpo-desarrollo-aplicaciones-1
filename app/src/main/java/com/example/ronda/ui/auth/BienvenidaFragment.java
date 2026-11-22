@@ -19,17 +19,17 @@ import com.example.ronda.R;
 /**
  * Confirmacion que se muestra despues de verificar una cuenta recien creada.
  *
- * Es una pantalla de paso: anima tres textos y a los pocos segundos vuelve
- * sola al login para que la persona ingrese con sus credenciales. No crea
- * sesion ni necesita nada inyectado: recibe el email por argumento porque
- * en este punto todavia no hay nada guardado en el celular.
+ * Es una pantalla de paso: anima tres textos y a los pocos segundos entra
+ * sola al Home. La sesion ya la creo OtpFragment al verificar el codigo
+ * ("confirmar y crear sesion"), asi que aca no se inyecta nada: el email
+ * llega por argumento solo para mostrarlo.
  *
  * Antes esta logica vivia adentro de HomeFragment como un "modo bienvenida";
  * se separo para que el Home sea solo el Home (listado del Punto 3).
  */
 public class BienvenidaFragment extends Fragment {
 
-    /** Cuanto dura la bienvenida antes de volver al login. */
+    /** Cuanto dura la bienvenida antes de entrar al Home. */
     private static final long DEMORA_REDIRECCION_MS = 2600L;
 
     /** Desde donde "sube" cada texto al aparecer. */
@@ -65,9 +65,9 @@ public class BienvenidaFragment extends Fragment {
         tareaRedireccion = () -> {
             // La vista pudo destruirse mientras corria la espera.
             if (!isAdded() || getView() == null) return;
-            // La accion que trajo aca dejo al login justo debajo en la pila,
-            // asi que con volver un paso alcanza.
-            Navigation.findNavController(view).popBackStack();
+            // La cuenta nueva ya tiene sesion: se entra al Home y se saca de la
+            // pila todo lo de autenticacion, igual que al ingresar.
+            Navigation.findNavController(view).navigate(R.id.action_bienvenida_to_home);
         };
         handler.postDelayed(tareaRedireccion, DEMORA_REDIRECCION_MS);
     }
