@@ -17,7 +17,7 @@ import com.example.ronda.data.repository.SessionRepository;
 /**
  * Desbloqueo de la sesion con la biometria del dispositivo (Punto 1).
  *
- * Sigue el trio de la clase de Biometria, en tres pasos:
+ * Se arma en tres pasos:
  *   1) BiometricManager  -> ¿se puede usar biometria en este dispositivo?
  *   2) PromptInfo        -> como se ve el dialogo
  *   3) BiometricPrompt   -> lo dispara y avisa por los callbacks
@@ -112,6 +112,8 @@ public final class DesbloqueoBiometrico {
             return;
         }
 
+        // Con el executor del thread principal, los callbacks llegan donde se
+        // puede tocar la pantalla.
         Executor ejecutor = ContextCompat.getMainExecutor(contexto);
 
         // Paso 2 — como se ve el dialogo.

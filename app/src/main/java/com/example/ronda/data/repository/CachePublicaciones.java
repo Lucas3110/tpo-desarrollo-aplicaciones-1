@@ -44,7 +44,11 @@ public class CachePublicaciones {
     private final PublicacionCacheadaDao dao;
     private final Gson gson = new Gson();
 
-    /** Un solo hilo: las escrituras quedan en orden y no compiten entre sí. */
+    /**
+     * Un solo hilo: las escrituras quedan en orden y no compiten entre sí.
+     * Y va aparte del thread principal porque Room no deja usar la base
+     * desde ahí: la pantalla se congelaría mientras espera al disco.
+     */
     private final ExecutorService hilo = Executors.newSingleThreadExecutor();
 
     @Inject
@@ -200,6 +204,9 @@ public class CachePublicaciones {
      * Sin esto, quien llame tendría que acordarse de hacer el salto de hilo
      * antes de tocar una vista, y alcanza con olvidarse una vez para que la
      * app crashee con CalledFromWrongThreadException.
+     *
+     * Hace lo mismo que runOnUiThread, pero runOnUiThread es un método de
+     * Activity y esta clase no es una.
      */
     private <T> void responder(Respuesta<T> respuesta, @Nullable T valor) {
         new android.os.Handler(android.os.Looper.getMainLooper())

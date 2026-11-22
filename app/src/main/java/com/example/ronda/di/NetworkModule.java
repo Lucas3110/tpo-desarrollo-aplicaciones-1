@@ -33,7 +33,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * se la inyecta a quien la declare con @Inject.
  *
  * @InstallIn(SingletonComponent.class) + @Singleton = una única instancia que
- * vive lo que vive la app.
+ * vive lo que vive la app. Aunque dos hilos la pidan a la vez no se crean
+ * dos: el código que genera Hilt para @Singleton usa synchronized.
  */
 @Module
 @InstallIn(SingletonComponent.class)
@@ -71,8 +72,8 @@ public class NetworkModule {
      *    celular apunta a una IP que no responde, la app espera 15 s y cae en
      *    onFailure con un IOException, en vez del default de 10 s.
      *
-     * 2. El interceptor del JWT (clase 5, "JWT + LocalStorage"), que le pone
-     *    la cabecera Authorization a cada request.
+     * 2. El interceptor del JWT, que le pone la cabecera Authorization a cada
+     *    request.
      *
      * 3. El interceptor de sesion vencida (Punto 1), que reacciona al 401.
      *
@@ -117,7 +118,7 @@ public class NetworkModule {
                     .header(CABECERA_AUTH, "Bearer " + token)
                     .build();
 
-            // Para verificar en Logcat que el token viaja (hands-on de la clase 5).
+            // Para verificar en Logcat que el token viaja.
             Log.d(TAG_RED, "JWT agregado a " + original.method() + " "
                     + original.url().encodedPath());
             return cadena.proceed(conToken);
