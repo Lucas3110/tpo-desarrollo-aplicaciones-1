@@ -264,7 +264,7 @@ public class SessionRepository {
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM);
             return prefsCifradas;
         } catch (GeneralSecurityException | IOException e) {
-            Log.e(TAG, "No pude abrir las preferencias cifradas", e);
+            Log.e(TAG, "No se pudieron abrir las preferencias cifradas", e);
             return null;
         }
     }

@@ -1,6 +1,7 @@
 package com.example.ronda.ui.auth;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,14 +55,13 @@ import retrofit2.Response;
  *   pedirCodigoDeIngreso         ingreso con código
  *   ofrecerRegistro              mail sin cuenta: ofrece crearla
  *
- * La anotación @AndroidEntryPoint le avisa a Hilt que esta pantalla recibe
- * dependencias con @Inject.
+ * Con @AndroidEntryPoint, Hilt le puede dar a esta pantalla lo que pide con @Inject.
  */
 @AndroidEntryPoint
 public class LoginFragment extends Fragment {
+    private static final String TAG = "LoginFragment";   // etiqueta en Logcat
 
-    // Dependencias. Hilt las crea y las deja puestas antes de que arranque la
-    // pantalla: por eso acá no hay ningún new ni getInstance().
+    // Dependencias: las crea Hilt, por eso acá no hay ningún new ni getInstance().
     @Inject
     AuthApiService authApi;          // los pedidos al backend de /api/auth
 
@@ -303,7 +303,7 @@ public class LoginFragment extends Fragment {
                                           @NonNull Throwable t) {
                         if (!estaVivo()) return;
                         mostrarCargando(false);
-                        android.util.Log.e("ERROR_RED", "Fallo de conexion", t);
+                        Log.e(TAG, "No se pudo conectar con el servidor", t);
                         Toast.makeText(requireContext(),
                                 R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
                     }

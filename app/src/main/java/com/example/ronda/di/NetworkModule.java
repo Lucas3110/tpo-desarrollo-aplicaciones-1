@@ -122,9 +122,9 @@ public class NetworkModule {
                     .header(CABECERA_AUTH, "Bearer " + token)
                     .build();
 
-            // Para verificar en Logcat que el token viaja.
-            Log.d(TAG_RED, "JWT agregado a " + original.method() + " "
-                    + original.url().encodedPath());
+            // Solo en debug: confirma en Logcat que el token viaja, sin mostrarlo.
+            if (BuildConfig.DEBUG) Log.d(TAG_RED, "JWT agregado a " + original.method()
+                    + " " + original.url().encodedPath());
             return cadena.proceed(conToken);
         };
     }
