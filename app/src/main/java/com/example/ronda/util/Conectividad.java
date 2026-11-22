@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -35,6 +36,16 @@ public class Conectividad {
     private final ConnectivityManager gestor;
     private final MutableLiveData<Boolean> estado = new MutableLiveData<>();
 
+    /**
+     * Lo que observan las pantallas. El sistema avisa cada vez que cambia
+     * algo de la red (por ejemplo la señal), aunque siga habiendo internet, y
+     * LiveData entrega cada aviso aunque traiga el mismo valor. Sin este
+     * filtro la pantalla lo tomaba como "volvió la conexión" y, si el servidor
+     * no respondía, recargaba cada pocos segundos sin parar.
+     * distinctUntilChanged deja pasar solo los cambios de verdad.
+     */
+    private final LiveData<Boolean> cambios = Transformations.distinctUntilChanged(estado);
+
     @Inject
     public Conectividad(@ApplicationContext Context contexto) {
         gestor = (ConnectivityManager) contexto.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -56,11 +67,11 @@ public class Conectividad {
     }
 
     /**
-     * Cambia solo cuando el sistema avisa que apareció o se fue una red.
+     * Avisa solo cuando cambia: cuando se va internet y cuando vuelve.
      * Vale la pena observarlo en vez de preguntar cada dos segundos.
      */
     public LiveData<Boolean> getEstado() {
-        return estado;
+        return cambios;
     }
 
     /**
