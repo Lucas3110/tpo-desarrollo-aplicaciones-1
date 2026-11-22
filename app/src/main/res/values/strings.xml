@@ -349,6 +349,8 @@
     <string name="canal_avisos_descripcion">Te avisa cuando te preguntan o te responden, y cuando una oferta tuya o en tus publicaciones cambia.</string>
     <string name="canal_conexion_nombre">Conexión con Ronda</string>
     <string name="canal_conexion_descripcion">Notificación fija mientras Ronda espera novedades en segundo plano.</string>
+    <string name="avisos_conexion_titulo">Ronda está conectada</string>
+    <string name="avisos_conexion_texto">Te avisamos cuando haya preguntas u ofertas nuevas.</string>
     <string name="detalle_descripcion">Descripción</string>
     <string name="detalle_info_vendedor">Información del vendedor</string>
     <string name="detalle_ver_perfil">Ver perfil público</string>
