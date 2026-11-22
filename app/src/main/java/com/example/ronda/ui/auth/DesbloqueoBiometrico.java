@@ -88,14 +88,19 @@ public final class DesbloqueoBiometrico {
                     }
 
                     @Override
+                    public void onAuthenticationFailed() {
+                        // La huella no coincide, pero el cartel sigue abierto para
+                        // reintentar y el sistema ya muestra el aviso: no hay nada
+                        // que hacer. Si falla muchas veces, el sistema corta el
+                        // intento y llega onAuthenticationError.
+                    }
+
+                    @Override
                     public void onAuthenticationError(int codigo,
                                                       @NonNull CharSequence mensaje) {
                         // Cancelar, tocar el boton negativo o un error del sistema.
                         callback.onCancelado();
                     }
-
-                    // onAuthenticationFailed (una huella que no coincide) deja el
-                    // prompt abierto para reintentar, asi que no hacemos nada.
                 });
 
         prompt.authenticate(info);

@@ -202,7 +202,7 @@ public class LoginFragment extends Fragment {
 
         mostrarCargando(true);
 
-        authApi.me(sesion.getBearer())
+        authApi.me()
                 .enqueue(new Callback<PerfilResponse>() {
 
                     @Override

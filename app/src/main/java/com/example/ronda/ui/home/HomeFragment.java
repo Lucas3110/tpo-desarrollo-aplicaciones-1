@@ -914,7 +914,7 @@ public class HomeFragment extends Fragment {
             return;
         }
         final Integer zonaAntes = sesion.getZonaId();
-        authApi.me(sesion.getBearer()).enqueue(new Callback<PerfilResponse>() {
+        authApi.me().enqueue(new Callback<PerfilResponse>() {
             @Override
             public void onResponse(@NonNull Call<PerfilResponse> call,
                                    @NonNull Response<PerfilResponse> response) {
