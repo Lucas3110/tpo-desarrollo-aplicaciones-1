@@ -3,13 +3,15 @@ package com.example.ronda.data.model;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Forma unica de los errores de la API:
+ * Forma única de los errores de la API:
  *
- *   { "error": { "codigo": "OTP_EXPIRADO", "mensaje": "El codigo vencio..." } }
+ *   { "error": { "codigo": "OTP_EXPIRADO", "mensaje": "El código venció..." } }
  *
- * Importante: la UI decide que mostrar segun el "codigo", que es estable.
- * El "mensaje" es texto que puede cambiar, sirve para mostrarlo tal cual
- * cuando no necesitamos un tratamiento especial.
+ * Importante: la app decide qué hacer según el "codigo", que es estable.
+ * El "mensaje" es texto que puede cambiar: sirve para mostrarlo tal cual
+ * cuando no hace falta un tratamiento especial.
+ *
+ * La lee ApiErrorParser.
  */
 public class ErrorResponse {
 
@@ -20,6 +22,7 @@ public class ErrorResponse {
         return error;
     }
 
+    /** Lo que viene adentro de "error". Es una clase dentro de otra (static). */
     public static class Detalle {
 
         @SerializedName("codigo")

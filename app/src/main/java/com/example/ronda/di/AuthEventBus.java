@@ -7,16 +7,19 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
- * Avisa que la sesión se murió.
+ * Avisa que la sesión venció (Punto 1).
  *
  * El problema que resuelve: el interceptor de OkHttp es el primero en
- * enterarse de que el backend devolvió 401 (token vencido o revocado), pero
- * corre en un hilo de red y no tiene forma de tocar la UI ni de navegar. La
- * Activity sí puede navegar, pero no se entera de lo que pasa en la red.
+ * enterarse de que el backend devolvió 401 (token vencido o inválido), pero
+ * corre en un hilo de red y no puede tocar la UI ni navegar. La Activity sí
+ * puede navegar, pero no se entera de lo que pasa en la red.
  *
- * Este singleton los conecta: el interceptor emite, la MainActivity observa y
- * manda al login. Con Hilt los dos reciben LA MISMA instancia sin tener que
- * pasársela de mano en mano.
+ * Esta clase los conecta: el interceptor emite, la MainActivity observa y
+ * manda al login. Como es @Singleton, Hilt les da a los dos LA MISMA
+ * instancia sin tener que pasársela de mano en mano.
+ *
+ * El aviso viaja en un LiveData: un valor que se puede observar. Quien lo
+ * observa se entera cada vez que cambia.
  *
  * Importa para el Punto 1: si la sesión nunca venciera, pedir la huella al
  * abrir la app sería puramente decorativo.
@@ -24,13 +27,19 @@ import javax.inject.Singleton;
 @Singleton
 public class AuthEventBus {
 
+    /**
+     * Por dentro es Mutable (acá se cambia el valor). Hacia afuera se entrega
+     * como LiveData, que solo se puede observar.
+     */
     private final MutableLiveData<Boolean> sesionExpirada = new MutableLiveData<>();
 
+    /** Con @Inject en el constructor, Hilt sabe crearla sola, sin módulo. */
     @Inject
     public AuthEventBus() {
         // Hilt lo construye.
     }
 
+    /** Lo que observa MainActivity. */
     public LiveData<Boolean> getSesionExpirada() {
         return sesionExpirada;
     }
@@ -45,9 +54,9 @@ public class AuthEventBus {
     }
 
     /**
-     * Se llama después de navegar al login. Sin esto, el LiveData conserva el
-     * último valor y se lo vuelve a entregar al próximo observador — con lo
-     * cual la app te patea al login apenas volvés a entrar.
+     * Lo llama MainActivity apenas recibe el aviso. Sin esto, el LiveData
+     * conserva el último valor y se lo vuelve a entregar al próximo
+     * observador, con lo cual la app te patea al login apenas volvés a entrar.
      */
     public void limpiar() {
         sesionExpirada.postValue(false);

@@ -1,6 +1,6 @@
 package com.example.ronda.data.model;
 
-/** Cuerpo de POST /api/auth/registro. */
+/** Cuerpo de POST /api/auth/registro: email, contraseña y nombre. */
 public class RegistroRequest {
 
     private final String email;

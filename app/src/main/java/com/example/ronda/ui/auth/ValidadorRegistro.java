@@ -5,23 +5,29 @@ import androidx.annotation.StringRes;
 import com.example.ronda.R;
 
 /**
- * Validaciones locales del formulario de alta.
+ * Validaciones locales de los formularios (nombre, email, contraseña y
+ * teléfono).
  *
- * Estan aca, y no sueltas en el Fragment, por dos motivos: se pueden leer de
- * un vistazo junto a las reglas del backend, y se reusan si manana otra
- * pantalla pide los mismos datos (por ejemplo el "editar perfil" del Punto 2).
+ * Están acá, y no sueltas en el Fragment, por dos motivos: se pueden leer de
+ * un vistazo junto a las reglas del backend, y se reusan en otras pantallas
+ * que piden los mismos datos (el login usa validarEmail y Mi perfil usa
+ * validarTelefono).
  *
- * OJO: esto NO reemplaza la validacion del servidor. Sirve para dar una
+ * OJO: esto NO reemplaza la validación del servidor. Sirve para dar una
  * respuesta inmediata y ahorrar un viaje a la red, pero cualquiera puede
- * saltearse la app y pegarle a la API con Postman. Los mismos limites estan
+ * saltearse la app y pegarle a la API con Postman. Los mismos límites están
  * repetidos en src/services/authService.js del backend.
+ *
+ * Es final y con el constructor privado: solo tiene métodos static, que se
+ * usan como ValidadorRegistro.validarEmail(...).
  */
 public final class ValidadorRegistro {
 
+    // Límites de cada campo. Son los mismos que usa el backend.
     public static final int NOMBRE_MAX = 30;
     public static final int PASSWORD_MIN = 6;
     public static final int PASSWORD_MAX = 40;
-    /** Mismo limite que TELEFONO_MAX en src/services/usuarioService.js. */
+    /** Mismo límite que TELEFONO_MAX en src/services/usuarioService.js. */
     public static final int TELEFONO_MAX = 30;
 
     private ValidadorRegistro() {
@@ -29,10 +35,11 @@ public final class ValidadorRegistro {
     }
 
     /**
-     * Resultado de validar un campo: o esta bien, o trae el id del texto de
-     * error que hay que mostrar.
+     * Resultado de validar un campo: o está bien, o trae el id del texto de
+     * error que hay que mostrar (un R.string.*).
      */
     public static class Resultado {
+        /** null si el campo está bien. */
         private final Integer mensajeError;
 
         private Resultado(Integer mensajeError) {
@@ -58,8 +65,8 @@ public final class ValidadorRegistro {
     }
 
     /**
-     * El nombre es obligatorio: el perfil publico del Punto 2 y las
-     * publicaciones necesitan mostrar de quien son.
+     * El nombre es obligatorio: el perfil público y las publicaciones
+     * necesitan mostrar de quién son.
      */
     public static Resultado validarNombre(String nombre) {
         String limpio = nombre == null ? "" : nombre.trim();
@@ -75,14 +82,15 @@ public final class ValidadorRegistro {
                 return Resultado.invalido(R.string.error_nombre_con_numeros);
             }
         }
-        // Letras de cualquier idioma (con acentos y enie), espacios,
-        // apostrofos y guiones. Tiene que empezar con una letra.
+        // Letras de cualquier idioma (con acentos y eñe), espacios,
+        // apóstrofos y guiones. Tiene que empezar con una letra.
         if (!limpio.matches("^\\p{L}[\\p{L} '’-]*$")) {
             return Resultado.invalido(R.string.error_nombre_invalido);
         }
         return Resultado.valido();
     }
 
+    /** El email no puede estar vacío y tiene que tener forma de email. */
     public static Resultado validarEmail(String email) {
         String limpio = email == null ? "" : email.trim();
 
@@ -96,6 +104,7 @@ public final class ValidadorRegistro {
         return Resultado.valido();
     }
 
+    /** La contraseña tiene que tener entre 6 y 40 caracteres. */
     public static Resultado validarPassword(String password) {
         String valor = password == null ? "" : password;
 
@@ -109,9 +118,9 @@ public final class ValidadorRegistro {
     }
 
     /**
-     * Telefono de contacto del Punto 2. Es opcional: vacio es valido (el
-     * backend lo guarda como NULL). Si viene, mismo criterio que
-     * src/services/usuarioService.js: numeros, espacios, guiones, parentesis
+     * Teléfono de contacto (lo usa Mi perfil). Es opcional: vacío es válido
+     * (el backend lo guarda como NULL). Si viene, mismo criterio que
+     * src/services/usuarioService.js: números, espacios, guiones, paréntesis
      * y un "+" inicial, con al menos 6 caracteres.
      */
     public static Resultado validarTelefono(String telefono) {

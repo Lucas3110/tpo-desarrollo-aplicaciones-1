@@ -54,6 +54,7 @@ public class DetallePublicacionFragment extends Fragment {
     @Inject
     CachePublicaciones cache;
 
+    /** Punto 6: para frenar las acciones que necesitan red y saber cuando vuelve. */
     @Inject
     Conectividad conectividad;
 
@@ -100,6 +101,7 @@ public class DetallePublicacionFragment extends Fragment {
 
         progressBar = view.findViewById(R.id.progressBar);
         tvSinConexionDetalle = view.findViewById(R.id.tvSinConexionDetalle);
+        // Punto 6: desde aca la pantalla se entera cuando se va o vuelve internet.
         observarConexion();
         scrollView = view.findViewById(R.id.scrollView);
         
@@ -224,8 +226,9 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     /**
-     * "Las acciones que requieren conexion quedan deshabilitadas mientras no
-     * haya conectividad, mostrando un mensaje claro."
+     * Punto 6: las acciones que necesitan red (preguntar, ofertar, favoritos,
+     * gestionar, como llegar, escanear) no se hacen sin conexion, y se avisa
+     * con un mensaje claro. Devuelve true si se puede seguir.
      *
      * Se chequea al tocar y no al dibujar la pantalla a proposito: la
      * conexion puede irse en cualquier momento, y un boton que se ve
@@ -239,8 +242,9 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     /**
-     * Cuando vuelve la conexion se recarga el detalle solo, para que deje de
-     * verse la copia guardada y pase a verse la de verdad.
+     * Punto 6: cuando vuelve la conexion se recarga el detalle solo, para que
+     * deje de verse la copia guardada y pase a verse la de verdad. Sin red,
+     * apaga los botones y muestra la banda.
      */
     private void observarConexion() {
         conectividad.getEstado().observe(getViewLifecycleOwner(), hayInternet -> {
@@ -268,7 +272,7 @@ public class DetallePublicacionFragment extends Fragment {
      * Los botones que necesitan red se ven apagados mientras no la hay.
      *
      * Siguen respondiendo al toque a proposito: asi se puede explicar por que
-     * no se puede, que es la otra mitad de lo que pide el enunciado. Un boton
+     * no se puede, con el mensaje de hayConexionParaActuar(). Un boton
      * que directamente no reacciona deja a la persona sin saber si la app se
      * colgo o si le falta conexion.
      */
@@ -283,6 +287,10 @@ public class DetallePublicacionFragment extends Fragment {
         cargarDetallePublicacion(false);
     }
 
+    /**
+     * Cada vez que la pantalla vuelve a primer plano se pide el detalle al
+     * servidor. Sin red, el onFailure muestra la copia guardada (Punto 6).
+     */
     @Override public void onResume() {
         super.onResume();
         if (publicacionId != -1) cargarDetallePublicacion();

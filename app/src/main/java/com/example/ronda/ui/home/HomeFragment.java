@@ -100,6 +100,7 @@ public class HomeFragment extends Fragment {
     @Inject
     CachePublicaciones cache;
 
+    /** Punto 6: si hay internet ahora, y el aviso de cuando se va o vuelve. */
     @Inject
     Conectividad conectividad;
 
@@ -216,6 +217,7 @@ public class HomeFragment extends Fragment {
         grupoError = view.findViewById(R.id.grupoError);
         tvContador = view.findViewById(R.id.tvContador);
         tvSinConexion = view.findViewById(R.id.tvSinConexion);
+        // Punto 6: desde aca la pantalla se entera cuando se va o vuelve internet.
         observarConexion();
         tvError = view.findViewById(R.id.tvError);
         tvUrlBase = view.findViewById(R.id.tvUrlBase);
@@ -254,15 +256,16 @@ public class HomeFragment extends Fragment {
                         Navigation.findNavController(requireView()).navigate(R.id.action_home_to_auth);
                         return;
                     }
-                    // Guardar en favoritos es una de las acciones que el punto 6
-                    // pide frenar sin conexion: sin esto el corazon se pintaba
-                    // y un segundo despues se despintaba solo.
+                    // Punto 6: guardar en favoritos necesita el servidor, asi
+                    // que sin conexion se frena aca con un aviso. Sin esto el
+                    // corazon se pintaba y un segundo despues se despintaba solo.
                     if (!conectividad.hayInternet()) {
                         Toast.makeText(requireContext(), R.string.sin_conexion_accion,
                                 Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    // Optimistic toggle
+                    // Se pinta el corazon antes de que conteste el servidor; si
+                    // el pedido falla, se vuelve a como estaba.
                     boolean eraFavorito = item.isFavorito();
                     item.setEsFavorito(!eraFavorito);
                     adapter.notifyDataSetChanged();
@@ -325,8 +328,8 @@ public class HomeFragment extends Fragment {
         btnMiPerfil.setOnClickListener(v ->
                 Navigation.findNavController(requireView()).navigate(R.id.action_home_to_perfil));
         btnPublicar.setOnClickListener(v -> {
-            // Publicar es otra de las acciones que necesitan servidor: mejor
-            // avisarlo antes de que la persona complete los tres pasos.
+            // Punto 6: publicar es otra de las acciones que necesitan servidor,
+            // mejor avisarlo antes de que la persona complete los tres pasos.
             if (!conectividad.hayInternet()) {
                 Toast.makeText(requireContext(), R.string.sin_conexion_accion,
                         Toast.LENGTH_SHORT).show();
@@ -1049,9 +1052,9 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * La banda de aviso de arriba. Antes decia a que hora se habia guardado
-     * cada cosa; se saco porque es un detalle de implementacion que al que
-     * usa la app no le dice nada. Alcanza con avisar que no hay conexion.
+     * La banda de aviso de arriba: "Sin conexion, la informacion puede no
+     * estar actualizada". No muestra la hora de cada dato: a quien usa la app
+     * le alcanza con saber que no hay conexion.
      */
     private void mostrarAvisoSinConexion() {
         if (tvSinConexion == null) return;
@@ -1064,16 +1067,19 @@ public class HomeFragment extends Fragment {
     }
 
     /**
-     * Las dos mitades del enunciado sobre conectividad:
+     * Punto 6, las dos partes de la conectividad en el Home:
      *
      *   - mientras no hay red, el Home avisa que lo que se ve puede estar
      *     desactualizado;
-     *   - "al recuperar la conexion, la app actualiza automaticamente la
-     *     informacion guardada con los datos mas recientes del servidor".
+     *   - cuando vuelve la conexion, se recarga solo con los datos nuevos
+     *     del servidor.
      *
      * Se observa el LiveData en vez de preguntar cada dos segundos: el
      * sistema avisa cuando cambia. Al volver la red solo recarga si el aviso
      * estaba a la vista; si ya habia datos frescos no hay nada que rehacer.
+     *
+     * Con getViewLifecycleOwner() se observa mientras exista la vista: cuando
+     * se destruye, deja de observar solo.
      */
     private void observarConexion() {
         conectividad.getEstado().observe(getViewLifecycleOwner(), hayInternet -> {
@@ -1081,16 +1087,18 @@ public class HomeFragment extends Fragment {
             atenuarBusquedaSinConexion(Boolean.TRUE.equals(hayInternet));
 
             if (!Boolean.TRUE.equals(hayInternet)) {
-                // El enunciado pide avisar cuando se explora el Home sin
-                // conexion, no solamente cuando falla un pedido. Si la red se
-                // cae con la lista ya cargada no hay ningun request que falle,
-                // asi que sin esto no se enteraba nadie.
+                // Hay que avisar cuando se explora el Home sin conexion, no
+                // solamente cuando falla un pedido. Si la red se cae con la
+                // lista ya cargada no hay ningun request que falle, asi que
+                // sin esto no se enteraba nadie.
                 if (!items.isEmpty()) mostrarAvisoSinConexion();
                 // Sin red no tiene sentido que el scroll siga pidiendo paginas.
                 hayMas = false;
                 return;
             }
 
+            // Volvio internet. Si la banda no estaba a la vista, lo que se ve
+            // ya es del servidor y no hay nada que recargar.
             if (tvSinConexion == null || tvSinConexion.getVisibility() != View.VISIBLE) return;
 
             Toast.makeText(requireContext(), R.string.sin_conexion_volvio, Toast.LENGTH_SHORT).show();

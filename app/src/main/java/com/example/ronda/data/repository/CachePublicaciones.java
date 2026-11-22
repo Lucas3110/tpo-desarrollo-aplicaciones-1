@@ -18,21 +18,30 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
- * Guarda y recupera publicaciones del celular (Punto 6).
+ * Guarda y recupera publicaciones del celular (Punto 6). Es lo que usan las
+ * pantallas: al DAO no lo toca nadie más.
  *
  * Está entre las pantallas y el DAO por tres motivos:
  *
  *   1. Room no deja tocar la base desde el hilo principal. Acá vive el
  *      ExecutorService, así que ningún Fragment tiene que acordarse.
  *   2. Traduce entre el JSON guardado y los objetos que la app ya sabe
- *      dibujar.
+ *      dibujar (con Gson).
  *   3. Devuelve los resultados en el hilo principal, que es donde los
  *      necesita la UI.
  *
  * Nada de esto es crítico: si falla la caché, la app sigue andando con los
- * datos de la red. Por eso los errores se tragan en vez de propagarse — un
+ * datos de la red. Por eso los errores se ignoran en vez de propagarse: un
  * problema guardando una copia local no puede romper una pantalla que ya
  * tiene los datos buenos.
+ *
+ * Dónde está cada cosa:
+ *   guardarListado   lo llama el Home con cada página que llega bien
+ *   guardarDetalle   lo llama el detalle al abrir una publicación
+ *   ultimasVistas    el Home sin conexión
+ *   detalleGuardado  el detalle sin conexión
+ *   limpiar          al cerrar sesión o cuando vence
+ *   responder        vuelve al hilo principal con un Handler
  */
 @Singleton
 public class CachePublicaciones {
@@ -42,6 +51,7 @@ public class CachePublicaciones {
 
     private final AppDatabase base;
     private final PublicacionCacheadaDao dao;
+    /** Pasa objetos a JSON (toJson) y JSON a objetos (fromJson). */
     private final Gson gson = new Gson();
 
     /**
@@ -51,13 +61,14 @@ public class CachePublicaciones {
      */
     private final ExecutorService hilo = Executors.newSingleThreadExecutor();
 
+    /** Hilt la construye y le pasa la base y el DAO (los arma StorageModule). */
     @Inject
     public CachePublicaciones(AppDatabase base, PublicacionCacheadaDao dao) {
         this.base = base;
         this.dao = dao;
     }
 
-    /** Lo que necesita la pantalla cuando lee sin conexión. */
+    /** Lo que necesita el Home cuando lee sin conexión. */
     public static class Instantanea {
         public final List<PublicacionItemResponse> items;
         /** Milisegundos del guardado más reciente. 0 si la caché está vacía. */
@@ -84,6 +95,11 @@ public class CachePublicaciones {
         }
     }
 
+    /**
+     * Cómo se devuelve lo leído. Leer la base tarda y no se puede esperar en
+     * el hilo principal, así que quien pide pasa este callback y el resultado
+     * le llega después.
+     */
     public interface Respuesta<T> {
         void listo(@Nullable T resultado);
     }
@@ -93,16 +109,19 @@ public class CachePublicaciones {
     // -----------------------------------------------------------------
 
     /**
-     * Se llama cada vez que el Home trae una pagina con exito.
+     * Se llama cada vez que el Home trae una página con éxito.
      *
      * lote identifica la carga completa: es el mismo valor para todas las
-     * paginas de un mismo scroll, asi la segunda no se adelanta a la primera.
-     * desde es el indice absoluto del primer item de esta pagina.
+     * páginas de un mismo scroll, así la segunda no se adelanta a la primera.
+     * desde es el índice absoluto del primer item de esta página.
      */
     public void guardarListado(List<PublicacionItemResponse> items, long lote, int desde) {
         if (items == null || items.isEmpty()) return;
 
+        // Copia de la lista, porque el Home la puede seguir cambiando mientras
+        // el hilo de fondo la guarda.
         final List<PublicacionItemResponse> copia = new ArrayList<>(items);
+        // execute manda este bloque al hilo de fondo.
         hilo.execute(() -> {
             try {
                 final long ahora = System.currentTimeMillis();
@@ -114,6 +133,7 @@ public class CachePublicaciones {
                         dao.guardarListado(item.getId(), gson.toJson(item), ahora,
                                 lote, desde + i);
                     }
+                    // Se borra lo que sobra para no pasar de 60.
                     dao.podar(MAXIMO);
                 });
             } catch (Exception e) {
@@ -141,14 +161,15 @@ public class CachePublicaciones {
     // -----------------------------------------------------------------
 
     /**
-     * Las últimas publicaciones que se cargaron bien, para el Home offline.
-     * El callback llega en el hilo principal.
+     * Las últimas publicaciones que se cargaron bien, para el Home sin
+     * conexión. El callback llega en el hilo principal.
      */
     public void ultimasVistas(Respuesta<Instantanea> respuesta) {
         hilo.execute(() -> {
             List<PublicacionItemResponse> items = new ArrayList<>();
             long guardado = 0L;
             try {
+                // Cada fila guarda el JSON: se vuelve a convertir en objeto.
                 for (PublicacionCacheada fila : dao.ultimasVistas(MAXIMO)) {
                     PublicacionItemResponse item =
                             gson.fromJson(fila.jsonListado, PublicacionItemResponse.class);
@@ -166,7 +187,7 @@ public class CachePublicaciones {
     /**
      * El detalle guardado de una publicación, o null si nunca se abrió.
      *
-     * Una fila que sólo vino del listado no tiene descripción ni galería;
+     * Una fila que solo vino del listado no tiene descripción ni galería;
      * mostrarla como si fuera el detalle completo sería peor que avisar que
      * no hay nada guardado.
      */
@@ -187,7 +208,10 @@ public class CachePublicaciones {
         });
     }
 
-    /** Al cerrar sesión: lo visto es de esa persona, no del dispositivo. */
+    /**
+     * Borra todo. Lo llaman el Home al cerrar sesión y MainActivity cuando la
+     * sesión vence: lo visto es de esa persona, no del dispositivo.
+     */
     public void limpiar() {
         hilo.execute(() -> {
             try {
@@ -203,10 +227,11 @@ public class CachePublicaciones {
      *
      * Sin esto, quien llame tendría que acordarse de hacer el salto de hilo
      * antes de tocar una vista, y alcanza con olvidarse una vez para que la
-     * app crashee con CalledFromWrongThreadException.
+     * app se cierre con CalledFromWrongThreadException.
      *
      * Hace lo mismo que runOnUiThread, pero runOnUiThread es un método de
-     * Activity y esta clase no es una.
+     * Activity y esta clase no es una. El Handler con el Looper principal
+     * deja el bloque en la cola del hilo principal.
      */
     private <T> void responder(Respuesta<T> respuesta, @Nullable T valor) {
         new android.os.Handler(android.os.Looper.getMainLooper())
