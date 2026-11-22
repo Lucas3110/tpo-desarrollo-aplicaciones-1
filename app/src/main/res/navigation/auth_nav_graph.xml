@@ -35,6 +35,13 @@
         android:label="Crear cuenta"
         tools:layout="@layout/fragment_registro">
 
+        <!-- Opcional: el login lo pasa cuando se pidio un codigo con un email
+             sin cuenta, para no tener que escribirlo de nuevo. -->
+        <argument
+            android:name="email"
+            app:argType="string"
+            android:defaultValue="" />
+
         <action
             android:id="@+id/action_registro_to_otp"
             app:destination="@id/otpFragment" />

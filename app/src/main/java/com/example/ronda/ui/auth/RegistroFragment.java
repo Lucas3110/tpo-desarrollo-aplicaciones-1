@@ -72,6 +72,14 @@ public class RegistroFragment extends Fragment {
         btnRegistrarme.setOnClickListener(v -> registrar(view));
         tvYaTengoCuenta.setOnClickListener(v ->
                 Navigation.findNavController(view).popBackStack());
+
+        // Si viene del login (se pidio un codigo con un email que no tiene
+        // cuenta), el email ya llega escrito.
+        String emailSugerido = getArguments() != null
+                ? getArguments().getString("email", "") : "";
+        if (!emailSugerido.isEmpty()) {
+            etEmail.setText(emailSugerido);
+        }
     }
 
     private void registrar(View view) {

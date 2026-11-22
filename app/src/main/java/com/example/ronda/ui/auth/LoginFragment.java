@@ -305,8 +305,15 @@ public class LoginFragment extends Fragment {
                         if (response.isSuccessful() || response.code() == 429) {
                             irAVerificarCodigo(view, email, "LOGIN");
                         } else {
+                            // Una sola lectura del cuerpo: leerlo dos veces
+                            // devuelve null y se pierde el codigo del error.
+                            ErrorResponse.Detalle error = ApiErrorParser.parse(response);
+                            if ("USUARIO_NO_ENCONTRADO".equals(ApiErrorParser.codigo(error))) {
+                                ofrecerRegistro(view, email);
+                                return;
+                            }
                             Toast.makeText(requireContext(),
-                                    ApiErrorParser.mensaje(ApiErrorParser.parse(response),
+                                    ApiErrorParser.mensaje(error,
                                             getString(R.string.error_reenvio_generico)),
                                     Toast.LENGTH_LONG).show();
                         }
@@ -321,6 +328,30 @@ public class LoginFragment extends Fragment {
                                   R.string.error_sin_conexion, Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    /**
+     * Se pidio un codigo para un email que no tiene cuenta: en vez de quedarse
+     * en el error, se le ofrece registrarse.
+     *
+     * Solo pasa con el codigo: con contrasena el backend responde lo mismo
+     * que con una contrasena mal escrita, para no revelar que mails tienen
+     * cuenta. Con el codigo avisa USUARIO_NO_ENCONTRADO, y ahi se ofrece crear
+     * la cuenta con el email ya escrito.
+     */
+    private void ofrecerRegistro(View view, String email) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.login_sin_cuenta_titulo)
+                .setMessage(getString(R.string.login_sin_cuenta_mensaje, email))
+                .setPositiveButton(R.string.login_sin_cuenta_crear, (d, cual) -> {
+                    if (!estaVivo()) return;
+                    Bundle args = new Bundle();
+                    args.putString("email", email);
+                    Navigation.findNavController(view)
+                            .navigate(R.id.action_login_to_registro, args);
+                })
+                .setNegativeButton(R.string.login_sin_cuenta_cancelar, null)
+                .show();
     }
 
     // -----------------------------------------------------------------
