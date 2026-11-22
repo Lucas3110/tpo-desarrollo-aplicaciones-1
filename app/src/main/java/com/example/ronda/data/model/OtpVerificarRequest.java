@@ -1,6 +1,9 @@
 package com.example.ronda.data.model;
 
-/** Cuerpo de POST /api/auth/otp/verificar. */
+/**
+ * Cuerpo de POST /api/auth/otp/verificar: el email, el código de 6 dígitos
+ * y para qué es (REGISTRO o LOGIN).
+ */
 public class OtpVerificarRequest {
 
     private final String email;

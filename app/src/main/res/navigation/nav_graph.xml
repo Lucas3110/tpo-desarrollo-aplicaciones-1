@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Graph raiz. No define pantallas: solo incluye los dos sub-graphs.
-  La app arranca en el de autenticacion.
+  Grafo raíz. No define pantallas: solo incluye los dos sub-grafos, el de
+  autenticación (Punto 1) y el del Home (el resto de la app).
+  La app arranca en el de autenticación (startDestination).
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

@@ -26,15 +26,17 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * Le enseña a Hilt cómo construir las dependencias de red.
+ * Módulo de Hilt para la red: le enseña a Hilt cómo construir OkHttp,
+ * Retrofit y las interfaces de la API.
  *
- * Reemplaza al singleton manual que era RetrofitClient: en vez de que cada
- * pantalla pida la instancia con getInstance(), Hilt la crea una sola vez y
- * se la inyecta a quien la declare con @Inject.
+ * Hace falta un módulo porque esas clases no son nuestras y no se les puede
+ * poner @Inject en el constructor. Cada método con @Provides es una receta:
+ * Hilt la ejecuta y le da el resultado a quien lo pida con @Inject. Así
+ * ninguna pantalla arma su propio Retrofit ni lo busca con getInstance().
  *
- * @InstallIn(SingletonComponent.class) + @Singleton = una única instancia que
- * vive lo que vive la app. Aunque dos hilos la pidan a la vez no se crean
- * dos: el código que genera Hilt para @Singleton usa synchronized.
+ * Con @InstallIn(SingletonComponent.class) y @Singleton queda una única
+ * instancia que vive lo que vive la app. Aunque dos hilos la pidan a la vez
+ * no se crean dos: el código que genera Hilt para @Singleton usa synchronized.
  */
 @Module
 @InstallIn(SingletonComponent.class)
@@ -44,42 +46,41 @@ public class NetworkModule {
     private static final String TAG_RED = "RondaRed";
 
     /**
-     * Direccion del backend, inyectada en tiempo de compilacion desde
-     * app/build.gradle.kts.
+     * Dirección del backend. Sale de app/build.gradle.kts al compilar
+     * (BuildConfig.BASE_URL).
      *
      * Por defecto es http://10.0.2.2:3000/ (el alias con el que el emulador
-     * ve el localhost de la PC). Para probar en un celular fisico, cada uno
-     * pone la IP de SU maquina en local.properties:
+     * ve el localhost de la PC). Para probar en un celular físico, cada uno
+     * pone la IP de SU máquina en local.properties:
      *
      *     ronda.baseUrl=http://192.168.0.153:3000/
      *
-     * local.properties no se commitea, asi que nadie le rompe la
-     * configuracion a los demas. Antes esto eran dos constantes en este
-     * archivo mas una heuristica que miraba Build.FINGERPRINT para adivinar
-     * si estabamos en un emulador; se saco porque la IP hardcodeada terminaba
-     * commiteada y rompiendole el entorno al resto.
+     * local.properties no se sube al repositorio, así que nadie le cambia la
+     * configuración a los demás.
      */
     private static final String BASE_URL = BuildConfig.BASE_URL;
 
-    /** Cuanto se espera al servidor antes de dar la request por fallida. */
+    /** Cuánto se espera al servidor antes de dar el pedido por fallido. */
     private static final long TIMEOUT_SEGUNDOS = 15;
 
     /**
-     * Retrofit usa OkHttp por debajo. Se configura el cliente a mano por tres
-     * motivos:
+     * El cliente HTTP. Retrofit usa OkHttp por debajo, y se configura a mano
+     * por tres motivos:
      *
-     * 1. Los timeouts (apunte "API REST y Retrofit", consideracion 3): si el
-     *    celular apunta a una IP que no responde, la app espera 15 s y cae en
-     *    onFailure con un IOException, en vez del default de 10 s.
+     * 1. Los timeouts: si el celular apunta a una IP que no responde, la app
+     *    espera 15 s y cae en onFailure con un IOException, en vez del default
+     *    de 10 s.
      *
-     * 2. El interceptor del JWT, que le pone la cabecera Authorization a cada
-     *    request.
+     * 2. El interceptor del JWT, que le pone el header Authorization a cada
+     *    pedido.
      *
-     * 3. El interceptor de sesion vencida (Punto 1), que reacciona al 401.
+     * 3. El interceptor de sesión vencida (Punto 1), que reacciona al 401.
      *
-     * El orden importa: primero se pone el token y despues se mira la
-     * respuesta. Los interceptores corren en el orden en que se agregan para
-     * la ida, y al reves para la vuelta.
+     * El orden importa: primero se pone el token y después se mira la
+     * respuesta. Los interceptores corren en el orden en que se agregan a la
+     * ida, y al revés a la vuelta.
+     *
+     * Los parámetros (sesion y eventos) también los pasa Hilt.
      */
     @Provides
     @Singleton
@@ -94,15 +95,17 @@ public class NetworkModule {
     }
 
     /**
-     * Antes de enviar cada request lee el token guardado en SessionRepository
-     * (nuestro "TokenManager") y, si hay sesion, agrega sola la cabecera
-     * Authorization. Asi las interfaces nuevas no tienen que recibir el bearer
-     * a mano en cada metodo.
+     * Un interceptor es código que OkHttp corre en cada pedido. "cadena" es la
+     * cadena de interceptores: cadena.request() es el pedido y
+     * cadena.proceed() lo manda y devuelve la respuesta.
      *
-     * Si una request ya trae la cabecera (algunas interfaces de los Puntos 2
-     * en adelante la pasan con @Header), se respeta tal cual: nunca se manda
-     * dos veces. Las del Punto 1 ya no la pasan: la pone siempre este
-     * interceptor.
+     * Este lee el token guardado en SessionRepository (nuestro "TokenManager")
+     * y, si hay sesión, le agrega solo el header "Authorization: Bearer" con
+     * el token. Así las interfaces de Retrofit no tienen que recibirlo en
+     * cada método.
+     *
+     * Si un pedido ya trae el header (algunas interfaces de otros puntos lo
+     * pasan con @Header), se respeta tal cual: nunca se manda dos veces.
      */
     private static Interceptor interceptorDeJwt(SessionRepository sesion) {
         return cadena -> {
@@ -110,10 +113,11 @@ public class NetworkModule {
             String token = sesion.getToken();
 
             if (token == null || original.header(CABECERA_AUTH) != null) {
-                // Sin sesion (login, registro, OTP) o ya venia puesta.
+                // Sin sesión (login, registro, código) o ya venía puesto.
                 return cadena.proceed(original);
             }
 
+            // Una copia del pedido, con el header agregado.
             Request conToken = original.newBuilder()
                     .header(CABECERA_AUTH, "Bearer " + token)
                     .build();
@@ -126,33 +130,40 @@ public class NetworkModule {
     }
 
     /**
-     * Un 401 del backend significa que el token ya no sirve: vencio (dura 7
-     * dias) o el usuario dejo de existir. Sin esto, la app se quedaria
-     * mostrando errores sueltos en cada pantalla sin entender por que.
+     * Un 401 del backend significa que el token ya no sirve: venció (dura 7
+     * días) o el usuario dejó de existir. Sin esto, la app se quedaría
+     * mostrando errores sueltos en cada pantalla sin entender por qué.
      *
      * Se hace en el interceptor y no en cada Fragment porque el 401 puede
-     * llegar en cualquier request, y repetir el chequeo en los 20 callbacks
-     * de la app seria imposible de mantener.
+     * llegar en cualquier pedido, y repetir el chequeo en los 20 callbacks
+     * de la app sería imposible de mantener.
      *
-     * Esto es lo que le da sentido real al desbloqueo biometrico: la sesion
-     * puede morir, y entonces volver a entrar significa algo.
+     * Esto es lo que le da sentido al desbloqueo biométrico: la sesión puede
+     * vencer, y entonces volver a entrar significa algo.
      */
     private static Interceptor interceptorDeSesionVencida(SessionRepository sesion,
                                                           AuthEventBus eventos) {
         return cadena -> {
+            // Primero deja salir el pedido y espera la respuesta.
             Response respuesta = cadena.proceed(cadena.request());
 
             if (respuesta.code() == 401 && sesion.haySesion()) {
-                // Ojo: sin el chequeo de haySesion, un login con contrasena
-                // incorrecta (que tambien responde 401) dispararia el evento
-                // y patearia a una pantalla de login en la que ya estamos.
+                // Ojo: sin el chequeo de haySesion, un login con contraseña
+                // incorrecta (que también responde 401) dispararía el evento
+                // y patearía a una pantalla de login en la que ya estamos.
                 sesion.cerrarSesion();
+                // MainActivity escucha este aviso y vuelve al login.
                 eventos.emitirSesionExpirada();
             }
             return respuesta;
         };
     }
 
+    /**
+     * Retrofit arma los pedidos HTTP a partir de las interfaces. Usa el OkHttp
+     * de arriba (con los interceptores) y Gson para pasar de JSON a objetos
+     * Java y al revés.
+     */
     @Provides
     @Singleton
     public Retrofit provideRetrofit(OkHttpClient cliente) {
@@ -163,6 +174,10 @@ public class NetworkModule {
                 .build();
     }
 
+    /**
+     * Punto 1. retrofit.create() genera la clase que implementa
+     * AuthApiService: nosotros solo escribimos la interfaz.
+     */
     @Provides
     @Singleton
     public AuthApiService provideAuthApiService(Retrofit retrofit) {
@@ -180,7 +195,7 @@ public class NetworkModule {
         return retrofit.create(PublicacionApiService.class);
     }
 
-    /** Datos personales del Punto 2. Mismo patron que las otras interfaces. */
+    /** Datos personales del Punto 2. Mismo patrón que las otras interfaces. */
     @Provides
     @Singleton
     public UsuarioApiService provideUsuarioApiService(Retrofit retrofit) {
@@ -188,8 +203,8 @@ public class NetworkModule {
     }
 
     /**
-     * Ofertas y negociacion del Punto 7. Es la primera interfaz que no recibe
-     * el token por parametro: se lo pone el interceptor del JWT.
+     * Ofertas y negociación del Punto 7. Tampoco recibe el token por
+     * parámetro: se lo pone el interceptor del JWT.
      */
     @Provides
     @Singleton

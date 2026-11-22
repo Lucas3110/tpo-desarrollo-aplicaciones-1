@@ -5,16 +5,15 @@ import android.app.Application;
 import dagger.hilt.android.HiltAndroidApp;
 
 /**
- * Clase Application de la app.
+ * La Application de RONDA: el primer objeto que crea Android al abrir la app,
+ * antes que cualquier Activity o Fragment.
  *
- * Android siempre crea un objeto Application al arrancar, ANTES que cualquier
- * Activity o Fragment. Hasta ahora usábamos el que trae el sistema por defecto
- * y por eso no existía este archivo.
- *
- * @HiltAndroidApp le dice a Hilt que arranque acá el grafo de dependencias.
- * Tiene que ser en la Application porque es el único punto de entrada
- * garantizado: si el grafo se inicializara en una Activity y hubiera varias,
- * no habría forma de saber cuál corre primero.
+ * La anotación @HiltAndroidApp arranca acá el contenedor de Hilt, que después
+ * arma y reparte las dependencias (Retrofit, SessionRepository, la base de
+ * Room...) a quien las pida con @Inject. Tiene que ser en la Application
+ * porque es el único punto de entrada que siempre corre primero: si el
+ * contenedor arrancara en una Activity y hubiera varias, no habría forma de
+ * saber cuál corre antes.
  *
  * Queda registrada en el AndroidManifest con android:name=".MyApp".
  */

@@ -1,27 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Grafo de navegación del Punto 1: las cuatro pantallas de autenticación
+  (login, registro, código y bienvenida) y las flechas entre ellas.
+
+  Cómo se lee:
+    fragment   una pantalla (android:name es su clase Java)
+    action     una flecha: a qué pantalla se puede ir desde esta
+    argument   un dato que la pantalla recibe al abrirse (por ejemplo, el email)
+    popUpTo    al navegar, saca pantallas de la pila para que "atrás" no vuelva a ellas
+
+  En el código se navega con Navigation.findNavController(view).navigate(R.id.action_...).
+-->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/auth_nav_graph"
     app:startDestination="@id/loginFragment">
 
+    <!-- Login: la primera pantalla del grafo (startDestination). -->
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.example.ronda.ui.auth.LoginFragment"
         android:label="Ingresar"
         tools:layout="@layout/fragment_login">
 
+        <!-- "Crear cuenta", y también el cartel de mail sin cuenta. -->
         <action
             android:id="@+id/action_login_to_registro"
             app:destination="@id/registroFragment" />
 
-        <!-- Login por codigo: mismo OtpFragment, con proposito=LOGIN -->
+        <!-- Login por código: mismo OtpFragment, con proposito=LOGIN -->
         <action
             android:id="@+id/action_login_to_otp"
             app:destination="@id/otpFragment" />
 
-        <!-- Ingreso con contrasena: entra al Home y limpia todo el graph de auth,
-             asi el boton "atras" no vuelve al login. -->
+        <!-- Ingreso con contraseña o auto-login: entra al Home y limpia todo el
+             grafo de auth, así el botón "atrás" no vuelve al login. -->
         <action
             android:id="@+id/action_auth_to_home"
             app:destination="@id/home_nav_graph"
@@ -29,24 +43,27 @@
             app:popUpToInclusive="true" />
     </fragment>
 
+    <!-- Alta de cuenta. -->
     <fragment
         android:id="@+id/registroFragment"
         android:name="com.example.ronda.ui.auth.RegistroFragment"
         android:label="Crear cuenta"
         tools:layout="@layout/fragment_registro">
 
-        <!-- Opcional: el login lo pasa cuando se pidio un codigo con un email
+        <!-- Opcional: el login lo pasa cuando se pidió un código con un email
              sin cuenta, para no tener que escribirlo de nuevo. -->
         <argument
             android:name="email"
             app:argType="string"
             android:defaultValue="" />
 
+        <!-- Cuenta creada: a confirmar el código que llegó al mail. -->
         <action
             android:id="@+id/action_registro_to_otp"
             app:destination="@id/otpFragment" />
     </fragment>
 
+    <!-- Código de verificación: lo usan el registro (REGISTRO) y el login (LOGIN). -->
     <fragment
         android:id="@+id/otpFragment"
         android:name="com.example.ronda.ui.auth.OtpFragment"
@@ -58,19 +75,21 @@
             app:argType="string"
             android:defaultValue="" />
 
+        <!-- Para qué es el código. Si no llega, se asume REGISTRO. -->
         <argument
             android:name="proposito"
             app:argType="string"
             android:defaultValue="REGISTRO" />
 
+        <!-- Ingreso con código: entra al Home y limpia el grafo de auth. -->
         <action
             android:id="@+id/action_otp_to_home"
             app:destination="@id/home_nav_graph"
             app:popUpTo="@id/auth_nav_graph"
             app:popUpToInclusive="true" />
 
-        <!-- Cuenta nueva confirmada (y con sesion): bienvenida y despues el
-             Home. popUpTo saca del historial a registro y otp, asi la
+        <!-- Cuenta nueva confirmada (y con sesión): bienvenida y después el
+             Home. popUpTo saca del historial a registro y otp, así la
              bienvenida queda justo encima del login. -->
         <action
             android:id="@+id/action_otp_to_bienvenida"
@@ -78,6 +97,7 @@
             app:popUpTo="@id/loginFragment" />
     </fragment>
 
+    <!-- Bienvenida de la cuenta nueva: a los 2,6 s entra sola al Home. -->
     <fragment
         android:id="@+id/bienvenidaFragment"
         android:name="com.example.ronda.ui.auth.BienvenidaFragment"
@@ -89,8 +109,8 @@
             app:argType="string"
             android:defaultValue="" />
 
-        <!-- La cuenta nueva ya tiene sesion: entra al Home y limpia todo el
-             graph de auth, igual que action_auth_to_home. -->
+        <!-- La cuenta nueva ya tiene sesión: entra al Home y limpia todo el
+             grafo de auth, igual que action_auth_to_home. -->
         <action
             android:id="@+id/action_bienvenida_to_home"
             app:destination="@id/home_nav_graph"

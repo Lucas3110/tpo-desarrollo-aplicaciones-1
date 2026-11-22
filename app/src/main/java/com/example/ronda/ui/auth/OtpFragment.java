@@ -34,20 +34,27 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Pantalla del codigo de verificacion. Cubre los dos caminos del enunciado
- * segun el argumento "proposito":
- *   REGISTRO -> confirmar la cuenta recien creada
- *   LOGIN    -> ingresar sin contrasena
+ * Pantalla del código de verificación (Punto 1). La usan los dos caminos,
+ * según el argumento "proposito" que llega por el nav graph:
+ *   REGISTRO -> confirmar la cuenta recién creada
+ *   LOGIN    -> ingresar sin contraseña
  *
- * Verificar el codigo devuelve un token en los dos casos, y en los dos se
- * crea la sesion, como pide la consigna ("confirmar y crear sesion"). Lo
- * unico que cambia es a donde va despues: la cuenta nueva pasa por la
- * bienvenida antes del Home.
+ * Verificar el código devuelve un token en los dos casos, y en los dos se
+ * crea la sesión. Lo único que cambia es a dónde va después: la cuenta
+ * nueva pasa por la bienvenida antes del Home.
+ *
+ * Dónde está cada cosa:
+ *   onViewCreated               lee los argumentos y arranca la cuenta regresiva
+ *   verificar                   POST /api/auth/otp/verificar y crea la sesión
+ *   mostrarErrorDeVerificacion  qué hacer según el error (OTP_INVALIDO, ...)
+ *   reenviar                    pide otro código
+ *   arrancarCuentaRegresiva     los 60 segundos del botón "Reenviar"
+ *   onDestroyView               corta el timer al salir de la pantalla
  */
 @AndroidEntryPoint
 public class OtpFragment extends Fragment {
 
-    // Hilt lo crea y lo inyecta: ya no hay que pedirlo con getInstance().
+    // Dependencias que pone Hilt, igual que en el login.
     @Inject
     AuthApiService authApi;
 
@@ -57,16 +64,20 @@ public class OtpFragment extends Fragment {
     /** Tiene que coincidir con OTP_RESEND_COOLDOWN_SECONDS del backend. */
     private static final int SEGUNDOS_DE_ESPERA = 60;
 
+    // Los argumentos que llegan del login o del registro.
     private String email = "";
     private String proposito = "REGISTRO";
 
+    // Vistas del layout fragment_otp.xml.
     private EditText etCodigo;
     private Button btnVerificar;
     private Button btnReenviar;
     private ProgressBar progressBar;
 
+    /** El timer del botón "Reenviar". Se guarda para poder cortarlo. */
     private CountDownTimer cuentaRegresiva;
 
+    /** Ciclo de vida: infla el XML de la pantalla. */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -75,15 +86,16 @@ public class OtpFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_otp, container, false);
     }
 
+    /** Ciclo de vida: la vista ya existe. Se leen los argumentos y se conectan los botones. */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // getArguments() trae el Bundle que mandó la pantalla anterior.
         if (getArguments() != null) {
             email = getArguments().getString("email", "");
             proposito = getArguments().getString("proposito", "REGISTRO");
         }
-
 
         TextView tvDestino = view.findViewById(R.id.tvDestino);
         etCodigo = view.findViewById(R.id.etCodigo);
@@ -91,23 +103,27 @@ public class OtpFragment extends Fragment {
         btnReenviar = view.findViewById(R.id.btnReenviar);
         progressBar = view.findViewById(R.id.progressBar);
 
+        // "Te mandamos un código a ...".
         tvDestino.setText(getString(R.string.otp_enviado_a, email));
 
         btnVerificar.setOnClickListener(v -> verificar(view));
         btnReenviar.setOnClickListener(v -> reenviar());
 
-        // El backend acaba de mandar un codigo al entrar a esta pantalla,
-        // asi que el reenvio arranca bloqueado por el mismo tiempo que el
-        // cooldown del servidor. Si no, la API responderia 429.
+        // El backend acaba de mandar un código al entrar a esta pantalla,
+        // así que el reenvío arranca bloqueado por el mismo tiempo que el
+        // cooldown del servidor. Si no, la API respondería 429.
         arrancarCuentaRegresiva(SEGUNDOS_DE_ESPERA);
     }
 
     // -----------------------------------------------------------------
-    // Verificar el codigo
+    // Verificar el código
     // -----------------------------------------------------------------
+
+    /** Botón "Verificar": manda el código al backend. */
     private void verificar(View view) {
         String codigo = etCodigo.getText().toString().trim();
 
+        // El código siempre tiene 6 dígitos: si no, ni se llama al servidor.
         if (codigo.length() != 6) {
             etCodigo.setError(getString(R.string.error_codigo_incompleto));
             etCodigo.requestFocus();
@@ -129,17 +145,20 @@ public class OtpFragment extends Fragment {
                         if (response.isSuccessful() && response.body() != null) {
                             SesionResponse cuerpo = response.body();
 
-                            // Los dos caminos crean la sesion: el token que
+                            // Los dos caminos crean la sesión: el token que
                             // devuelve el backend al verificar ya sirve para
-                            // entrar, tambien con una cuenta recien creada.
+                            // entrar, también con una cuenta recién creada.
                             String emailSesion = cuerpo.getUsuario() != null
                                     ? cuerpo.getUsuario().getEmail() : email;
                             sesion.guardarSesion(cuerpo.getToken(), emailSesion);
                             sesion.guardarZona(cuerpo.getUsuario() != null
                                     ? cuerpo.getUsuario().getZona() : null);
 
-                            // Recien ahora hay un token, asi que es el momento
+                            // Recién ahora hay un token, así que es el momento
                             // de ofrecer la huella, igual que en el login.
+                            // "seguir" es lo que se hace después: la cuenta
+                            // nueva va a la bienvenida y el ingreso con código
+                            // va directo al Home.
                             Runnable seguir = "REGISTRO".equals(proposito)
                                     ? () -> irABienvenida(view)
                                     : () -> irAlHome(view);
@@ -161,7 +180,7 @@ public class OtpFragment extends Fragment {
                 });
     }
 
-    /** Cuenta nueva confirmada: la bienvenida, y desde ahi el Home. */
+    /** Cuenta nueva confirmada: la bienvenida, y desde ahí el Home. */
     private void irABienvenida(View view) {
         if (!estaVivo()) return;
         Bundle args = new Bundle();
@@ -169,12 +188,13 @@ public class OtpFragment extends Fragment {
         Navigation.findNavController(view).navigate(R.id.action_otp_to_bienvenida, args);
     }
 
-    /** Ingreso con codigo: un inicio de sesion como cualquier otro. */
+    /** Ingreso con código: un inicio de sesión como cualquier otro. */
     private void irAlHome(View view) {
         if (!estaVivo()) return;
         Navigation.findNavController(view).navigate(R.id.action_otp_to_home);
     }
 
+    /** El backend rechazó el código: cada código de error tiene su respuesta. */
     private void mostrarErrorDeVerificacion(Response<SesionResponse> response) {
         ErrorResponse.Detalle error = ApiErrorParser.parse(response);
         String codigo = ApiErrorParser.codigo(error);
@@ -188,6 +208,7 @@ public class OtpFragment extends Fragment {
 
         switch (codigo) {
             case "OTP_INVALIDO":
+                // Código mal escrito: se marca el campo para corregirlo.
                 etCodigo.setError(mensaje);
                 etCodigo.requestFocus();
                 break;
@@ -195,8 +216,8 @@ public class OtpFragment extends Fragment {
             case "OTP_EXPIRADO":
             case "OTP_BLOQUEADO":
             case "OTP_INEXISTENTE":
-                // Ya no sirve insistir con este codigo: hay que pedir uno nuevo,
-                // asi que habilitamos el reenvio en el acto.
+                // Ya no sirve insistir con este código: hay que pedir uno nuevo,
+                // así que habilitamos el reenvío en el acto.
                 etCodigo.setText("");
                 habilitarReenvio();
                 Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
@@ -208,8 +229,10 @@ public class OtpFragment extends Fragment {
     }
 
     // -----------------------------------------------------------------
-    // Reenviar el codigo
+    // Reenviar el código
     // -----------------------------------------------------------------
+
+    /** Botón "Reenviar": pide otro código con el mismo propósito. */
     private void reenviar() {
         mostrarCargando(true);
 
@@ -229,7 +252,7 @@ public class OtpFragment extends Fragment {
                             Toast.makeText(requireContext(),
                                     R.string.otp_reenviado, Toast.LENGTH_SHORT).show();
                         } else {
-                            // 429 OTP_COOLDOWN: el servidor todavia no deja pedir otro.
+                            // 429 OTP_COOLDOWN: el servidor todavía no deja pedir otro.
                             Toast.makeText(requireContext(),
                                     ApiErrorParser.mensaje(ApiErrorParser.parse(response),
                                             getString(R.string.error_reenvio_generico)),
@@ -250,8 +273,13 @@ public class OtpFragment extends Fragment {
     }
 
     // -----------------------------------------------------------------
-    // Cuenta regresiva del boton "Reenviar"
+    // Cuenta regresiva del botón "Reenviar"
     // -----------------------------------------------------------------
+
+    /**
+     * Bloquea "Reenviar" y muestra los segundos que faltan. CountDownTimer
+     * llama a onTick cada segundo y a onFinish cuando termina.
+     */
     private void arrancarCuentaRegresiva(int segundos) {
         cancelarCuentaRegresiva();
         btnReenviar.setEnabled(false);
@@ -271,6 +299,7 @@ public class OtpFragment extends Fragment {
         }.start();
     }
 
+    /** Deja "Reenviar" disponible ya, sin esperar. */
     private void habilitarReenvio() {
         cancelarCuentaRegresiva();
         btnReenviar.setText(R.string.otp_reenviar);
@@ -284,20 +313,26 @@ public class OtpFragment extends Fragment {
         }
     }
 
+    /** Ciclo de vida: la vista se está por destruir (por ejemplo, al salir de la pantalla). */
     @Override
     public void onDestroyView() {
         // Si no lo cancelamos, el timer sigue corriendo cuando la vista ya no
-        // existe y el proximo onTick revienta con NullPointerException.
+        // existe y el próximo onTick revienta con NullPointerException.
         cancelarCuentaRegresiva();
         super.onDestroyView();
     }
 
     // -----------------------------------------------------------------
+    // Ayudas
+    // -----------------------------------------------------------------
+
+    /** Muestra la barra de carga y apaga "Verificar" mientras se espera. */
     private void mostrarCargando(boolean cargando) {
         progressBar.setVisibility(cargando ? View.VISIBLE : View.GONE);
         btnVerificar.setEnabled(!cargando);
     }
 
+    /** ¿La pantalla sigue a la vista? La respuesta puede llegar cuando ya se fue. */
     private boolean estaVivo() {
         return isAdded() && getView() != null;
     }

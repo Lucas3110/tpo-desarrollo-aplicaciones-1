@@ -31,25 +31,35 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Alta de cuenta: POST /api/auth/registro.
- * Si sale bien, el backend ya mando el codigo OTP y pasamos a OtpFragment.
+ * Alta de cuenta (Punto 1): POST /api/auth/registro.
+ *
+ * Si sale bien, el backend ya mandó el código al mail y se pasa a
+ * OtpFragment con el propósito REGISTRO para confirmarlo.
+ *
+ * Dónde está cada cosa:
+ *   onViewCreated           conecta los botones y precarga el email si vino del login
+ *   registrar               valida en el celular y llama al backend
+ *   mostrarErrorDeRegistro  marca el campo que corresponde a cada error
+ *   irAVerificarCodigo      borra la sesión anterior y va a la pantalla del código
  */
 @AndroidEntryPoint
 public class RegistroFragment extends Fragment {
 
-    // Hilt lo crea y lo inyecta: ya no hay que pedirlo con getInstance().
+    // Dependencias que pone Hilt.
     @Inject
     AuthApiService authApi;
 
     @Inject
     SessionRepository sesion;
 
+    // Vistas del layout fragment_registro.xml.
     private EditText etNombre;
     private EditText etEmail;
     private EditText etPassword;
     private Button btnRegistrarme;
     private ProgressBar progressBar;
 
+    /** Ciclo de vida: infla el XML de la pantalla. */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -58,6 +68,7 @@ public class RegistroFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_registro, container, false);
     }
 
+    /** Ciclo de vida: la vista ya existe. Se buscan los campos y se conectan los botones. */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -70,10 +81,11 @@ public class RegistroFragment extends Fragment {
         TextView tvYaTengoCuenta = view.findViewById(R.id.tvYaTengoCuenta);
 
         btnRegistrarme.setOnClickListener(v -> registrar(view));
+        // "Ya tengo cuenta": popBackStack vuelve a la pantalla anterior (el login).
         tvYaTengoCuenta.setOnClickListener(v ->
                 Navigation.findNavController(view).popBackStack());
 
-        // Si viene del login (se pidio un codigo con un email que no tiene
+        // Si viene del login (se pidió un código con un email que no tiene
         // cuenta), el email ya llega escrito.
         String emailSugerido = getArguments() != null
                 ? getArguments().getString("email", "") : "";
@@ -82,6 +94,7 @@ public class RegistroFragment extends Fragment {
         }
     }
 
+    /** Botón "Registrarme". */
     private void registrar(View view) {
         String nombre = etNombre.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
@@ -103,8 +116,8 @@ public class RegistroFragment extends Fragment {
                     @Override
                     public void onResponse(@NonNull Call<RegistroResponse> call,
                                            @NonNull Response<RegistroResponse> response) {
-                        // enqueue nos devuelve en el hilo principal, asi que
-                        // aca ya se puede tocar la UI.
+                        // enqueue nos devuelve en el hilo principal, así que
+                        // acá ya se puede tocar la UI.
                         if (!estaVivo()) return;
                         mostrarCargando(false);
 
@@ -118,7 +131,7 @@ public class RegistroFragment extends Fragment {
                     @Override
                     public void onFailure(@NonNull Call<RegistroResponse> call,
                                           @NonNull Throwable t) {
-                        // Aca no hubo respuesta del servidor: sin red, backend
+                        // Acá no hubo respuesta del servidor: sin red, backend
                         // apagado o URL mal.
                         if (!estaVivo()) return;
                         mostrarCargando(false);
@@ -128,9 +141,10 @@ public class RegistroFragment extends Fragment {
                 });
     }
 
+    /** El backend rechazó el alta: se muestra el error en el campo que corresponde. */
     private void mostrarErrorDeRegistro(Response<RegistroResponse> response) {
         // Una sola lectura del cuerpo: leerlo dos veces devuelve null y se
-        // pierde el mensaje real que mando la API.
+        // pierde el mensaje real que mandó la API.
         ErrorResponse.Detalle error = ApiErrorParser.parse(response);
         String codigo = ApiErrorParser.codigo(error);
         String mensaje = ApiErrorParser.mensaje(error,
@@ -141,8 +155,8 @@ public class RegistroFragment extends Fragment {
             return;
         }
 
-        // Cada codigo marca el campo que corresponde, asi la persona ve el
-        // error donde lo tiene que corregir y no en un Toast generico.
+        // Cada código marca el campo que corresponde, así la persona ve el
+        // error donde lo tiene que corregir y no en un Toast genérico.
         switch (codigo) {
             case "EMAIL_EN_USO":
             case "EMAIL_INVALIDO":
@@ -170,11 +184,12 @@ public class RegistroFragment extends Fragment {
         }
     }
 
+    /** La cuenta se creó: se pasa a confirmar el código que llegó al mail. */
     private void irAVerificarCodigo(View view, String email) {
-        // La cuenta nueva ya existe, asi que lo que quedaba de la anterior
-        // sobra. Sin esto la sesion de quien venia usando la app sobrevive al
+        // La cuenta nueva ya existe, así que lo que quedaba de la anterior
+        // sobra. Sin esto la sesión de quien venía usando la app sobrevive al
         // alta: al volver al login, el auto-login la levanta y la persona
-        // termina entrando con la cuenta de otro. Y si esa cuenta tenia el
+        // termina entrando con la cuenta de otro. Y si esa cuenta tenía el
         // desbloqueo con huella activado, encima se lo ofrece.
         sesion.olvidarTodo();
 
@@ -184,7 +199,7 @@ public class RegistroFragment extends Fragment {
         Navigation.findNavController(view).navigate(R.id.action_registro_to_otp, args);
     }
 
-    /** Marca el campo si la validacion fallo. Devuelve true si esta todo bien. */
+    /** Marca el campo si la validación falló. Devuelve true si está todo bien. */
     private boolean validar(EditText campo, ValidadorRegistro.Resultado resultado) {
         if (resultado.esValido()) {
             campo.setError(null);
@@ -195,14 +210,15 @@ public class RegistroFragment extends Fragment {
         return false;
     }
 
+    /** Muestra la barra de carga y apaga el botón mientras se espera. */
     private void mostrarCargando(boolean cargando) {
         progressBar.setVisibility(cargando ? View.VISIBLE : View.GONE);
         btnRegistrarme.setEnabled(!cargando);
     }
 
     /**
-     * La respuesta puede llegar despues de que el usuario se fue de la pantalla.
-     * Si eso pasa, las vistas ya no existen y tocarlas revienta.
+     * La respuesta puede llegar después de que la persona se fue de la
+     * pantalla. Si eso pasa, las vistas ya no existen y tocarlas revienta.
      */
     private boolean estaVivo() {
         return isAdded() && getView() != null;

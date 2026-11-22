@@ -2,7 +2,11 @@ package com.example.ronda.data.model;
 
 import com.google.gson.annotations.SerializedName;
 
-/** Respuesta de POST /auth/registro. */
+/**
+ * Respuesta de POST /api/auth/registro. Gson llena estos campos con el JSON
+ * que manda el backend; @SerializedName dice qué clave del JSON va en cada
+ * uno.
+ */
 public class RegistroResponse {
 
     @SerializedName("mensaje")
@@ -13,7 +17,7 @@ public class RegistroResponse {
 
     /**
      * Solo viene cuando el backend corre con OTP_EXPOSE_IN_RESPONSE=true.
-     * Sirve para probar sin abrir el mail; en produccion es null.
+     * Sirve para probar sin abrir el mail; en producción es null.
      */
     @SerializedName("codigoDesarrollo")
     private String codigoDesarrollo;

@@ -17,27 +17,27 @@ import androidx.navigation.Navigation;
 import com.example.ronda.R;
 
 /**
- * Confirmacion que se muestra despues de verificar una cuenta recien creada.
+ * Bienvenida que se muestra después de confirmar una cuenta nueva (Punto 1).
  *
- * Es una pantalla de paso: anima tres textos y a los pocos segundos entra
- * sola al Home. La sesion ya la creo OtpFragment al verificar el codigo
- * ("confirmar y crear sesion"), asi que aca no se inyecta nada: el email
+ * Es una pantalla de paso: anima tres textos y a los 2,6 segundos entra sola
+ * al Home. La sesión ya la creó OtpFragment al verificar el código, así que
+ * acá no se inyecta nada (por eso no lleva @AndroidEntryPoint): el email
  * llega por argumento solo para mostrarlo.
- *
- * Antes esta logica vivia adentro de HomeFragment como un "modo bienvenida";
- * se separo para que el Home sea solo el Home (listado del Punto 3).
  */
 public class BienvenidaFragment extends Fragment {
 
-    /** Cuanto dura la bienvenida antes de entrar al Home. */
+    /** Cuánto dura la bienvenida antes de entrar al Home. */
     private static final long DEMORA_REDIRECCION_MS = 2600L;
 
-    /** Desde donde "sube" cada texto al aparecer. */
+    /** Desde dónde "sube" cada texto al aparecer. */
     private static final float DESPLAZAMIENTO_DP = 32f;
 
+    /** Sirve para correr algo más tarde en el hilo principal (postDelayed). */
     private final Handler handler = new Handler(Looper.getMainLooper());
+    /** La entrada al Home programada. Se guarda para poder cancelarla. */
     private Runnable tareaRedireccion;
 
+    /** Ciclo de vida: infla el XML de la pantalla. */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -46,6 +46,7 @@ public class BienvenidaFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_bienvenida, container, false);
     }
 
+    /** Ciclo de vida: muestra el email, anima los textos y programa la entrada al Home. */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -58,23 +59,24 @@ public class BienvenidaFragment extends Fragment {
 
         tvEmail.setText(email);
 
+        // Los tres textos aparecen uno detrás del otro.
         aparecer(tvBienvenida, 0);
         aparecer(tvEmail, 120);
         aparecer(tvSubtitulo, 240);
 
         tareaRedireccion = () -> {
-            // La vista pudo destruirse mientras corria la espera.
+            // La vista pudo destruirse mientras corría la espera.
             if (!isAdded() || getView() == null) return;
-            // La cuenta nueva ya tiene sesion: se entra al Home y se saca de la
-            // pila todo lo de autenticacion, igual que al ingresar.
+            // La cuenta nueva ya tiene sesión: se entra al Home y se saca de la
+            // pila todo lo de autenticación, igual que al ingresar.
             Navigation.findNavController(view).navigate(R.id.action_bienvenida_to_home);
         };
         handler.postDelayed(tareaRedireccion, DEMORA_REDIRECCION_MS);
     }
 
-    /** Fade-in con un leve desplazamiento hacia arriba. Sin librerias extra. */
+    /** Fade-in con un leve desplazamiento hacia arriba. Sin librerías extra. */
     private void aparecer(View v, long demoraMs) {
-        // setTranslationY recibe pixeles: se convierte desde dp para que el
+        // setTranslationY recibe píxeles: se convierte desde dp para que el
         // desplazamiento mida lo mismo en cualquier densidad de pantalla.
         float desplazamiento = DESPLAZAMIENTO_DP * getResources().getDisplayMetrics().density;
         v.setAlpha(0f);
@@ -88,10 +90,11 @@ public class BienvenidaFragment extends Fragment {
                 .start();
     }
 
+    /** Ciclo de vida: la vista se está por destruir. */
     @Override
     public void onDestroyView() {
-        // Si no lo cancelamos, la redireccion se dispara sobre una vista que
-        // ya no existe (por ejemplo si el usuario toca "atras" antes de tiempo).
+        // Si no lo cancelamos, la redirección se dispara sobre una vista que
+        // ya no existe (por ejemplo, si la persona toca "atrás" antes de tiempo).
         if (tareaRedireccion != null) {
             handler.removeCallbacks(tareaRedireccion);
             tareaRedireccion = null;
