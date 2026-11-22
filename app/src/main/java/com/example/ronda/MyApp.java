@@ -2,6 +2,8 @@ package com.example.ronda;
 
 import android.app.Application;
 
+import com.example.ronda.notificaciones.CanalesDeNotificacion;
+
 import dagger.hilt.android.HiltAndroidApp;
 
 /**
@@ -19,4 +21,11 @@ import dagger.hilt.android.HiltAndroidApp;
  */
 @HiltAndroidApp
 public class MyApp extends Application {
+
+    /** Punto 11: los canales tienen que existir antes de mostrar cualquier aviso. */
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        CanalesDeNotificacion.crear(this);
+    }
 }

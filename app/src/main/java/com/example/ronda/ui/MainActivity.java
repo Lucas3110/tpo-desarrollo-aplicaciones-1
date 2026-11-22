@@ -1,5 +1,6 @@
 package com.example.ronda.ui;
 
+import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,7 +38,8 @@ import dagger.hilt.android.AndroidEntryPoint;
  *
  * Como es la única que vive mientras la app está abierta, hace además dos
  * cosas:
- *   - pide el permiso de red local al arrancar (pedirAccesoALaRedLocal)
+ *   - pide el permiso de red local al arrancar (pedirAccesoALaRedLocal) y,
+ *     despues, el de notificaciones (pedirPermisoDeNotificaciones)
  *   - escucha si la sesión venció y vuelve al login (observarSesionExpirada)
  *
  * La anotación @AndroidEntryPoint le avisa a Hilt que esta Activity recibe
@@ -74,6 +76,17 @@ public class MainActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedido -> {
                 if (!concedido) {
                     Toast.makeText(this, R.string.permiso_red_local_denegado,
+                            Toast.LENGTH_LONG).show();
+                }
+                // Se pide uno por vez: despues de este, el de notificaciones.
+                pedirPermisoDeNotificaciones();
+            });
+
+    /** Punto 11: permiso para mostrar los avisos. */
+    private final ActivityResultLauncher<String> pedidoNotificaciones =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedido -> {
+                if (!concedido) {
+                    Toast.makeText(this, R.string.permiso_notificaciones_denegado,
                             Toast.LENGTH_LONG).show();
                 }
             });
@@ -124,14 +137,28 @@ public class MainActivity extends AppCompatActivity {
      * En Android 15 o anterior el permiso no existe y esto no hace nada.
      */
     private void pedirAccesoALaRedLocal() {
-        if (Build.VERSION.SDK_INT < 36) return;
-
-        // Si ya lo tiene, no se vuelve a preguntar.
-        if (ContextCompat.checkSelfPermission(this, PERMISO_RED_LOCAL)
+        // Si no hace falta o ya lo tiene, se pasa directo al de notificaciones.
+        if (Build.VERSION.SDK_INT < 36
+                || ContextCompat.checkSelfPermission(this, PERMISO_RED_LOCAL)
                 == PackageManager.PERMISSION_GRANTED) {
+            pedirPermisoDeNotificaciones();
             return;
         }
         pedidoRedLocal.launch(PERMISO_RED_LOCAL);
+    }
+
+    /**
+     * Punto 11: desde Android 13 mostrar notificaciones requiere permiso. Si
+     * ya se nego, launch() devuelve false sin mostrar nada.
+     */
+    private void pedirPermisoDeNotificaciones() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        pedidoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS);
     }
 
     /**

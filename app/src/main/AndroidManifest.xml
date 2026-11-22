@@ -37,6 +37,9 @@
       impreso debajo del QR se puede ingresar a mano.
     -->
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Punto 11: en Android 13+ se pide en runtime (MainActivity). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
