@@ -18,6 +18,7 @@ import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.ronda.R;
+import com.example.ronda.data.repository.CachePublicaciones;
 import com.example.ronda.di.AuthEventBus;
 
 import javax.inject.Inject;
@@ -55,6 +56,10 @@ public class MainActivity extends AppCompatActivity {
     /** Por acá llega el aviso de que el backend respondió 401. Lo pone Hilt. */
     @Inject
     AuthEventBus eventosDeAuth;
+
+    /** Punto 6: lo guardado para ver sin conexión se borra al vencer la sesión. */
+    @Inject
+    CachePublicaciones cache;
 
     /** El que sabe navegar entre las pantallas del nav graph. */
     private NavController navController;
@@ -120,6 +125,10 @@ public class MainActivity extends AppCompatActivity {
      * sesión y avisa por el AuthEventBus. Acá se escucha ese aviso y se vuelve
      * al login.
      *
+     * Punto 6: también se borra lo guardado para ver sin conexión, igual que
+     * con el botón "Cerrar sesión" del Home. Todo 401 con sesión pasa por acá,
+     * así que alcanza con hacerlo en un solo lugar.
+     *
      * Tiene que estar en la Activity y no en un Fragment: el 401 puede llegar
      * estando en cualquier pantalla, y la Activity es la única que vive
      * siempre y puede navegar.
@@ -134,6 +143,11 @@ public class MainActivity extends AppCompatActivity {
             // se lo volvería a entregar al próximo observador, pateando al
             // login apenas la persona vuelve a entrar.
             eventosDeAuth.limpiar();
+
+            // Lo que quedó guardado es de la cuenta que se acaba de cerrar
+            // (por ejemplo, cuáles tenía en favoritos): no tiene que verlo
+            // quien entre después.
+            cache.limpiar();
 
             Toast.makeText(this, R.string.sesion_expirada, Toast.LENGTH_LONG).show();
 
