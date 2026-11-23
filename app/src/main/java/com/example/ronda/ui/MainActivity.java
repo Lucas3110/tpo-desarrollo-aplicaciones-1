@@ -7,9 +7,8 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -19,7 +18,6 @@ import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.ronda.R;
-import com.example.ronda.data.repository.CachePublicaciones;
 import com.example.ronda.di.AuthEventBus;
 
 import javax.inject.Inject;
@@ -52,31 +50,14 @@ public class MainActivity extends AppCompatActivity {
      * sigue compilando con cualquier compileSdk.
      */
     private static final String PERMISO_RED_LOCAL = "android.permission.ACCESS_LOCAL_NETWORK";
+    private static final int PEDIDO_RED_LOCAL = 1001;
 
     /** Por acá llega el aviso de que el backend respondió 401. Lo pone Hilt. */
     @Inject
     AuthEventBus eventosDeAuth;
 
-    /** Punto 6: lo guardado para ver sin conexión se borra al vencer la sesión. */
-    @Inject
-    CachePublicaciones cache;
-
     /** El que sabe navegar entre las pantallas del nav graph. */
     private NavController navController;
-
-    /**
-     * El permiso de red local se pide con un Result Launcher: se registra una
-     * sola vez, antes de que arranque la Activity, y después se dispara con
-     * launch(). La respuesta (concedido: true o false) llega a este callback
-     * en vez de a onRequestPermissionsResult.
-     */
-    private final ActivityResultLauncher<String> pedidoRedLocal =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedido -> {
-                if (!concedido) {
-                    Toast.makeText(this, R.string.permiso_red_local_denegado,
-                            Toast.LENGTH_LONG).show();
-                }
-            });
 
     /** Ciclo de vida: es lo primero que corre cuando se abre la Activity. */
     @Override
@@ -131,17 +112,13 @@ public class MainActivity extends AppCompatActivity {
                 == PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        pedidoRedLocal.launch(PERMISO_RED_LOCAL);
+        ActivityCompat.requestPermissions(this, new String[]{PERMISO_RED_LOCAL}, PEDIDO_RED_LOCAL);
     }
 
     /**
      * Punto 1: cuando el backend responde 401, el interceptor de red limpia la
      * sesión y avisa por el AuthEventBus. Acá se escucha ese aviso y se vuelve
      * al login.
-     *
-     * Punto 6: también se borra lo guardado para ver sin conexión, igual que
-     * con el botón "Cerrar sesión" del Home. Todo 401 con sesión pasa por acá,
-     * así que alcanza con hacerlo en un solo lugar.
      *
      * Tiene que estar en la Activity y no en un Fragment: el 401 puede llegar
      * estando en cualquier pantalla, y la Activity es la única que vive
@@ -157,11 +134,6 @@ public class MainActivity extends AppCompatActivity {
             // se lo volvería a entregar al próximo observador, pateando al
             // login apenas la persona vuelve a entrar.
             eventosDeAuth.limpiar();
-
-            // Lo que quedó guardado es de la cuenta que se acaba de cerrar
-            // (por ejemplo, cuáles tenía en favoritos): no tiene que verlo
-            // quien entre después.
-            cache.limpiar();
 
             Toast.makeText(this, R.string.sesion_expirada, Toast.LENGTH_LONG).show();
 

@@ -341,7 +341,6 @@
     <string name="biometria_activar_si">Sí, activar</string>
     <string name="biometria_activar_no">Ahora no</string>
     <string name="sesion_expirada">Tu sesión venció. Ingresá de nuevo.</string>
-    <string name="permiso_red_local_denegado">Sin el permiso de red local, Ronda no puede conectarse al servidor.</string>
     <string name="detalle_descripcion">Descripción</string>
     <string name="detalle_info_vendedor">Información del vendedor</string>
     <string name="detalle_ver_perfil">Ver perfil público</string>
