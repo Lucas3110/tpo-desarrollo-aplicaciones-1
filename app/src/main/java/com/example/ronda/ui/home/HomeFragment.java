@@ -1075,8 +1075,8 @@ public class HomeFragment extends Fragment {
      *     del servidor.
      *
      * Se observa el LiveData en vez de preguntar cada dos segundos: el
-     * sistema avisa cuando cambia. Al volver la red solo recarga si el aviso
-     * estaba a la vista; si ya habia datos frescos no hay nada que rehacer.
+     * sistema avisa cuando cambia. Al volver la red recarga si se veia la
+     * banda o el error; si ya habia datos frescos no hay nada que rehacer.
      *
      * Con getViewLifecycleOwner() se observa mientras exista la vista: cuando
      * se destruye, deja de observar solo.
@@ -1097,10 +1097,10 @@ public class HomeFragment extends Fragment {
                 return;
             }
 
-            // Volvio internet. Si la banda no estaba a la vista, lo que se ve
-            // ya es del servidor y no hay nada que recargar.
-            if (tvSinConexion == null || tvSinConexion.getVisibility() != View.VISIBLE) return;
-
+            // Volvio internet. Se recarga si lo que se ve no vino del servidor:
+            // la lista guardada (con la banda) o el bloque de error.
+            boolean seVeLaBanda = tvSinConexion != null && tvSinConexion.getVisibility() == View.VISIBLE;
+            if (!seVeLaBanda && grupoError.getVisibility() != View.VISIBLE) return;
             Toast.makeText(requireContext(), R.string.sin_conexion_volvio, Toast.LENGTH_SHORT).show();
             recargar();
         });
