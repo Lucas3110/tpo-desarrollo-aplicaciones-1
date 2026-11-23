@@ -7,8 +7,9 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -51,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
      * sigue compilando con cualquier compileSdk.
      */
     private static final String PERMISO_RED_LOCAL = "android.permission.ACCESS_LOCAL_NETWORK";
-    private static final int PEDIDO_RED_LOCAL = 1001;
 
     /** Por acá llega el aviso de que el backend respondió 401. Lo pone Hilt. */
     @Inject
@@ -63,6 +63,20 @@ public class MainActivity extends AppCompatActivity {
 
     /** El que sabe navegar entre las pantallas del nav graph. */
     private NavController navController;
+
+    /**
+     * El permiso de red local se pide con un Result Launcher: se registra una
+     * sola vez, antes de que arranque la Activity, y después se dispara con
+     * launch(). La respuesta (concedido: true o false) llega a este callback
+     * en vez de a onRequestPermissionsResult.
+     */
+    private final ActivityResultLauncher<String> pedidoRedLocal =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedido -> {
+                if (!concedido) {
+                    Toast.makeText(this, R.string.permiso_red_local_denegado,
+                            Toast.LENGTH_LONG).show();
+                }
+            });
 
     /** Ciclo de vida: es lo primero que corre cuando se abre la Activity. */
     @Override
@@ -117,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
                 == PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        ActivityCompat.requestPermissions(this, new String[]{PERMISO_RED_LOCAL}, PEDIDO_RED_LOCAL);
+        pedidoRedLocal.launch(PERMISO_RED_LOCAL);
     }
 
     /**
