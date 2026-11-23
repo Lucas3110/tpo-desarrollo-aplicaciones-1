@@ -1,6 +1,7 @@
 package com.example.ronda.ui;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,6 +26,7 @@ import com.example.ronda.R;
 import com.example.ronda.data.repository.CachePublicaciones;
 import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.di.AuthEventBus;
+import com.example.ronda.notificaciones.AbrirAviso;
 import com.example.ronda.notificaciones.AvisosService;
 
 import javax.inject.Inject;
@@ -45,6 +48,7 @@ import dagger.hilt.android.AndroidEntryPoint;
  *     despues, el de notificaciones (pedirPermisoDeNotificaciones)
  *   - escucha si la sesión venció y vuelve al login (observarSesionExpirada)
  *   - arranca la espera de avisos al entrar con sesion (esperarAvisosAlEntrar)
+ *     y abre el aviso que se toco (abrirAvisoPendiente)
  *
  * La anotación @AndroidEntryPoint le avisa a Hilt que esta Activity recibe
  * dependencias con @Inject.
@@ -73,6 +77,10 @@ public class MainActivity extends AppCompatActivity {
 
     /** El que sabe navegar entre las pantallas del nav graph. */
     private NavController navController;
+
+    /** Punto 11: aviso tocado que todavia no se abrio (por ej. si no habia sesion). */
+    private Bundle avisoPendiente;
+    private static final String ESTADO_AVISO_PENDIENTE = "avisoPendiente";
 
     /**
      * El permiso de red local se pide con un Result Launcher: se registra una
@@ -117,6 +125,12 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        // Punto 11: si se abrio tocando un aviso, viene en el Intent. Al
+        // rotar el Intent es el mismo, por eso se usa el estado guardado.
+        avisoPendiente = savedInstanceState == null
+                ? AbrirAviso.argumentosDelDetalle(getIntent())
+                : savedInstanceState.getBundle(ESTADO_AVISO_PENDIENTE);
+
         // Se busca el NavHostFragment del layout para sacarle el NavController.
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
@@ -139,8 +153,45 @@ public class MainActivity extends AppCompatActivity {
         navController.addOnDestinationChangedListener((controlador, destino, argumentos) -> {
             if (esParteConSesion(destino) && sesion.haySesion()) {
                 AvisosService.iniciar(this);
+                // post: no navegar en medio de otro cambio de pantalla.
+                if (avisoPendiente != null) contenedorDePantallas().post(this::abrirAvisoPendiente);
             }
         });
+    }
+
+    /** Punto 11: con la app abierta el aviso llega aca (SINGLE_TOP). */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        Bundle aviso = AbrirAviso.argumentosDelDetalle(intent);
+        if (aviso == null) return;
+        avisoPendiente = aviso;
+        abrirAvisoPendiente();
+    }
+
+    /**
+     * Navega al detalle del aviso. Sin sesion queda pendiente y lo reintenta
+     * el listener al entrar al Home.
+     */
+    private void abrirAvisoPendiente() {
+        if (avisoPendiente == null || navController == null || !sesion.haySesion()) return;
+        NavDestination actual = navController.getCurrentDestination();
+        if (actual == null || !esParteConSesion(actual)) return;
+
+        Bundle argumentos = avisoPendiente;
+        avisoPendiente = null;
+        navController.navigate(R.id.detallePublicacionFragment, argumentos);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBundle(ESTADO_AVISO_PENDIENTE, avisoPendiente);
+    }
+
+    private View contenedorDePantallas() {
+        return findViewById(R.id.nav_host_fragment);
     }
 
     /** Las pantallas del grafo del Home son las que requieren sesion. */

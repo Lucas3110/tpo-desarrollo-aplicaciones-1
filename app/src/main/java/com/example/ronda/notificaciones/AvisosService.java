@@ -243,14 +243,23 @@ public class AvisosService extends Service {
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(aviso.getMensaje()))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setContentIntent(abrirApp())
+                .setContentIntent(abrirAviso(aviso))
                 .setAutoCancel(true)
                 .build();
 
         NotificationManagerCompat.from(this).notify(TAG_AVISO, aviso.getId(), notificacion);
     }
 
-    /** Al tocar la notificacion se abre Ronda. */
+    /**
+     * Abre la publicacion del aviso. requestCode = id del aviso: con el mismo
+     * requestCode y FLAG_UPDATE_CURRENT todos abririan el ultimo.
+     */
+    private PendingIntent abrirAviso(NotificacionResponse aviso) {
+        return PendingIntent.getActivity(this, aviso.getId(), AbrirAviso.intentPara(this, aviso),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /** Al tocar la notificacion fija se abre Ronda. */
     private PendingIntent abrirApp() {
         Intent intent = new Intent(this, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
