@@ -191,9 +191,9 @@ public class LoginFragment extends Fragment {
         // modo sin conexión andaría, pero no habría forma de llegar a él.
         //
         // El token vive 7 días y está guardado acá: alcanza para dejar entrar.
-        // Si resulta que ya no servía, el primer pedido que se haga al
-        // recuperar la red devuelve 401 y el interceptor manda de vuelta al
-        // login. O sea que la validación no se pierde, se pospone.
+        // Si resulta que ya no servía, el primer pedido que exige sesión al
+        // volver la red (un favorito, las ofertas) devuelve 401 y se vuelve al
+        // login; el listado no, porque es público. La validación se pospone.
         if (!conectividad.hayInternet()) {
             irAlHome(view);
             return;
