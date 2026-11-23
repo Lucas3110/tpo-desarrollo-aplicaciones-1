@@ -16,12 +16,15 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.navigation.NavController;
+import androidx.navigation.NavDestination;
 import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.ronda.R;
 import com.example.ronda.data.repository.CachePublicaciones;
+import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.di.AuthEventBus;
+import com.example.ronda.notificaciones.AvisosService;
 
 import javax.inject.Inject;
 
@@ -41,6 +44,7 @@ import dagger.hilt.android.AndroidEntryPoint;
  *   - pide el permiso de red local al arrancar (pedirAccesoALaRedLocal) y,
  *     despues, el de notificaciones (pedirPermisoDeNotificaciones)
  *   - escucha si la sesión venció y vuelve al login (observarSesionExpirada)
+ *   - arranca la espera de avisos al entrar con sesion (esperarAvisosAlEntrar)
  *
  * La anotación @AndroidEntryPoint le avisa a Hilt que esta Activity recibe
  * dependencias con @Inject.
@@ -62,6 +66,10 @@ public class MainActivity extends AppCompatActivity {
     /** Punto 6: lo guardado para ver sin conexión se borra al vencer la sesión. */
     @Inject
     CachePublicaciones cache;
+
+    /** Punto 11: los avisos se esperan solo mientras hay sesion. */
+    @Inject
+    SessionRepository sesion;
 
     /** El que sabe navegar entre las pantallas del nav graph. */
     private NavController navController;
@@ -116,9 +124,29 @@ public class MainActivity extends AppCompatActivity {
         if (navHostFragment != null) {
             navController = navHostFragment.getNavController();
             observarSesionExpirada();
+            esperarAvisosAlEntrar();
         }
 
         pedirAccesoALaRedLocal();
+    }
+
+    /**
+     * Punto 11: el servicio de avisos arranca al entrar al grafo del Home, que
+     * es por donde pasan el login, el OTP, la huella y el auto-login. Lo frena
+     * SessionRepository al cerrar sesion. iniciar() no hace nada si ya corre.
+     */
+    private void esperarAvisosAlEntrar() {
+        navController.addOnDestinationChangedListener((controlador, destino, argumentos) -> {
+            if (esParteConSesion(destino) && sesion.haySesion()) {
+                AvisosService.iniciar(this);
+            }
+        });
+    }
+
+    /** Las pantallas del grafo del Home son las que requieren sesion. */
+    private static boolean esParteConSesion(NavDestination destino) {
+        return destino.getParent() != null
+                && destino.getParent().getId() == R.id.home_nav_graph;
     }
 
     /**

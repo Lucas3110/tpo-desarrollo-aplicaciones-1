@@ -4,10 +4,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import androidx.core.app.NotificationManagerCompat;
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKey;
 
 import com.example.ronda.data.model.ZonaResponse;
+import com.example.ronda.notificaciones.AvisosService;
+import com.example.ronda.notificaciones.CursorDeAvisos;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -52,14 +55,17 @@ public class SessionRepository {
 
     private final Context contexto;
     private final SharedPreferences prefs;
+    /** Punto 11: hasta que aviso se recibio con esta sesion. */
+    private final CursorDeAvisos cursorDeAvisos;
     /** El archivo encriptado. Se crea recién la primera vez que se usa. */
     private SharedPreferences prefsCifradas;
 
     /** Hilt llama a este constructor (por el @Inject) y le pasa el contexto. */
     @Inject
-    public SessionRepository(@ApplicationContext Context contexto) {
+    public SessionRepository(@ApplicationContext Context contexto, CursorDeAvisos cursorDeAvisos) {
         this.contexto = contexto;
         this.prefs = contexto.getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE);
+        this.cursorDeAvisos = cursorDeAvisos;
     }
 
     /**
@@ -171,6 +177,7 @@ public class SessionRepository {
                 .remove(CLAVE_ZONA_NOMBRE)
                 .apply();
         borrarTokenCifrado();
+        dejarDeEsperarAvisos();
     }
 
     /**
@@ -186,6 +193,19 @@ public class SessionRepository {
     public void olvidarTodo() {
         prefs.edit().clear().apply();
         borrarTokenCifrado();
+        dejarDeEsperarAvisos();
+    }
+
+    /**
+     * Punto 11: toda salida de sesion pasa por aca (boton, 401, token
+     * invalido al abrir). Se frena el servicio, se borra el cursor y se sacan
+     * los avisos de la barra, para que la proxima cuenta no vea ni abra los
+     * de la anterior.
+     */
+    private void dejarDeEsperarAvisos() {
+        AvisosService.detener(contexto);
+        cursorDeAvisos.olvidar();
+        NotificationManagerCompat.from(contexto).cancelAll();
     }
 
     // -----------------------------------------------------------------
