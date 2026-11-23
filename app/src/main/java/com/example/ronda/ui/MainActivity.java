@@ -1,5 +1,7 @@
 package com.example.ronda.ui;
 
+import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -7,6 +9,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,12 +18,16 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.navigation.NavController;
+import androidx.navigation.NavDestination;
 import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.ronda.R;
 import com.example.ronda.data.repository.CachePublicaciones;
+import com.example.ronda.data.repository.SessionRepository;
 import com.example.ronda.di.AuthEventBus;
+import com.example.ronda.notificaciones.AbrirAviso;
+import com.example.ronda.notificaciones.AvisosService;
 
 import javax.inject.Inject;
 
@@ -37,8 +44,11 @@ import dagger.hilt.android.AndroidEntryPoint;
  *
  * Como es la única que vive mientras la app está abierta, hace además dos
  * cosas:
- *   - pide el permiso de red local al arrancar (pedirAccesoALaRedLocal)
+ *   - pide el permiso de red local al arrancar (pedirAccesoALaRedLocal) y,
+ *     despues, el de notificaciones (pedirPermisoDeNotificaciones)
  *   - escucha si la sesión venció y vuelve al login (observarSesionExpirada)
+ *   - arranca la espera de avisos al entrar con sesion (esperarAvisosAlEntrar)
+ *     y abre el aviso que se toco (abrirAvisoPendiente)
  *
  * La anotación @AndroidEntryPoint le avisa a Hilt que esta Activity recibe
  * dependencias con @Inject.
@@ -61,8 +71,16 @@ public class MainActivity extends AppCompatActivity {
     @Inject
     CachePublicaciones cache;
 
+    /** Punto 11: los avisos se esperan solo mientras hay sesion. */
+    @Inject
+    SessionRepository sesion;
+
     /** El que sabe navegar entre las pantallas del nav graph. */
     private NavController navController;
+
+    /** Punto 11: aviso tocado que todavia no se abrio (por ej. si no habia sesion). */
+    private Bundle avisoPendiente;
+    private static final String ESTADO_AVISO_PENDIENTE = "avisoPendiente";
 
     /**
      * El permiso de red local se pide con un Result Launcher: se registra una
@@ -74,6 +92,17 @@ public class MainActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedido -> {
                 if (!concedido) {
                     Toast.makeText(this, R.string.permiso_red_local_denegado,
+                            Toast.LENGTH_LONG).show();
+                }
+                // Se pide uno por vez: despues de este, el de notificaciones.
+                pedirPermisoDeNotificaciones();
+            });
+
+    /** Punto 11: permiso para mostrar los avisos. */
+    private final ActivityResultLauncher<String> pedidoNotificaciones =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedido -> {
+                if (!concedido) {
+                    Toast.makeText(this, R.string.permiso_notificaciones_denegado,
                             Toast.LENGTH_LONG).show();
                 }
             });
@@ -96,6 +125,12 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        // Punto 11: si se abrio tocando un aviso, viene en el Intent. Al
+        // rotar el Intent es el mismo, por eso se usa el estado guardado.
+        avisoPendiente = savedInstanceState == null
+                ? AbrirAviso.argumentosDelDetalle(getIntent())
+                : savedInstanceState.getBundle(ESTADO_AVISO_PENDIENTE);
+
         // Se busca el NavHostFragment del layout para sacarle el NavController.
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
@@ -103,9 +138,66 @@ public class MainActivity extends AppCompatActivity {
         if (navHostFragment != null) {
             navController = navHostFragment.getNavController();
             observarSesionExpirada();
+            esperarAvisosAlEntrar();
         }
 
         pedirAccesoALaRedLocal();
+    }
+
+    /**
+     * Punto 11: el servicio de avisos arranca al entrar al grafo del Home, que
+     * es por donde pasan el login, el OTP, la huella y el auto-login. Lo frena
+     * SessionRepository al cerrar sesion. iniciar() no hace nada si ya corre.
+     */
+    private void esperarAvisosAlEntrar() {
+        navController.addOnDestinationChangedListener((controlador, destino, argumentos) -> {
+            if (esParteConSesion(destino) && sesion.haySesion()) {
+                AvisosService.iniciar(this);
+                // post: no navegar en medio de otro cambio de pantalla.
+                if (avisoPendiente != null) contenedorDePantallas().post(this::abrirAvisoPendiente);
+            }
+        });
+    }
+
+    /** Punto 11: con la app abierta el aviso llega aca (SINGLE_TOP). */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        Bundle aviso = AbrirAviso.argumentosDelDetalle(intent);
+        if (aviso == null) return;
+        avisoPendiente = aviso;
+        abrirAvisoPendiente();
+    }
+
+    /**
+     * Navega al detalle del aviso. Sin sesion queda pendiente y lo reintenta
+     * el listener al entrar al Home.
+     */
+    private void abrirAvisoPendiente() {
+        if (avisoPendiente == null || navController == null || !sesion.haySesion()) return;
+        NavDestination actual = navController.getCurrentDestination();
+        if (actual == null || !esParteConSesion(actual)) return;
+
+        Bundle argumentos = avisoPendiente;
+        avisoPendiente = null;
+        navController.navigate(R.id.detallePublicacionFragment, argumentos);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBundle(ESTADO_AVISO_PENDIENTE, avisoPendiente);
+    }
+
+    private View contenedorDePantallas() {
+        return findViewById(R.id.nav_host_fragment);
+    }
+
+    /** Las pantallas del grafo del Home son las que requieren sesion. */
+    private static boolean esParteConSesion(NavDestination destino) {
+        return destino.getParent() != null
+                && destino.getParent().getId() == R.id.home_nav_graph;
     }
 
     /**
@@ -124,14 +216,28 @@ public class MainActivity extends AppCompatActivity {
      * En Android 15 o anterior el permiso no existe y esto no hace nada.
      */
     private void pedirAccesoALaRedLocal() {
-        if (Build.VERSION.SDK_INT < 36) return;
-
-        // Si ya lo tiene, no se vuelve a preguntar.
-        if (ContextCompat.checkSelfPermission(this, PERMISO_RED_LOCAL)
+        // Si no hace falta o ya lo tiene, se pasa directo al de notificaciones.
+        if (Build.VERSION.SDK_INT < 36
+                || ContextCompat.checkSelfPermission(this, PERMISO_RED_LOCAL)
                 == PackageManager.PERMISSION_GRANTED) {
+            pedirPermisoDeNotificaciones();
             return;
         }
         pedidoRedLocal.launch(PERMISO_RED_LOCAL);
+    }
+
+    /**
+     * Punto 11: desde Android 13 mostrar notificaciones requiere permiso. Si
+     * ya se nego, launch() devuelve false sin mostrar nada.
+     */
+    private void pedirPermisoDeNotificaciones() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        pedidoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS);
     }
 
     /**

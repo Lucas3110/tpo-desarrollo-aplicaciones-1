@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.example.ronda.BuildConfig;
 import com.example.ronda.data.network.AuthApiService;
+import com.example.ronda.data.network.NotificacionApiService;
 import com.example.ronda.data.network.OfertaApiService;
 import com.example.ronda.data.network.OperacionApiService;
 import com.example.ronda.data.network.PublicacionApiService;
@@ -12,6 +13,7 @@ import com.example.ronda.data.repository.SessionRepository;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import dagger.Module;
@@ -62,6 +64,12 @@ public class NetworkModule {
 
     /** Cuánto se espera al servidor antes de dar el pedido por fallido. */
     private static final long TIMEOUT_SEGUNDOS = 15;
+
+    /** Punto 11: @Named para distinguir el cliente de long polling del comun. */
+    private static final String ESPERA_LARGA = "esperaLarga";
+
+    /** Margen sobre la espera del backend para no cortar antes del 204. */
+    private static final long MARGEN_ESPERA_SEGUNDOS = 10;
 
     /**
      * El cliente HTTP. Retrofit usa OkHttp por debajo, y se configura a mano
@@ -223,5 +231,38 @@ public class NetworkModule {
     @Singleton
     public OperacionApiService provideOperacionApiService(Retrofit retrofit) {
         return retrofit.create(OperacionApiService.class);
+    }
+
+    /**
+     * Punto 11: el pedido de avisos queda abierto hasta 25 s y el cliente
+     * general corta a los 15. newBuilder() mantiene los interceptores (JWT y
+     * 401) y solo cambia el readTimeout.
+     */
+    @Provides
+    @Singleton
+    @Named(ESPERA_LARGA)
+    public OkHttpClient provideOkHttpClientEsperaLarga(OkHttpClient cliente) {
+        return cliente.newBuilder()
+                .readTimeout(NotificacionApiService.ESPERA_SEGUNDOS + MARGEN_ESPERA_SEGUNDOS,
+                        TimeUnit.SECONDS)
+                .build();
+    }
+
+    @Provides
+    @Singleton
+    @Named(ESPERA_LARGA)
+    public Retrofit provideRetrofitEsperaLarga(@Named(ESPERA_LARGA) OkHttpClient cliente) {
+        return new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(cliente)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+    }
+
+    @Provides
+    @Singleton
+    public NotificacionApiService provideNotificacionApiService(
+            @Named(ESPERA_LARGA) Retrofit retrofit) {
+        return retrofit.create(NotificacionApiService.class);
     }
 }

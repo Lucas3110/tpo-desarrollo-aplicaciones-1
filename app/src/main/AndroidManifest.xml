@@ -37,6 +37,17 @@
       impreso debajo del QR se puede ingresar a mano.
     -->
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Punto 11: en Android 13+ se pide en runtime (MainActivity). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      Punto 11: AvisosService es un servicio de primer plano. Desde Android 14
+      necesita un tipo: ninguno de los estandar describe un long polling, por
+      eso va como specialUse.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -64,6 +75,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Punto 11: long polling de avisos. exported=false: solo la app lo arranca. -->
+        <service
+            android:name=".notificaciones.AvisosService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Mantiene abierto un pedido de long polling al servidor de Ronda para mostrar al instante los avisos de preguntas y ofertas." />
+        </service>
     </application>
 
 </manifest>

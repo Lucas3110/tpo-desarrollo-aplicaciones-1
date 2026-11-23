@@ -136,6 +136,12 @@
         <argument
             android:name="publicacionId"
             app:argType="integer" />
+        <!-- Punto 11: al llegar desde un aviso, PREGUNTAS u OFERTAS abre ese panel. -->
+        <argument
+            android:name="abrir"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
 
         <!-- "Ver perfil publico" del vendedor (y de quien oferto, si soy el vendedor). -->
         <action

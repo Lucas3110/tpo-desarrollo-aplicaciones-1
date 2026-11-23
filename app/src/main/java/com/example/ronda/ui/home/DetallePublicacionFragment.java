@@ -31,6 +31,7 @@ import com.example.ronda.data.model.ErrorResponse;
 import com.example.ronda.data.network.PublicacionApiService;
 import com.example.ronda.data.repository.CachePublicaciones;
 import com.example.ronda.data.repository.SessionRepository;
+import com.example.ronda.notificaciones.AbrirAviso;
 import com.example.ronda.util.Conectividad;
 import com.example.ronda.ui.ofertas.FormatoOferta;
 
@@ -62,6 +63,9 @@ public class DetallePublicacionFragment extends Fragment {
     com.example.ronda.data.repository.FavoritosRepository favoritosRepository;
 
     private int publicacionId = -1;
+    /** Punto 11: panel a abrir al cargar, si se llego desde un aviso. Se usa una vez. */
+    private String abrirAlCargar;
+    private static final String ESTADO_ABRIR = "abrirAlCargar";
     private PublicacionDetalleResponse.Publicacion mPub;
     private boolean esFavorito = false;
     private Call<PublicacionDetalleResponse> llamadaDetalle;
@@ -87,7 +91,18 @@ public class DetallePublicacionFragment extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             publicacionId = getArguments().getInt("publicacionId", -1);
+            abrirAlCargar = getArguments().getString(AbrirAviso.ARG_ABRIR);
         }
+        // Al rotar el panel ya esta abierto y se restaura solo.
+        if (savedInstanceState != null) {
+            abrirAlCargar = savedInstanceState.getString(ESTADO_ABRIR);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(ESTADO_ABRIR, abrirAlCargar);
     }
 
     @Override
@@ -144,17 +159,11 @@ public class DetallePublicacionFragment extends Fragment {
         
         btnPreguntar.setOnClickListener(v -> {
             if (mPub == null || !hayConexionParaActuar()) return;
-            boolean esVendedor = mPub.isEsMia();
-            boolean puedePreguntar = mPub.getAcciones().isPuedePreguntar();
-            PreguntasBottomSheet bottomSheet = PreguntasBottomSheet.newInstance(mPub.getId(), esVendedor, puedePreguntar);
-            bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
+            abrirPreguntas();
         });
         btnOfertar.setOnClickListener(v -> {
             if (mPub == null || !hayConexionParaActuar()) return;
-            boolean esVendedor = mPub.isEsMia();
-            boolean puedeOfertar = mPub.getAcciones().isPuedeOfertar();
-            OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), esVendedor, puedeOfertar, mPub.getPrecio());
-            bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
+            abrirOfertas();
         });
         btnGuardar.setOnClickListener(v -> { if (hayConexionParaActuar()) toggleFavorito(); });
         btnGestionar.setOnClickListener(v -> {
@@ -318,6 +327,7 @@ public class DetallePublicacionFragment extends Fragment {
                     if (tvSinConexionDetalle != null) tvSinConexionDetalle.setVisibility(View.GONE);
                     poblarUi(response.body().getPublicacion());
                     if (abrirMapa) abrirMapa(mPub.getEntrega());
+                    abrirLoQuePidioElAviso();
                 } else {
                     ErrorResponse.Detalle error = ApiErrorParser.parse(response);
                     String mensaje = ApiErrorParser.mensaje(error, getString(R.string.detalle_error_carga));
@@ -332,6 +342,36 @@ public class DetallePublicacionFragment extends Fragment {
                 mostrarDesdeCache();
             }
         });
+    }
+
+    private void abrirPreguntas() {
+        boolean esVendedor = mPub.isEsMia();
+        boolean puedePreguntar = mPub.getAcciones() != null && mPub.getAcciones().isPuedePreguntar();
+        PreguntasBottomSheet bottomSheet = PreguntasBottomSheet.newInstance(mPub.getId(), esVendedor, puedePreguntar);
+        bottomSheet.show(getChildFragmentManager(), "PreguntasBottomSheet");
+    }
+
+    private void abrirOfertas() {
+        boolean esVendedor = mPub.isEsMia();
+        boolean puedeOfertar = mPub.getAcciones() != null && mPub.getAcciones().isPuedeOfertar();
+        OfertasBottomSheet bottomSheet = OfertasBottomSheet.newInstance(mPub.getId(), esVendedor, puedeOfertar, mPub.getPrecio());
+        bottomSheet.show(getChildFragmentManager(), "OfertasBottomSheet");
+    }
+
+    /**
+     * Punto 11: abre el panel del aviso cuando la publicacion cargo con red.
+     * Si el estado ya se guardo, queda para la proxima carga (onResume).
+     */
+    private void abrirLoQuePidioElAviso() {
+        if (abrirAlCargar == null || mPub == null || isStateSaved()) return;
+
+        String panel = abrirAlCargar;
+        abrirAlCargar = null;
+        if (AbrirAviso.ABRIR_PREGUNTAS.equals(panel)) {
+            abrirPreguntas();
+        } else {
+            abrirOfertas();
+        }
     }
 
     private void poblarUi(PublicacionDetalleResponse.Publicacion pub) {
